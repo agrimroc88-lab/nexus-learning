@@ -1,0 +1,200 @@
+/* =====================================================================
+   NEXUS LEARNING · ESTILOS DE ADMINISTRACIÓN
+   Carpeta: css/admin.css
+   Lo usan login.html, admin.html y resultados.html.
+   Requiere cargar antes css/estilos.css.
+   ===================================================================== */
+
+/* ---------- Inicio de sesión ---------- */
+.fondo-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--pino);
+}
+.caja-login {
+  width: 100%;
+  max-width: 420px;
+  padding: 36px;
+  border-radius: 18px;
+  background: var(--blanco);
+}
+.marca-oscura { color: var(--pino); margin-bottom: 28px; }
+.caja-login h1 { font-size: 32px; }
+.caja-login .intro { color: var(--gris); margin: 0 0 22px; }
+.caja-login .etiqueta { margin-top: 16px; }
+.caja-login .aviso { margin-bottom: 8px; }
+.boton-ancho { width: 100%; margin-top: 24px; }
+.nota-login { margin: 20px 0 0; font-size: 14px; color: var(--gris); }
+
+/* ---------- Barra del panel ---------- */
+.nav-admin { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.nav-admin a[aria-current="page"] { opacity: 1; font-weight: 700; text-decoration: underline; text-underline-offset: 6px; }
+.usuario { font-size: 14px; color: #A9C6BD; }
+.enlace-boton {
+  border: 0;
+  padding: 4px 2px;
+  background: none;
+  color: inherit;
+  font-family: var(--fuente-texto);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.barra .enlace-boton { color: var(--senal); }
+.enlace-boton.rojo { color: var(--error); }
+
+.aviso-pagina { padding-top: 48px; color: var(--gris); }
+
+/* ---------- Distribución ---------- */
+.panel {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 32px;
+  align-items: start;
+  padding-top: 32px;
+}
+
+.lista-cursos {
+  position: sticky;
+  top: 20px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--blanco);
+  border: 2px solid var(--niebla);
+}
+.lista-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+.lista-cabecera h2 { font-size: 22px; margin: 0; }
+.boton-chico { min-height: 38px; padding: 0 16px; font-size: 14px; }
+
+.lista-cursos ul { list-style: none; margin: 0; padding: 0; }
+.item-curso {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 6px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--tinta);
+  font-family: var(--fuente-texto);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.item-curso:hover { background: var(--papel); }
+.item-curso.activo { border-color: var(--pino); background: var(--papel); }
+
+.estado { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.estado.publicado { background: #DDF0E5; color: var(--ok); }
+.estado.borrador { background: var(--niebla); color: var(--gris); }
+
+/* ---------- Editor ---------- */
+.editor {
+  min-width: 0;
+  padding: 32px;
+  border-radius: 14px;
+  background: var(--blanco);
+  border: 2px solid var(--niebla);
+}
+.editor > .aviso { margin-bottom: 20px; }
+.editor h1 { font-size: 30px; }
+.vacio { padding: 48px 0; text-align: center; color: var(--gris); }
+.vacio h2 { font-size: 24px; }
+.vacio-lista { color: var(--gris); padding: 8px 0; list-style: none; }
+
+.pestanas { display: flex; gap: 6px; margin: 18px 0 28px; border-bottom: 2px solid var(--niebla); flex-wrap: wrap; }
+.pestana {
+  margin-bottom: -2px;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--gris);
+  font-family: var(--fuente-texto);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pestana.activa { color: var(--pino); border-bottom-color: var(--senal); }
+.pestana:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.hoja .etiqueta { margin-top: 18px; }
+.area { min-height: 110px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+.fila-dos { display: grid; grid-template-columns: 2fr 1fr; gap: 0 18px; }
+#form-curso .fila-dos { grid-template-columns: 1fr 1fr; }
+.ayuda { margin: 6px 0 0; font-size: 14px; color: var(--gris); }
+
+.interruptor { display: flex; gap: 10px; align-items: center; margin-top: 22px; font-weight: 600; cursor: pointer; }
+.interruptor input { width: 20px; height: 20px; accent-color: var(--pino); }
+
+.acciones-form {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--niebla);
+}
+.acciones-form .boton:only-child, .acciones-form [hidden] + .boton { margin-left: auto; }
+.boton.peligro { background: transparent; color: var(--error); border: 2px solid var(--error); }
+
+/* Lista de lecciones / preguntas */
+.lista-items { list-style: none; margin: 0 0 28px; padding: 0; }
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--niebla);
+}
+.item-num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--pino);
+  color: var(--blanco);
+  font-weight: 700;
+  font-size: 14px;
+}
+.item-info { min-width: 0; }
+.item-info strong { display: block; }
+.item-info small { color: var(--gris); font-size: 14px; }
+
+.formulario-item {
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--papel);
+}
+.formulario-item h3 { font-size: 20px; margin: 0; }
+
+.opciones-editor { border: 0; margin: 18px 0 0; padding: 0; }
+.opciones-editor legend { font-weight: 600; font-size: 15px; margin-bottom: 8px; padding: 0; }
+.fila-opcion { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.fila-opcion input[type="radio"] { width: 22px; height: 22px; flex: none; accent-color: var(--ok); }
+
+/* ---------- Celular y tablet ---------- */
+@media (max-width: 900px) {
+  .panel { grid-template-columns: 1fr; }
+  .lista-cursos { position: static; }
+  .editor { padding: 20px; }
+  .fila-dos, #form-curso .fila-dos { grid-template-columns: 1fr; }
+  .item { grid-template-columns: auto 1fr; }
+  .item .enlace-boton { grid-column: 2; justify-self: start; }
+  .nav-admin .usuario { display: none; }
+}
+@media (max-width: 760px) {
+  .barra nav.nav-admin { display: flex; gap: 12px; }
+  .nav-admin a[target="_blank"] { display: none; }
+}

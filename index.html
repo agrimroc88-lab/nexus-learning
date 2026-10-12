@@ -28,20 +28,26 @@
         Nexus Learning
       </a>
       <nav>
-        <a href="#cursos">Cursos</a>
-        &nbsp;&nbsp;
         <a href="verificar.html">Verificar certificado</a>
       </nav>
     </div>
   </header>
 
-  <!-- ===== Portada ===== -->
+  <!-- ===== Portada: ingreso con código ===== -->
   <section class="portada">
     <div class="contenedor">
       <div>
         <h1>Capacitación laboral que se puede comprobar</h1>
-        <p>Estudia a tu ritmo, rinde una evaluación corta y recibe un certificado con código único que cualquier empresa puede verificar.</p>
-        <a class="boton" href="#cursos">Ver cursos disponibles</a>
+        <p>Escribe el código que te dio tu empresa o escanea el código QR de la capacitación.</p>
+
+        <form id="form-acceso" class="acceso-form" novalidate>
+          <label for="codigo-acceso" class="etiqueta">Código de capacitación</label>
+          <div class="acceso-fila">
+            <input id="codigo-acceso" class="campo" placeholder="AND-7K4P9Q" maxlength="12" autocomplete="off" spellcheck="false" autocapitalize="characters">
+            <button class="boton" type="submit" id="btn-acceso">Ingresar</button>
+          </div>
+          <p class="acceso-error" id="error-acceso" role="alert"></p>
+        </form>
       </div>
 
       <svg class="ruta" viewBox="0 0 420 310" role="img" aria-labelledby="ruta-titulo">
@@ -52,26 +58,19 @@
         <circle cx="290" cy="60" r="26" fill="#F2C14E"/>
         <path d="M279 60 l8 8 l15 -16" fill="none" stroke="#0F3D3E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
         <text x="84" y="270" font-size="20">Aprende</text>
-        <text x="84" y="290" font-size="14" class="sub">Lecciones cortas</text>
+        <text x="84" y="290" font-size="14" class="sub">Presencial o virtual</text>
         <text x="204" y="180" font-size="20">Evalúa</text>
-        <text x="204" y="200" font-size="14" class="sub">Preguntas al final</text>
+        <text x="204" y="200" font-size="14" class="sub">Cuando se requiera</text>
         <text x="326" y="58" font-size="20">Certifica</text>
-        <text x="326" y="78" font-size="14" class="sub">Código</text>
+        <text x="326" y="78" font-size="14" class="sub">Con código</text>
         <text x="326" y="96" font-size="14" class="sub">verificable</text>
       </svg>
     </div>
   </section>
 
-  <!-- ===== Cursos ===== -->
-  <main class="seccion" id="cursos">
+  <!-- ===== Verificación de certificados ===== -->
+  <main class="seccion">
     <div class="contenedor">
-      <h2>Cursos disponibles</h2>
-      <p class="intro">Todos los cursos son gratuitos. Al aprobar la evaluación obtienes tu certificado al instante.</p>
-
-      <div id="estado-cursos" class="aviso" role="status">Cargando cursos…</div>
-      <ul id="lista-cursos" class="cursos" hidden></ul>
-
-      <!-- Verificación de certificados -->
       <div class="verificar-caja">
         <div>
           <h2>¿Recibiste un certificado?</h2>
@@ -89,7 +88,7 @@
   <!-- ===== Pie ===== -->
   <footer class="pie">
     <div class="contenedor">
-      <span>Nexus Learning · VitalWork S.A.S.</span>
+      <span>Nexus Learning, de VitalWork S.A.S.</span>
       <a href="verificar.html">Verificar un certificado</a>
     </div>
   </footer>

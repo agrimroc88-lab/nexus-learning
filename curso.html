@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Curso · Nexus Learning</title>
+  <title>Capacitación · Nexus Learning</title>
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,30 +28,88 @@
         Nexus Learning
       </a>
       <nav>
-        <a href="index.html#cursos">Todos los cursos</a>
+        <a href="verificar.html">Verificar certificado</a>
       </nav>
     </div>
   </header>
 
   <main class="contenedor pagina-curso">
-    <div id="estado" class="aviso" role="status">Cargando curso…</div>
+    <div id="estado" class="aviso" role="status">Revisando el código…</div>
 
+    <!-- ===== Código no válido ===== -->
+    <section id="bloque-codigo" class="vista vista-angosta" hidden>
+      <h1>No pudimos abrir esta capacitación</h1>
+      <p id="codigo-motivo" class="aviso error"></p>
+
+      <form id="form-otro-codigo" class="bloque-form" novalidate>
+        <label class="etiqueta" for="otro-codigo">Prueba con otro código</label>
+        <div class="fila-boton">
+          <input class="campo campo-codigo" id="otro-codigo" placeholder="AND-7K4P9Q" maxlength="12" autocomplete="off">
+          <button class="boton" type="submit">Ingresar</button>
+        </div>
+      </form>
+
+      <form id="form-recuperar" class="bloque-form" novalidate hidden>
+        <h2>¿Ya obtuviste tu certificado con este código?</h2>
+        <p class="nota-intro">Escribe tu cédula para descargarlo de nuevo.</p>
+        <label class="etiqueta" for="recuperar-cedula">Cédula o pasaporte</label>
+        <div class="fila-boton">
+          <input class="campo" id="recuperar-cedula" inputmode="numeric" maxlength="20">
+          <button class="boton secundario" type="submit">Buscar mi certificado</button>
+        </div>
+        <p class="error-campo" id="e-recuperar" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- ===== Capacitación ===== -->
     <div id="curso" hidden>
-      <!-- Encabezado del curso -->
       <div class="curso-cabecera">
+        <p class="empresa-etiqueta" id="curso-empresa"></p>
         <h1 id="curso-titulo"></h1>
         <p id="curso-datos"></p>
       </div>
 
-      <div class="curso-cuerpo">
-        <!-- Temario -->
-        <aside class="temario" aria-label="Contenido del curso">
+      <!-- ----- Registro ----- -->
+      <section id="vista-registro" class="vista vista-angosta" hidden>
+        <h2 id="registro-titulo">Regístrate para comenzar</h2>
+        <p class="nota-intro" id="registro-intro"></p>
+
+        <form id="form-registro" novalidate>
+          <div class="fila-campos">
+            <div>
+              <label class="etiqueta" for="p-nombres">Nombres y apellidos completos</label>
+              <input class="campo" id="p-nombres" autocomplete="name" maxlength="120">
+              <p class="error-campo" id="e-nombres"></p>
+            </div>
+            <div>
+              <label class="etiqueta" for="p-cedula">Cédula o pasaporte</label>
+              <input class="campo" id="p-cedula" inputmode="numeric" maxlength="20">
+              <p class="error-campo" id="e-cedula"></p>
+            </div>
+          </div>
+          <label class="etiqueta" for="p-correo">Correo electrónico (opcional)</label>
+          <input class="campo" id="p-correo" type="email" autocomplete="email" maxlength="120">
+
+          <label class="consentimiento">
+            <input type="checkbox" id="p-acepta">
+            <span>Autorizo a VitalWork S.A.S. a tratar mis datos (nombres, cédula y correo) únicamente para registrar esta capacitación y emitir y verificar mi certificado, conforme a la Ley Orgánica de Protección de Datos Personales.</span>
+          </label>
+          <p class="error-campo" id="e-acepta"></p>
+
+          <p class="aviso error" id="error-registro" role="alert" hidden></p>
+          <button type="submit" class="boton" id="btn-registro">Continuar</button>
+        </form>
+      </section>
+
+      <!-- ----- Curso ----- -->
+      <div class="curso-cuerpo" id="curso-cuerpo" hidden>
+        <aside class="temario" id="temario-caja" aria-label="Contenido del curso">
           <p class="temario-progreso" id="progreso-texto"></p>
           <div class="barra-progreso" aria-hidden="true"><span id="progreso-barra"></span></div>
           <ol id="temario"></ol>
         </aside>
 
-        <!-- ===== Vista: lección ===== -->
+        <!-- Lección -->
         <section id="vista-leccion" class="vista" hidden>
           <p class="vista-paso" id="leccion-paso"></p>
           <h2 id="leccion-titulo"></h2>
@@ -63,44 +121,15 @@
           </div>
         </section>
 
-        <!-- ===== Vista: evaluación ===== -->
+        <!-- Evaluación -->
         <section id="vista-evaluacion" class="vista" hidden>
-          <p class="vista-paso">Evaluación final</p>
+          <p class="vista-paso">Evaluación</p>
           <h2>Demuestra lo que aprendiste</h2>
           <p class="nota-intro" id="evaluacion-intro"></p>
+          <p class="persona-actual">Respondiendo como <strong id="persona-nombre"></strong>. <button type="button" class="enlace-simple" id="btn-no-soy">No soy yo</button></p>
 
           <form id="form-evaluacion" novalidate>
-            <fieldset class="datos-participante">
-              <legend>Tus datos para el certificado</legend>
-              <div class="fila-campos">
-                <div>
-                  <label class="etiqueta" for="p-nombres">Nombres y apellidos completos</label>
-                  <input class="campo" id="p-nombres" autocomplete="name" maxlength="120">
-                  <p class="error-campo" id="e-nombres"></p>
-                </div>
-                <div>
-                  <label class="etiqueta" for="p-cedula">Cédula o pasaporte</label>
-                  <input class="campo" id="p-cedula" inputmode="numeric" maxlength="20">
-                  <p class="error-campo" id="e-cedula"></p>
-                </div>
-                <div>
-                  <label class="etiqueta" for="p-empresa">Empresa donde trabajas (opcional)</label>
-                  <input class="campo" id="p-empresa" autocomplete="organization" maxlength="120">
-                </div>
-                <div>
-                  <label class="etiqueta" for="p-correo">Correo electrónico (opcional)</label>
-                  <input class="campo" id="p-correo" type="email" autocomplete="email" maxlength="120">
-                </div>
-              </div>
-              <label class="consentimiento">
-                <input type="checkbox" id="p-acepta">
-                <span>Autorizo a VitalWork S.A.S. a tratar mis datos (nombres, cédula, empresa y correo) únicamente para registrar esta capacitación y emitir y verificar mi certificado, conforme a la Ley Orgánica de Protección de Datos Personales.</span>
-              </label>
-              <p class="error-campo" id="e-acepta"></p>
-            </fieldset>
-
             <div id="preguntas"></div>
-
             <div id="error-envio" class="aviso error" role="alert" hidden></div>
             <div class="navegacion">
               <button type="button" class="boton secundario" id="btn-repasar">Repasar lecciones</button>
@@ -109,7 +138,7 @@
           </form>
         </section>
 
-        <!-- ===== Vista: resultado ===== -->
+        <!-- Resultado -->
         <section id="vista-resultado" class="vista" hidden>
           <div id="resultado"></div>
         </section>

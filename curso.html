@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Curso · Nexus Learning</title>
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Estilos: generales + propios de esta página -->
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/curso.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="index.html" aria-label="Nexus Learning, inicio">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Nexus Learning
+      </a>
+      <nav>
+        <a href="index.html#cursos">Todos los cursos</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="contenedor pagina-curso">
+    <div id="estado" class="aviso" role="status">Cargando curso…</div>
+
+    <div id="curso" hidden>
+      <!-- Encabezado del curso -->
+      <div class="curso-cabecera">
+        <h1 id="curso-titulo"></h1>
+        <p id="curso-datos"></p>
+      </div>
+
+      <div class="curso-cuerpo">
+        <!-- Temario -->
+        <aside class="temario" aria-label="Contenido del curso">
+          <p class="temario-progreso" id="progreso-texto"></p>
+          <div class="barra-progreso" aria-hidden="true"><span id="progreso-barra"></span></div>
+          <ol id="temario"></ol>
+        </aside>
+
+        <!-- ===== Vista: lección ===== -->
+        <section id="vista-leccion" class="vista" hidden>
+          <p class="vista-paso" id="leccion-paso"></p>
+          <h2 id="leccion-titulo"></h2>
+          <div id="leccion-video" class="video" hidden></div>
+          <div id="leccion-contenido" class="leccion-texto"></div>
+          <div class="navegacion">
+            <button type="button" class="boton secundario" id="btn-anterior">Lección anterior</button>
+            <button type="button" class="boton" id="btn-siguiente">Siguiente lección</button>
+          </div>
+        </section>
+
+        <!-- ===== Vista: evaluación ===== -->
+        <section id="vista-evaluacion" class="vista" hidden>
+          <p class="vista-paso">Evaluación final</p>
+          <h2>Demuestra lo que aprendiste</h2>
+          <p class="nota-intro" id="evaluacion-intro"></p>
+
+          <form id="form-evaluacion" novalidate>
+            <fieldset class="datos-participante">
+              <legend>Tus datos para el certificado</legend>
+              <div class="fila-campos">
+                <div>
+                  <label class="etiqueta" for="p-nombres">Nombres y apellidos completos</label>
+                  <input class="campo" id="p-nombres" autocomplete="name" maxlength="120">
+                  <p class="error-campo" id="e-nombres"></p>
+                </div>
+                <div>
+                  <label class="etiqueta" for="p-cedula">Cédula o pasaporte</label>
+                  <input class="campo" id="p-cedula" inputmode="numeric" maxlength="20">
+                  <p class="error-campo" id="e-cedula"></p>
+                </div>
+                <div>
+                  <label class="etiqueta" for="p-empresa">Empresa donde trabajas (opcional)</label>
+                  <input class="campo" id="p-empresa" autocomplete="organization" maxlength="120">
+                </div>
+                <div>
+                  <label class="etiqueta" for="p-correo">Correo electrónico (opcional)</label>
+                  <input class="campo" id="p-correo" type="email" autocomplete="email" maxlength="120">
+                </div>
+              </div>
+              <label class="consentimiento">
+                <input type="checkbox" id="p-acepta">
+                <span>Autorizo a VitalWork S.A.S. a tratar mis datos (nombres, cédula, empresa y correo) únicamente para registrar esta capacitación y emitir y verificar mi certificado, conforme a la Ley Orgánica de Protección de Datos Personales.</span>
+              </label>
+              <p class="error-campo" id="e-acepta"></p>
+            </fieldset>
+
+            <div id="preguntas"></div>
+
+            <div id="error-envio" class="aviso error" role="alert" hidden></div>
+            <div class="navegacion">
+              <button type="button" class="boton secundario" id="btn-repasar">Repasar lecciones</button>
+              <button type="submit" class="boton" id="btn-enviar">Enviar evaluación</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- ===== Vista: resultado ===== -->
+        <section id="vista-resultado" class="vista" hidden>
+          <div id="resultado"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <span>Nexus Learning, de VitalWork S.A.S.</span>
+      <a href="verificar.html">Verificar un certificado</a>
+    </div>
+  </footer>
+
+  <!-- Scripts: el orden importa -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/certificado.js"></script>
+  <script src="js/curso.js"></script>
+</body>
+</html>

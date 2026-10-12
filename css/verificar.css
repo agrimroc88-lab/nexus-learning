@@ -1,0 +1,63 @@
+/* =====================================================================
+   NEXUS LEARNING · ESTILOS DE LA PÁGINA DE VERIFICACIÓN
+   Carpeta: css/verificar.css
+   Solo los usa verificar.html. Requiere cargar antes css/estilos.css.
+   ===================================================================== */
+
+.pagina-verificar { padding-top: 48px; max-width: 760px; }
+.pagina-verificar h1 { font-size: clamp(32px, 4.5vw, 46px); }
+.pagina-verificar .intro { color: var(--gris); margin: 0 0 28px; }
+
+.buscador-fila { display: flex; gap: 10px; }
+.buscador .campo { text-transform: uppercase; font-size: 18px; letter-spacing: 0.03em; }
+.error-campo { min-height: 1.3em; margin: 6px 0 0; font-size: 14px; color: var(--error); }
+
+/* ---------- Tarjeta de resultado ---------- */
+.ficha {
+  margin-top: 28px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--blanco);
+  border: 2px solid var(--niebla);
+}
+.ficha-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 28px;
+  color: var(--blanco);
+}
+.ficha.valida .ficha-cabecera { background: var(--pino); }
+.ficha.invalida .ficha-cabecera { background: var(--error); }
+.ficha-cabecera h2 { color: var(--blanco); font-size: 24px; margin: 0; }
+.ficha-cabecera p { margin: 2px 0 0; opacity: 0.85; font-size: 15px; }
+.sello {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--senal);
+}
+.ficha.invalida .sello { background: var(--blanco); }
+
+.ficha-datos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px;
+  margin: 0;
+  padding: 26px 28px 30px;
+}
+.ficha-datos div.ancho { grid-column: 1 / -1; }
+.ficha-datos dt { font-size: 14px; color: var(--gris); margin-bottom: 2px; }
+.ficha-datos dd { margin: 0; font-weight: 700; font-size: 18px; color: var(--tinta); }
+.ficha-datos dd.nombre { font-family: var(--fuente-titulo); font-size: 26px; color: var(--pino); }
+
+.ficha-texto { padding: 22px 28px 26px; margin: 0; color: var(--gris); }
+
+@media (max-width: 600px) {
+  .buscador-fila { flex-direction: column; }
+  .ficha-datos { grid-template-columns: 1fr; }
+  .ficha-cabecera, .ficha-datos, .ficha-texto { padding-left: 20px; padding-right: 20px; }
+}

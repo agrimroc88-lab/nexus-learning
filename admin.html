@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administración · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="admin.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Administración
+      </a>
+      <nav class="nav-admin">
+        <a href="admin.html" aria-current="page">Cursos</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <main id="panel" class="contenedor panel" hidden>
+
+    <!-- ===== Lista de cursos ===== -->
+    <aside class="lista-cursos">
+      <div class="lista-cabecera">
+        <h2>Cursos</h2>
+        <button type="button" class="boton boton-chico" id="btn-nuevo-curso">Nuevo curso</button>
+      </div>
+      <ul id="cursos"></ul>
+    </aside>
+
+    <!-- ===== Editor ===== -->
+    <section class="editor">
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <div id="editor-vacio" class="vacio">
+        <h2>Elige un curso de la lista</h2>
+        <p>O crea uno nuevo con el botón "Nuevo curso".</p>
+      </div>
+
+      <div id="editor-curso" hidden>
+        <h1 id="editor-titulo"></h1>
+
+        <div class="pestanas" role="tablist">
+          <button type="button" role="tab" class="pestana" data-pestana="datos">Datos del curso</button>
+          <button type="button" role="tab" class="pestana" data-pestana="lecciones">Lecciones <span id="n-lecciones"></span></button>
+          <button type="button" role="tab" class="pestana" data-pestana="preguntas">Preguntas <span id="n-preguntas"></span></button>
+        </div>
+
+        <!-- ----- Datos del curso ----- -->
+        <form id="form-curso" class="hoja" data-hoja="datos" novalidate>
+          <label class="etiqueta" for="c-titulo">Título del curso</label>
+          <input class="campo" id="c-titulo" maxlength="150">
+
+          <label class="etiqueta" for="c-descripcion">Descripción (aparece en la página de inicio)</label>
+          <textarea class="campo area" id="c-descripcion" rows="4" maxlength="600"></textarea>
+
+          <div class="fila-dos">
+            <div>
+              <label class="etiqueta" for="c-horas">Horas del certificado</label>
+              <input class="campo" id="c-horas" type="number" min="0.5" max="200" step="0.5">
+            </div>
+            <div>
+              <label class="etiqueta" for="c-nota">Nota mínima para aprobar (%)</label>
+              <input class="campo" id="c-nota" type="number" min="1" max="100" step="1">
+            </div>
+          </div>
+
+          <label class="interruptor">
+            <input type="checkbox" id="c-publicado">
+            <span>Publicado: visible en la página de inicio</span>
+          </label>
+
+          <div class="acciones-form">
+            <button type="button" class="boton peligro" id="btn-eliminar-curso">Eliminar curso</button>
+            <button type="submit" class="boton" id="btn-guardar-curso">Guardar curso</button>
+          </div>
+        </form>
+
+        <!-- ----- Lecciones ----- -->
+        <div class="hoja" data-hoja="lecciones" hidden>
+          <ol id="lista-lecciones" class="lista-items"></ol>
+
+          <form id="form-leccion" class="formulario-item" novalidate>
+            <h3 id="leccion-form-titulo">Agregar lección</h3>
+            <div class="fila-dos">
+              <div>
+                <label class="etiqueta" for="l-titulo">Título</label>
+                <input class="campo" id="l-titulo" maxlength="150">
+              </div>
+              <div>
+                <label class="etiqueta" for="l-orden">Orden</label>
+                <input class="campo" id="l-orden" type="number" min="1" step="1">
+              </div>
+            </div>
+            <label class="etiqueta" for="l-video">Enlace de YouTube (opcional)</label>
+            <input class="campo" id="l-video" placeholder="https://youtu.be/…" maxlength="300">
+
+            <label class="etiqueta" for="l-contenido">Contenido</label>
+            <textarea class="campo area" id="l-contenido" rows="10"></textarea>
+            <p class="ayuda">Deja una línea en blanco entre párrafos. Para hacer una lista, empieza cada línea con un guion (-) o con un número (1.).</p>
+
+            <div class="acciones-form">
+              <button type="button" class="boton secundario" id="btn-cancelar-leccion">Cancelar</button>
+              <button type="submit" class="boton" id="btn-guardar-leccion">Guardar lección</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ----- Preguntas ----- -->
+        <div class="hoja" data-hoja="preguntas" hidden>
+          <ol id="lista-preguntas" class="lista-items"></ol>
+
+          <form id="form-pregunta" class="formulario-item" novalidate>
+            <h3 id="pregunta-form-titulo">Agregar pregunta</h3>
+            <div class="fila-dos">
+              <div>
+                <label class="etiqueta" for="q-enunciado">Pregunta</label>
+                <input class="campo" id="q-enunciado" maxlength="300">
+              </div>
+              <div>
+                <label class="etiqueta" for="q-orden">Orden</label>
+                <input class="campo" id="q-orden" type="number" min="1" step="1">
+              </div>
+            </div>
+
+            <fieldset class="opciones-editor">
+              <legend>Opciones de respuesta: marca la correcta</legend>
+              <div id="q-opciones"></div>
+            </fieldset>
+            <p class="ayuda">Escribe al menos 2 opciones. Las vacías no se muestran.</p>
+
+            <div class="acciones-form">
+              <button type="button" class="boton secundario" id="btn-cancelar-pregunta">Cancelar</button>
+              <button type="submit" class="boton" id="btn-guardar-pregunta">Guardar pregunta</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

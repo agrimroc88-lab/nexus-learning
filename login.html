@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Ingresar · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="fondo-login">
+
+  <main class="caja-login">
+    <a class="marca marca-oscura" href="index.html" aria-label="Nexus Learning, inicio">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+        <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+        <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+        <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+      </svg>
+      Nexus Learning
+    </a>
+
+    <h1>Administración</h1>
+    <p class="intro">Ingresa con la cuenta que te creó el administrador de la plataforma.</p>
+
+    <div id="mensaje" class="aviso" role="alert" hidden></div>
+
+    <form id="form-login" novalidate>
+      <label class="etiqueta" for="correo">Correo electrónico</label>
+      <input class="campo" id="correo" type="email" autocomplete="username" required>
+
+      <label class="etiqueta" for="clave">Contraseña</label>
+      <input class="campo" id="clave" type="password" autocomplete="current-password" required>
+
+      <button class="boton boton-ancho" type="submit" id="btn-ingresar">Ingresar</button>
+    </form>
+
+    <p class="nota-login">¿Olvidaste tu contraseña? Puedes cambiarla desde Supabase, en Authentication &gt; Users.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

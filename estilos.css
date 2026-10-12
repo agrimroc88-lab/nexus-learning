@@ -1,0 +1,283 @@
+/* =====================================================================
+   NEXUS LEARNING · ESTILOS COMPARTIDOS
+   Carpeta: css/estilos.css
+   Lo usan todas las páginas. Cambiar un color aquí lo cambia en todo el sitio.
+   ===================================================================== */
+
+:root {
+  --pino: #0F3D3E;        /* color principal */
+  --pino-claro: #1C5C5D;
+  --senal: #F2C14E;       /* acento: amarillo de señalización */
+  --papel: #F6F7F4;       /* fondo general */
+  --blanco: #FFFFFF;
+  --tinta: #172220;       /* texto principal */
+  --gris: #56655F;        /* texto secundario */
+  --niebla: #DCE5E0;      /* bordes y fondos suaves */
+  --ok: #1F7A4D;
+  --error: #B3402A;
+
+  --fuente-titulo: "Bricolage Grotesque", "Segoe UI", Arial, sans-serif;
+  --fuente-texto: "Instrument Sans", "Segoe UI", Arial, sans-serif;
+
+  --radio: 10px;
+  --ancho: 1080px;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--fuente-texto);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: var(--pino-claro); }
+
+h1, h2, h3 {
+  font-family: var(--fuente-titulo);
+  line-height: 1.15;
+  margin: 0 0 0.5em;
+  color: var(--pino);
+}
+
+.contenedor {
+  width: 100%;
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Barra superior ---------- */
+.barra {
+  background: var(--pino);
+  color: var(--blanco);
+}
+.barra .contenedor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  gap: 16px;
+}
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--blanco);
+  text-decoration: none;
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  font-size: 20px;
+}
+.marca svg { flex: none; }
+.barra nav a {
+  color: var(--blanco);
+  text-decoration: none;
+  font-size: 15px;
+  opacity: 0.85;
+}
+.barra nav a:hover { opacity: 1; text-decoration: underline; }
+
+/* ---------- Botones y campos ---------- */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--senal);
+  color: var(--pino);
+  font-family: var(--fuente-texto);
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.boton:hover { filter: brightness(0.95); }
+.boton.secundario {
+  background: transparent;
+  color: var(--pino);
+  border: 2px solid var(--pino);
+}
+.boton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.campo {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 2px solid var(--niebla);
+  border-radius: var(--radio);
+  background: var(--blanco);
+  color: var(--tinta);
+  font-family: var(--fuente-texto);
+  font-size: 16px;
+}
+.campo:focus { outline: none; border-color: var(--pino-claro); }
+
+:focus-visible { outline: 3px solid var(--senal); outline-offset: 2px; }
+
+.etiqueta {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+/* ---------- Mensajes ---------- */
+.aviso {
+  padding: 14px 18px;
+  border-radius: var(--radio);
+  background: var(--blanco);
+  border: 2px solid var(--niebla);
+  color: var(--gris);
+}
+.aviso.error { border-color: var(--error); color: var(--error); }
+.aviso.ok { border-color: var(--ok); color: var(--ok); }
+
+/* ---------- Pie de página ---------- */
+.pie {
+  margin-top: 80px;
+  padding: 28px 0;
+  border-top: 1px solid var(--niebla);
+  color: var(--gris);
+  font-size: 14px;
+}
+.pie .contenedor {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* =====================================================================
+   PÁGINA DE INICIO (index.html)
+   ===================================================================== */
+.portada {
+  background: var(--pino);
+  color: var(--blanco);
+  padding: 56px 0 72px;
+  overflow: hidden;
+}
+.portada .contenedor {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 40px;
+}
+.portada h1 {
+  color: var(--blanco);
+  font-size: clamp(36px, 5.2vw, 60px);
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+}
+.portada p {
+  color: #CFE0DA;
+  font-size: 19px;
+  max-width: 46ch;
+  margin: 0 0 28px;
+}
+
+/* La ruta: aprende, evalúa, certifica */
+.ruta { width: 100%; height: auto; }
+.ruta text {
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  fill: var(--blanco);
+}
+.ruta .sub {
+  font-family: var(--fuente-texto);
+  font-weight: 400;
+  fill: #A9C6BD;
+}
+
+/* Ingreso con código */
+.acceso-form { max-width: 460px; }
+.acceso-form .etiqueta { color: var(--blanco); }
+.acceso-fila { display: flex; gap: 10px; }
+.acceso-fila .campo {
+  min-height: 54px;
+  border-color: transparent;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.acceso-fila .boton { min-height: 54px; padding: 0 26px; }
+.acceso-error { min-height: 1.4em; margin: 10px 0 0; color: #FFB9AA; font-weight: 600; font-size: 15px; }
+
+/* Lista de cursos */
+.seccion { padding-top: 64px; }
+.seccion > .contenedor > h2 { font-size: 32px; }
+.seccion > .contenedor > p.intro { color: var(--gris); max-width: 60ch; margin-top: 0; }
+
+.cursos {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  border-top: 2px solid var(--pino);
+}
+.curso {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 32px;
+  align-items: center;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--niebla);
+}
+.curso h3 { font-size: 24px; margin-bottom: 6px; }
+.curso p { margin: 0; color: var(--gris); max-width: 70ch; }
+.curso .datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pino-claro);
+}
+
+/* Verificación */
+.verificar-caja {
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 32px;
+  align-items: center;
+  padding: 36px;
+  background: var(--blanco);
+  border: 2px solid var(--niebla);
+  border-radius: 16px;
+}
+.verificar-caja h2 { font-size: 28px; }
+.verificar-caja p { margin: 0; color: var(--gris); }
+.verificar-form { display: flex; gap: 10px; }
+.verificar-form .campo { text-transform: uppercase; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .portada { padding: 36px 0 48px; }
+  .portada .contenedor { grid-template-columns: 1fr; }
+  .curso { grid-template-columns: 1fr; }
+  .curso .boton { justify-self: start; }
+  .verificar-caja { grid-template-columns: 1fr; padding: 24px; }
+  .verificar-form { flex-direction: column; }
+  .acceso-fila { flex-direction: column; }
+  .barra nav { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

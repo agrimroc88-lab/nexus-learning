@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificar certificado · Nexus Learning</title>
+  <meta name="description" content="Comprueba si un certificado de Nexus Learning es auténtico.">
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Estilos: generales + propios de esta página -->
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/verificar.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="index.html" aria-label="Nexus Learning, inicio">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Nexus Learning
+      </a>
+      <nav>
+        <a href="index.html#cursos">Cursos</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="contenedor pagina-verificar">
+    <h1>Verificar un certificado</h1>
+    <p class="intro">Escribe el código que aparece en el certificado, debajo del código QR.</p>
+
+    <form id="form-verificar" class="buscador" novalidate>
+      <label for="codigo" class="etiqueta">Código del certificado</label>
+      <div class="buscador-fila">
+        <input id="codigo" name="codigo" class="campo" placeholder="VW-2026-A1B2C3D4" maxlength="30" autocomplete="off" spellcheck="false">
+        <button class="boton" type="submit" id="btn-verificar">Verificar</button>
+      </div>
+      <p class="error-campo" id="error-codigo" role="alert"></p>
+    </form>
+
+    <div id="resultado" aria-live="polite"></div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <span>Nexus Learning, de VitalWork S.A.S.</span>
+      <a href="index.html">Ir al inicio</a>
+    </div>
+  </footer>
+
+  <!-- Scripts: el orden importa -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/verificar.js"></script>
+</body>
+</html>

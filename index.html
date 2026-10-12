@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexus Learning · Capacitación laboral certificada</title>
+  <meta name="description" content="Cursos de capacitación laboral con evaluación y certificado verificable.">
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Estilos de la plataforma -->
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="index.html" aria-label="Nexus Learning, inicio">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Nexus Learning
+      </a>
+      <nav>
+        <a href="#cursos">Cursos</a>
+        &nbsp;&nbsp;
+        <a href="verificar.html">Verificar certificado</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== Portada ===== -->
+  <section class="portada">
+    <div class="contenedor">
+      <div>
+        <h1>Capacitación laboral que se puede comprobar</h1>
+        <p>Estudia a tu ritmo, rinde una evaluación corta y recibe un certificado con código único que cualquier empresa puede verificar.</p>
+        <a class="boton" href="#cursos">Ver cursos disponibles</a>
+      </div>
+
+      <svg class="ruta" viewBox="0 0 420 310" role="img" aria-labelledby="ruta-titulo">
+        <title id="ruta-titulo">Tres pasos: aprende, evalúa y certifica</title>
+        <path d="M50 240 C 120 240, 100 150, 170 150 S 230 60, 290 60" fill="none" stroke="#F2C14E" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
+        <circle cx="50" cy="240" r="22" fill="#1C5C5D" stroke="#F2C14E" stroke-width="3"/>
+        <circle cx="170" cy="150" r="22" fill="#1C5C5D" stroke="#F2C14E" stroke-width="3"/>
+        <circle cx="290" cy="60" r="26" fill="#F2C14E"/>
+        <path d="M279 60 l8 8 l15 -16" fill="none" stroke="#0F3D3E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="84" y="270" font-size="20">Aprende</text>
+        <text x="84" y="290" font-size="14" class="sub">Lecciones cortas</text>
+        <text x="204" y="180" font-size="20">Evalúa</text>
+        <text x="204" y="200" font-size="14" class="sub">Preguntas al final</text>
+        <text x="326" y="58" font-size="20">Certifica</text>
+        <text x="326" y="78" font-size="14" class="sub">Código</text>
+        <text x="326" y="96" font-size="14" class="sub">verificable</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ===== Cursos ===== -->
+  <main class="seccion" id="cursos">
+    <div class="contenedor">
+      <h2>Cursos disponibles</h2>
+      <p class="intro">Todos los cursos son gratuitos. Al aprobar la evaluación obtienes tu certificado al instante.</p>
+
+      <div id="estado-cursos" class="aviso" role="status">Cargando cursos…</div>
+      <ul id="lista-cursos" class="cursos" hidden></ul>
+
+      <!-- Verificación de certificados -->
+      <div class="verificar-caja">
+        <div>
+          <h2>¿Recibiste un certificado?</h2>
+          <p>Escribe el código impreso en el certificado para confirmar que es auténtico.</p>
+        </div>
+        <form class="verificar-form" action="verificar.html" method="get">
+          <label for="codigo" class="etiqueta" hidden>Código del certificado</label>
+          <input id="codigo" name="codigo" class="campo" placeholder="VW-2026-A1B2C3D4" required autocomplete="off">
+          <button class="boton" type="submit">Verificar</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Pie ===== -->
+  <footer class="pie">
+    <div class="contenedor">
+      <span>Nexus Learning · VitalWork S.A.S.</span>
+      <a href="verificar.html">Verificar un certificado</a>
+    </div>
+  </footer>
+
+  <!-- Scripts: el orden importa -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/inicio.js"></script>
+</body>
+</html>

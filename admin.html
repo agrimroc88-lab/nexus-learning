@@ -91,6 +91,15 @@
             <span>Activo: disponible para crear nuevas capacitaciones</span>
           </label>
 
+          <div class="bloque-qr" id="bloque-qr" hidden>
+            <h3>QR permanente del programa</h3>
+            <p class="ayuda">Un solo código QR para todas las empresas: no caduca. Cada empresa entra con su propia clave de acceso, que se crea en la sección Empresas.</p>
+            <div class="fila-botones">
+              <button type="button" class="boton secundario boton-chico" id="btn-cartel-programa">Descargar cartel QR</button>
+              <button type="button" class="boton secundario boton-chico" id="btn-enlace-programa">Copiar enlace del programa</button>
+            </div>
+          </div>
+
           <div class="acciones-form">
             <button type="button" class="boton peligro" id="btn-eliminar-curso">Eliminar curso</button>
             <button type="submit" class="boton" id="btn-guardar-curso">Guardar curso</button>
@@ -161,8 +170,11 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
+  <script src="js/cartel.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

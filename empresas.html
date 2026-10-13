@@ -151,6 +151,11 @@
                 <input class="campo" id="v-hora-hasta" type="time">
               </div>
             </div>
+            <label class="etiqueta" for="v-clave-presencial">Clave de acceso presencial</label>
+            <div class="fila-clave">
+              <input class="campo campo-clave" id="v-clave-presencial" maxlength="12" placeholder="Vacío = se genera sola" autocomplete="off" spellcheck="false">
+              <button type="button" class="boton secundario boton-chico" data-sugerir="v-clave-presencial">Sugerir</button>
+            </div>
             <label class="interruptor">
               <input type="checkbox" id="v-eval-presencial">
               <span>Pedir evaluación a quienes escanean el QR</span>
@@ -169,8 +174,15 @@
                 <input class="campo" id="v-virtual-hasta" type="date">
               </div>
             </div>
+            <label class="etiqueta" for="v-clave-virtual">Clave de acceso virtual</label>
+            <div class="fila-clave">
+              <input class="campo campo-clave" id="v-clave-virtual" maxlength="12" placeholder="Vacío = se genera sola" autocomplete="off" spellcheck="false">
+              <button type="button" class="boton secundario boton-chico" data-sugerir="v-clave-virtual">Sugerir</button>
+            </div>
             <p class="ayuda">El acceso virtual siempre exige ver las lecciones y aprobar la evaluación.</p>
           </div>
+
+          <p class="ayuda">Claves: letras y números (4 a 12). Recomendado: 3 letras de la empresa y 5 números sin orden, por ejemplo AGR48213. Cada clave se usa una sola vez; si hace falta más tiempo, se extiende su vigencia.</p>
 
           <div class="fila-dos">
             <div>
@@ -185,7 +197,7 @@
 
           <div class="acciones-form">
             <button type="button" class="boton secundario" id="btn-cancelar-conv">Cancelar</button>
-            <button type="submit" class="boton" id="btn-guardar-conv">Crear capacitación y códigos</button>
+            <button type="submit" class="boton" id="btn-guardar-conv">Crear capacitación y claves</button>
           </div>
         </form>
 

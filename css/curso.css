@@ -7,6 +7,16 @@
 .pagina-curso { padding-top: 40px; }
 
 .curso-cabecera { margin-bottom: 32px; }
+.empresa-etiqueta {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--pino);
+  color: var(--senal) !important;
+  font-size: 14px;
+  font-weight: 700;
+}
 .curso-cabecera h1 { font-size: clamp(30px, 4vw, 44px); max-width: 24ch; }
 .curso-cabecera p { margin: 0; color: var(--gris); font-weight: 600; }
 
@@ -15,6 +25,27 @@
   grid-template-columns: 280px 1fr;
   gap: 40px;
   align-items: start;
+}
+
+/* Curso sin lecciones (presencial) o al mostrar el certificado */
+.curso-cuerpo.sin-temario { grid-template-columns: minmax(0, 760px); }
+
+/* Registro y código no válido */
+.vista-angosta { max-width: 760px; }
+.vista-angosta h1 { font-size: clamp(28px, 4vw, 38px); }
+.vista-angosta .aviso { margin-bottom: 8px; }
+#form-registro .etiqueta { margin-top: 4px; }
+#form-registro .boton { margin-top: 18px; }
+#form-registro > .aviso { margin-top: 12px; }
+.bloque-form { margin-top: 28px; }
+.bloque-form h2 { font-size: 22px; margin-bottom: 4px; }
+.fila-boton { display: flex; gap: 10px; }
+.campo-codigo { text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+
+.persona-actual { font-size: 15px; color: var(--gris); margin: -4px 0 8px; }
+.enlace-simple {
+  border: 0; padding: 0; background: none; cursor: pointer;
+  color: var(--pino-claro); font: inherit; font-weight: 600; text-decoration: underline;
 }
 
 /* ---------- Temario ---------- */
@@ -183,4 +214,5 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
   .vista { padding: 22px; }
   .fila-campos { grid-template-columns: 1fr; }
   .navegacion .boton { flex: 1 1 100%; }
+  .fila-boton { flex-direction: column; }
 }

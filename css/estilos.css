@@ -202,6 +202,21 @@ h1, h2, h3 {
   fill: #A9C6BD;
 }
 
+/* Ingreso con código */
+.acceso-form { max-width: 460px; }
+.acceso-form .etiqueta { color: var(--blanco); }
+.acceso-fila { display: flex; gap: 10px; }
+.acceso-fila .campo {
+  min-height: 54px;
+  border-color: transparent;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.acceso-fila .boton { min-height: 54px; padding: 0 26px; }
+.acceso-error { min-height: 1.4em; margin: 10px 0 0; color: #FFB9AA; font-weight: 600; font-size: 15px; }
+
 /* Lista de cursos */
 .seccion { padding-top: 64px; }
 .seccion > .contenedor > h2 { font-size: 32px; }
@@ -235,7 +250,7 @@ h1, h2, h3 {
 
 /* Verificación */
 .verificar-caja {
-  margin-top: 64px;
+  margin-top: 0;
   display: grid;
   grid-template-columns: 1fr 1.1fr;
   gap: 32px;
@@ -259,6 +274,7 @@ h1, h2, h3 {
   .curso .boton { justify-self: start; }
   .verificar-caja { grid-template-columns: 1fr; padding: 24px; }
   .verificar-form { flex-direction: column; }
+  .acceso-fila { flex-direction: column; }
   .barra nav { display: none; }
 }
 

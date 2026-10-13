@@ -87,12 +87,40 @@
               <p class="error-campo" id="e-cedula"></p>
             </div>
           </div>
+          <div class="fila-campos fila-tres-campos">
+            <fieldset class="grupo-sexo">
+              <legend class="etiqueta">Sexo</legend>
+              <label class="opcion-sexo"><input type="radio" name="p-sexo" value="M"><span>M</span></label>
+              <label class="opcion-sexo"><input type="radio" name="p-sexo" value="F"><span>F</span></label>
+              <p class="error-campo" id="e-sexo"></p>
+            </fieldset>
+            <div>
+              <label class="etiqueta" for="p-nacimiento">Fecha de nacimiento</label>
+              <input class="campo" id="p-nacimiento" type="date" min="1930-01-01">
+              <p class="error-campo" id="e-nacimiento"></p>
+            </div>
+            <div>
+              <label class="etiqueta" for="p-etnia">Autoidentificación étnica</label>
+              <select class="campo" id="p-etnia">
+                <option value="">Selecciona…</option>
+                <option value="mestizo">Mestizo</option>
+                <option value="blanco">Blanco</option>
+                <option value="indigena">Indígena</option>
+                <option value="montubio">Montubio</option>
+                <option value="afroecuatoriano">Afroecuatoriano</option>
+                <option value="otro">Otro</option>
+                <option value="no_responde">Prefiero no responder</option>
+              </select>
+              <p class="error-campo" id="e-etnia"></p>
+            </div>
+          </div>
+
           <label class="etiqueta" for="p-correo">Correo electrónico (opcional)</label>
           <input class="campo" id="p-correo" type="email" autocomplete="email" maxlength="120">
 
           <label class="consentimiento">
             <input type="checkbox" id="p-acepta">
-            <span>Autorizo a VitalWork S.A.S. a tratar mis datos (nombres, cédula y correo) únicamente para registrar esta capacitación y emitir y verificar mi certificado, conforme a la Ley Orgánica de Protección de Datos Personales.</span>
+            <span>Autorizo a VitalWork S.A.S. a tratar mis datos (nombres, cédula, sexo, fecha de nacimiento, autoidentificación étnica y correo) únicamente para registrar esta capacitación, emitir y verificar mi certificado, y elaborar el registro de asistencia y estadísticas de la empresa, conforme a la Ley Orgánica de Protección de Datos Personales. Entiendo que la autoidentificación étnica es un dato sensible y que puedo elegir "Prefiero no responder".</span>
           </label>
           <p class="error-campo" id="e-acepta"></p>
 

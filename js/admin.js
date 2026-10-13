@@ -24,7 +24,7 @@ const NUM_OPCIONES = 4;
   const usuario = await exigirAdministrador();
   if (!usuario) return;
 
-  el("usuario-correo").textContent = usuario.email;
+  el("usuario-correo").textContent = nexusUsuarioVisible(usuario.email);
   el("cargando").hidden = true;
   el("panel").hidden = false;
 

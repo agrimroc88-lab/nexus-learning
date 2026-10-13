@@ -27,11 +27,11 @@ document.getElementById("form-login").addEventListener("submit", async function 
   ev.preventDefault();
   mensajeLogin.hidden = true;
 
-  const correo = document.getElementById("correo").value.trim();
+  const correo = nexusCorreoDeUsuario(document.getElementById("correo").value);
   const clave = document.getElementById("clave").value;
 
   if (!correo || !clave) {
-    mostrarMensaje("Escribe tu correo y tu contraseña.");
+    mostrarMensaje("Escribe tu cédula (o correo) y tu contraseña.");
     return;
   }
 
@@ -49,7 +49,7 @@ document.getElementById("form-login").addEventListener("submit", async function 
     mostrarMensaje(
       error.status === 429
         ? "Demasiados intentos. Espera unos minutos y vuelve a intentarlo."
-        : "Correo o contraseña incorrectos."
+        : "Cédula, correo o contraseña incorrectos."
     );
     return;
   }

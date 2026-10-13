@@ -20,7 +20,7 @@ const BASE_SITIO = location.origin + location.pathname.replace(/[^/]*$/, "");
 (async function iniciar() {
   const usuario = await exigirAdministrador();
   if (!usuario) return;
-  el("usuario-correo").textContent = usuario.email;
+  el("usuario-correo").textContent = nexusUsuarioVisible(usuario.email);
   el("cargando").hidden = true;
   el("panel").hidden = false;
   await Promise.all([cargarCursos(), cargarEmpresas()]);

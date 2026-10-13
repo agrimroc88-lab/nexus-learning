@@ -103,6 +103,7 @@ el("btn-nuevo-curso").addEventListener("click", function () {
   el("editor-titulo").textContent = "Nuevo curso";
   llenarFormularioCurso({ titulo: "", descripcion: "", horas: 1, nota_minima: 70, publicado: true });
   el("btn-eliminar-curso").hidden = true;
+  el("bloque-qr").hidden = true;
   cambiarPestana("datos");
   actualizarPestanas();
   el("c-titulo").focus();
@@ -117,6 +118,7 @@ async function seleccionarCurso(id) {
   el("editor-curso").hidden = false;
   el("editor-titulo").textContent = adm.curso.titulo;
   el("btn-eliminar-curso").hidden = false;
+  el("bloque-qr").hidden = false;
   llenarFormularioCurso(adm.curso);
 
   await Promise.all([cargarLecciones(), cargarPreguntas()]);
@@ -228,6 +230,43 @@ el("btn-eliminar-curso").addEventListener("click", async function () {
   el("editor-vacio").hidden = false;
   await cargarCursos();
   avisar("Curso eliminado.");
+});
+
+// ---------------------------------------------------------------------
+// QR permanente del programa
+// ---------------------------------------------------------------------
+const BASE_SITIO = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+function enlacePrograma() {
+  return BASE_SITIO + "programa.html?p=" + encodeURIComponent(adm.curso.id);
+}
+
+el("btn-cartel-programa").addEventListener("click", function () {
+  if (!adm.curso) return;
+  if (!adm.curso.publicado) {
+    avisar("Este programa está inactivo: quien escanee el QR verá \"no disponible\" hasta que lo actives.", "error");
+  }
+  try {
+    NexusCartel.generarPrograma({
+      curso: adm.curso.titulo,
+      horas: adm.curso.horas,
+      url: enlacePrograma(),
+      sitio: BASE_SITIO
+    });
+  } catch (e) {
+    console.error(e);
+    avisar("No se pudo generar el cartel. Recarga la página e inténtalo de nuevo.", "error");
+  }
+});
+
+el("btn-enlace-programa").addEventListener("click", async function () {
+  if (!adm.curso) return;
+  try {
+    await navigator.clipboard.writeText(enlacePrograma());
+    avisar("Enlace del programa copiado.");
+  } catch (e) {
+    window.prompt("Copia este enlace:", enlacePrograma());
+  }
 });
 
 // ---------------------------------------------------------------------

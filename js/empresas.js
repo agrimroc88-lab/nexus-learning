@@ -301,10 +301,10 @@ function tarjetaConvocatoria(c) {
   acciones.className = "conv-acciones";
   acciones.appendChild(boton("Ver nómina", "boton boton-chico", function () { abrirNomina(c); }));
   if (c.modalidad !== "presencial") {
-    acciones.appendChild(boton("Nuevo código virtual", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "virtual"); }));
+    acciones.appendChild(boton("Nueva clave virtual", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "virtual"); }));
   }
   if (c.modalidad !== "virtual") {
-    acciones.appendChild(boton("Nuevo QR presencial", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "presencial"); }));
+    acciones.appendChild(boton("Nueva clave presencial", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "presencial"); }));
   }
   if (inscritos === 0) {
     acciones.appendChild(boton("Eliminar", "enlace-boton rojo", function () { eliminarConvocatoria(c); }));
@@ -329,7 +329,7 @@ function filaAcceso(a, c) {
 
   const info = document.createElement("div");
   const tipo = document.createElement("small");
-  tipo.textContent = a.tipo === "presencial" ? "QR presencial" : "Código virtual";
+  tipo.textContent = a.tipo === "presencial" ? "Clave presencial" : "Clave virtual";
   const codigo = document.createElement("strong");
   codigo.className = "codigo-acceso";
   codigo.textContent = a.codigo;
@@ -344,13 +344,81 @@ function filaAcceso(a, c) {
   const botones = document.createElement("div");
   botones.className = "acceso-botones";
   if (est.clase === "vigente" || est.clase === "programado") {
-    botones.appendChild(boton("Cartel QR", "enlace-boton", function () { descargarCartel(a, c); }));
+    botones.appendChild(boton("Cartel QR con clave", "enlace-boton", function () { descargarCartel(a, c); }));
     botones.appendChild(boton("Copiar enlace", "enlace-boton", function () { copiar(enlaceAcceso(a.codigo), "Enlace copiado."); }));
     botones.appendChild(boton("Copiar mensaje", "enlace-boton", function () { copiar(mensajeAcceso(a, c), "Mensaje copiado. Pégalo en WhatsApp o en un correo para la empresa."); }));
+  }
+  if (est.clase !== "anulado") {
+    botones.appendChild(boton("Extender vigencia", "enlace-boton", function () { formExtender(fila, a); }));
+  }
+  if (est.clase === "vigente" || est.clase === "programado") {
     botones.appendChild(boton("Anular", "enlace-boton rojo", function () { anularAcceso(a); }));
   }
   fila.append(info, botones);
   return fila;
+}
+
+// Extender la vigencia de una clave (aunque ya haya vencido).
+// La lista de la empresa se conserva: los que ya se certificaron siguen ahí.
+function formExtender(fila, a) {
+  const previo = fila.querySelector(".mini-form");
+  if (previo) { previo.remove(); return; }
+
+  const f = document.createElement("form");
+  f.className = "mini-form";
+  f.noValidate = true;
+  const titulo = document.createElement("strong");
+  titulo.textContent = "Extender la vigencia de " + a.codigo;
+  f.appendChild(titulo);
+
+  // Propuesta: 7 días más desde hoy o desde el fin actual (lo que sea mayor)
+  const base = new Date(Math.max(Date.now(), new Date(a.valido_hasta).getTime()));
+  base.setDate(base.getDate() + 7);
+  const fechaPropuesta = base.getFullYear() + "-" + dos(base.getMonth() + 1) + "-" + dos(base.getDate());
+
+  const fila2 = document.createElement("div");
+  fila2.className = "fila-dos";
+  const campos = [["Nueva fecha de fin", "date", fechaPropuesta], ["Hora de fin", "time", "23:59"]];
+  const inputs = campos.map(function (cfg) {
+    const div = document.createElement("div");
+    const lab = document.createElement("label");
+    lab.className = "etiqueta";
+    lab.textContent = cfg[0];
+    const inp = document.createElement("input");
+    inp.className = "campo";
+    inp.type = cfg[1];
+    inp.value = cfg[2];
+    lab.appendChild(inp);
+    div.appendChild(lab);
+    fila2.appendChild(div);
+    return inp;
+  });
+  f.appendChild(fila2);
+
+  const acciones = document.createElement("div");
+  acciones.className = "acciones-form";
+  const guardar = boton("Extender", "boton boton-chico", function () {});
+  guardar.type = "submit";
+  acciones.append(boton("Cancelar", "boton secundario boton-chico", function () { f.remove(); }), guardar);
+  f.appendChild(acciones);
+
+  f.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    if (!inputs[0].value || !inputs[1].value) return avisar("Completa la fecha y la hora de fin.", "error");
+    const hasta = new Date(inputs[0].value + "T" + inputs[1].value);
+    if (!(hasta > new Date())) return avisar("La nueva fecha de fin debe ser posterior a este momento.", "error");
+    if (!(hasta > new Date(a.valido_desde))) return avisar("La fecha de fin debe ser posterior al inicio de la clave.", "error");
+
+    guardar.disabled = true;
+    const r = await nexusDb.from("cap_accesos").update({ valido_hasta: hasta.toISOString() }).eq("id", a.id);
+    guardar.disabled = false;
+    if (r.error) return errorSupabase(r.error, "No se pudo extender la vigencia.");
+    avisar("Vigencia extendida: la clave " + a.codigo + " funciona hasta el " + fechaHora(hasta.toISOString()));
+    await cargarConvocatorias();
+  });
+
+  fila.appendChild(f);
+  inputs[0].focus();
 }
 
 function boton(texto, clase, accion) {
@@ -366,19 +434,23 @@ function enlaceAcceso(codigo) {
   return BASE_SITIO + "curso.html?codigo=" + encodeURIComponent(codigo);
 }
 
+function enlacePrograma(c) {
+  return BASE_SITIO + "programa.html?p=" + encodeURIComponent(c.cap_cursos.id);
+}
+
 function mensajeAcceso(a, c) {
   const curso = c.cap_cursos.titulo;
-  if (a.tipo === "virtual") {
-    return "Capacitación virtual: \"" + curso + "\".\n" +
-      "Ingresa a " + enlaceAcceso(a.codigo) + "\n" +
-      "Código: " + a.codigo + "\n" +
-      "Disponible hasta el " + fechaHora(a.valido_hasta) + ".\n" +
-      "Revisa las lecciones, aprueba la evaluación y descarga tu certificado.";
-  }
-  return "Certificado de la capacitación \"" + curso + "\".\n" +
-    "Ingresa a " + enlaceAcceso(a.codigo) + "\n" +
-    "Código: " + a.codigo + "\n" +
-    "Válido hasta el " + fechaHora(a.valido_hasta) + ".";
+  const intro = a.tipo === "virtual"
+    ? "Capacitación virtual: \"" + curso + "\"."
+    : "Certificado de la capacitación \"" + curso + "\".";
+  const cierre = a.tipo === "virtual"
+    ? "Revisa las lecciones, aprueba la evaluación y descarga tu certificado."
+    : "Escribe tus datos y descarga tu certificado.";
+  return intro + "\n" +
+    "Escanea el código QR del programa o ingresa a " + enlacePrograma(c) + "\n" +
+    "Clave de acceso: " + a.codigo + "\n" +
+    "Válida hasta el " + fechaHora(a.valido_hasta) + "\n" +
+    cierre;
 }
 
 async function copiar(texto, mensaje) {
@@ -392,15 +464,13 @@ async function copiar(texto, mensaje) {
 
 function descargarCartel(a, c) {
   try {
-    NexusCartel.generar({
-      codigo: a.codigo,
-      tipo: a.tipo,
-      empresa: emp.actual.nombre,
+    NexusCartel.generarPrograma({
       curso: c.cap_cursos.titulo,
-      valido_hasta: a.valido_hasta,
-      requiere_evaluacion: a.tipo === "virtual" || c.evaluacion_presencial,
-      url: enlaceAcceso(a.codigo),
-      sitio: BASE_SITIO
+      horas: c.horas || c.cap_cursos.horas,
+      url: enlacePrograma(c),
+      sitio: BASE_SITIO,
+      clave: a.codigo,
+      valido_hasta: a.valido_hasta
     });
   } catch (e) {
     console.error(e);
@@ -409,10 +479,10 @@ function descargarCartel(a, c) {
 }
 
 async function anularAcceso(a) {
-  if (!confirm("¿Anular el código " + a.codigo + "? Desde ahora nadie podrá usarlo. Quienes ya obtuvieron su certificado lo conservan.")) return;
+  if (!confirm("¿Anular la clave " + a.codigo + "? Desde ahora nadie podrá usarla y no se podrá extender. Quienes ya obtuvieron su certificado lo conservan.")) return;
   const r = await nexusDb.from("cap_accesos").update({ anulado: true }).eq("id", a.id);
   if (r.error) return errorSupabase(r.error, "No se pudo anular el código.");
-  avisar("Código anulado.");
+  avisar("Clave anulada.");
   await cargarConvocatorias();
 }
 
@@ -433,14 +503,14 @@ function formNuevoCodigo(tarjeta, c, tipo) {
   f.className = "mini-form";
   f.noValidate = true;
   const titulo = document.createElement("strong");
-  titulo.textContent = tipo === "virtual" ? "Nuevo código virtual" : "Nuevo QR presencial";
+  titulo.textContent = tipo === "virtual" ? "Nueva clave virtual" : "Nueva clave presencial";
   f.appendChild(titulo);
 
   const fila = document.createElement("div");
-  fila.className = tipo === "virtual" ? "fila-dos" : "fila-tres";
+  fila.className = "fila-tres";
   const campos = tipo === "virtual"
-    ? [["Desde", "date", hoyISO()], ["Hasta (inclusive)", "date", sumarDiasISO(15)]]
-    : [["Fecha", "date", hoyISO()], ["Desde", "time", horaActual()], ["Hasta", "time", horaMas(4)]];
+    ? [["Desde", "date", hoyISO()], ["Hasta (inclusive)", "date", sumarDiasISO(15)], ["Clave (vacío = automática)", "text", sugerirClave()]]
+    : [["Fecha", "date", hoyISO()], ["Desde", "time", horaActual()], ["Hasta", "time", horaMas(4)], ["Clave (vacío = automática)", "text", sugerirClave()]];
   const inputs = campos.map(function (cfg) {
     const div = document.createElement("div");
     const lab = document.createElement("label");
@@ -461,7 +531,7 @@ function formNuevoCodigo(tarjeta, c, tipo) {
   acciones.className = "acciones-form";
   acciones.append(
     boton("Cancelar", "boton secundario boton-chico", function () { f.remove(); }),
-    (function () { const b = boton("Crear código", "boton boton-chico", function () {}); b.type = "submit"; return b; })()
+    (function () { const b = boton("Crear clave", "boton boton-chico", function () {}); b.type = "submit"; return b; })()
   );
   f.appendChild(acciones);
 
@@ -471,11 +541,13 @@ function formNuevoCodigo(tarjeta, c, tipo) {
       ? rangoVirtual(inputs[0].value, inputs[1].value)
       : rangoPresencial(inputs[0].value, inputs[1].value, inputs[2].value);
     if (rango.error) return avisar(rango.error, "error");
-    const r = await nexusDb.from("cap_accesos").insert({
+    const clave = normalizarClave(inputs[inputs.length - 1].value);
+    if (clave && !claveValida(clave)) return avisar("La clave debe tener de 4 a 12 letras o números, sin espacios ni símbolos.", "error");
+    const r = await nexusDb.from("cap_accesos").insert(Object.assign({
       convocatoria_id: c.id, tipo: tipo, valido_desde: rango.desde, valido_hasta: rango.hasta
-    });
-    if (r.error) return errorSupabase(r.error, "No se pudo crear el código.");
-    avisar("Código creado.");
+    }, clave ? { codigo: clave } : {}));
+    if (r.error) return errorSupabase(r.error, "No se pudo crear la clave.");
+    avisar("Clave creada.");
     await cargarConvocatorias();
   });
 
@@ -510,6 +582,8 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-virtual-hasta").value = sumarDiasISO(15);
   el("v-horas").value = "";
   el("v-observaciones").value = "";
+  el("v-clave-presencial").value = "";
+  el("v-clave-virtual").value = "";
   actualizarBloquesModalidad();
 
   el("form-conv").hidden = false;
@@ -554,12 +628,19 @@ el("form-conv").addEventListener("submit", async function (ev) {
   if (modalidad !== "virtual") {
     const r = rangoPresencial(el("v-fecha").value, el("v-hora-desde").value, el("v-hora-hasta").value);
     if (r.error) return avisar(r.error, "error");
-    accesos.push({ tipo: "presencial", valido_desde: r.desde, valido_hasta: r.hasta });
+    const clave = normalizarClave(el("v-clave-presencial").value);
+    if (clave && !claveValida(clave)) return avisar("La clave presencial debe tener de 4 a 12 letras o números, sin espacios ni símbolos.", "error");
+    accesos.push(Object.assign({ tipo: "presencial", valido_desde: r.desde, valido_hasta: r.hasta }, clave ? { codigo: clave } : {}));
   }
   if (modalidad !== "presencial") {
     const r = rangoVirtual(el("v-virtual-desde").value, el("v-virtual-hasta").value);
     if (r.error) return avisar(r.error, "error");
-    accesos.push({ tipo: "virtual", valido_desde: r.desde, valido_hasta: r.hasta });
+    const clave = normalizarClave(el("v-clave-virtual").value);
+    if (clave && !claveValida(clave)) return avisar("La clave virtual debe tener de 4 a 12 letras o números, sin espacios ni símbolos.", "error");
+    accesos.push(Object.assign({ tipo: "virtual", valido_desde: r.desde, valido_hasta: r.hasta }, clave ? { codigo: clave } : {}));
+  }
+  if (accesos.length === 2 && accesos[0].codigo && accesos[0].codigo === accesos[1].codigo) {
+    return avisar("La clave presencial y la virtual deben ser distintas.", "error");
   }
 
   const botonGuardar = el("btn-guardar-conv");
@@ -587,12 +668,35 @@ el("form-conv").addEventListener("submit", async function (ev) {
 
   if (acc.error) {
     await nexusDb.from("cap_convocatorias").delete().eq("id", conv.data.id);
-    return errorSupabase(acc.error, "No se pudieron crear los códigos. No se guardó la capacitación.");
+    return errorSupabase(acc.error, "No se pudieron crear las claves. No se guardó la capacitación.");
   }
 
   el("form-conv").hidden = true;
-  avisar("Capacitación creada. Descarga el cartel QR o copia el mensaje para la empresa.");
+  avisar("Capacitación creada. Descarga el cartel QR con la clave o copia el mensaje para la empresa.");
   await cargarConvocatorias();
+});
+
+// Claves: normalizar, validar y sugerir (3 letras de la empresa + 5 números al azar)
+function normalizarClave(texto) {
+  return String(texto || "").toUpperCase().replace(/\s/g, "");
+}
+function claveValida(clave) {
+  return /^[A-Z0-9][A-Z0-9-]{2,10}[A-Z0-9]$/.test(clave);
+}
+function sugerirClave() {
+  const letras = (emp.actual ? emp.actual.nombre : "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
+  const prefijo = (letras + "XXX").slice(0, 3);
+  const n = new Uint32Array(1);
+  crypto.getRandomValues(n);
+  return prefijo + String(10000 + (n[0] % 90000));
+}
+
+document.querySelectorAll("[data-sugerir]").forEach(function (b) {
+  b.addEventListener("click", function () { el(b.dataset.sugerir).value = sugerirClave(); });
+});
+document.querySelectorAll(".campo-clave").forEach(function (i) {
+  i.addEventListener("input", function () { i.value = normalizarClave(i.value); });
 });
 
 // Rangos de fechas (se interpretan en la hora local de tu computadora)

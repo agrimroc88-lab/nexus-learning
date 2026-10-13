@@ -81,7 +81,7 @@ function mostrarCodigoInvalido(motivo, permitirRecuperar) {
 $("form-otro-codigo").addEventListener("submit", function (ev) {
   ev.preventDefault();
   const codigo = normalizarCodigo($("otro-codigo").value);
-  if (codigo.length >= 8) location.href = "curso.html?codigo=" + encodeURIComponent(codigo);
+  if (codigo.length >= 4) location.href = "curso.html?codigo=" + encodeURIComponent(codigo);
 });
 
 $("form-recuperar").addEventListener("submit", async function (ev) {
@@ -605,9 +605,7 @@ function borrarSesion() {
 // Utilidades
 // ---------------------------------------------------------------------
 function normalizarCodigo(texto) {
-  let c = String(texto || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
-  if (c.length === 9 && c.indexOf("-") === -1) c = c.slice(0, 3) + "-" + c.slice(3);
-  return c;
+  return String(texto || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
 }
 function formatearHoras(horas) {
   const n = Number(horas);

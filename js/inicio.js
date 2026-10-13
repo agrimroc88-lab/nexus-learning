@@ -10,9 +10,7 @@ const errorAcceso = document.getElementById("error-acceso");
 
 // Ordena lo que escribe la persona: mayúsculas, sin espacios y con guion
 function normalizarCodigo(texto) {
-  let c = String(texto || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
-  if (c.length === 9 && c.indexOf("-") === -1) c = c.slice(0, 3) + "-" + c.slice(3);
-  return c;
+  return String(texto || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
 }
 
 campoAcceso.addEventListener("input", function () {
@@ -24,8 +22,8 @@ formAcceso.addEventListener("submit", async function (ev) {
   const codigo = normalizarCodigo(campoAcceso.value);
   campoAcceso.value = codigo;
 
-  if (codigo.length < 8) {
-    errorAcceso.textContent = "Escribe el código completo, por ejemplo AND-7K4P9Q.";
+  if (codigo.length < 4) {
+    errorAcceso.textContent = "Escribe la clave completa, por ejemplo AGR48213.";
     campoAcceso.focus();
     return;
   }

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Empresas · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/empresas.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="admin.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Administración
+      </a>
+      <nav class="nav-admin">
+        <a href="admin.html">Cursos</a>
+        <a href="empresas.html" aria-current="page">Empresas</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <main id="panel" class="contenedor panel" hidden>
+
+    <!-- ===== Lista de empresas ===== -->
+    <aside class="lista-cursos">
+      <div class="lista-cabecera">
+        <h2>Empresas</h2>
+        <button type="button" class="boton boton-chico" id="btn-nueva-empresa">Nueva empresa</button>
+      </div>
+      <label class="etiqueta" for="buscar-empresa" hidden>Buscar empresa</label>
+      <input class="campo buscador-lista" id="buscar-empresa" placeholder="Buscar por nombre o RUC">
+      <ul id="empresas"></ul>
+    </aside>
+
+    <!-- ===== Panel derecho ===== -->
+    <section class="editor">
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <div id="editor-vacio" class="vacio">
+        <h2>Elige una empresa de la lista</h2>
+        <p>O registra una nueva con el botón "Nueva empresa".</p>
+      </div>
+
+      <!-- ----- Vista: empresa ----- -->
+      <div id="vista-empresa" hidden>
+        <div class="empresa-cabecera">
+          <div>
+            <h1 id="empresa-nombre"></h1>
+            <p id="empresa-resumen" class="empresa-resumen"></p>
+          </div>
+          <button type="button" class="boton secundario boton-chico" id="btn-editar-empresa">Editar datos</button>
+        </div>
+
+        <!-- Formulario de empresa -->
+        <form id="form-empresa" class="formulario-item" novalidate hidden>
+          <h3 id="empresa-form-titulo">Datos de la empresa</h3>
+          <div class="fila-dos">
+            <div>
+              <label class="etiqueta" for="e-nombre">Nombre o razón social</label>
+              <input class="campo" id="e-nombre" maxlength="150">
+            </div>
+            <div>
+              <label class="etiqueta" for="e-ruc">RUC</label>
+              <input class="campo" id="e-ruc" inputmode="numeric" maxlength="13">
+            </div>
+          </div>
+          <div class="fila-tres">
+            <div>
+              <label class="etiqueta" for="e-contacto">Persona de contacto</label>
+              <input class="campo" id="e-contacto" maxlength="120" placeholder="Talento humano">
+            </div>
+            <div>
+              <label class="etiqueta" for="e-correo">Correo</label>
+              <input class="campo" id="e-correo" type="email" maxlength="120">
+            </div>
+            <div>
+              <label class="etiqueta" for="e-telefono">Teléfono</label>
+              <input class="campo" id="e-telefono" maxlength="20">
+            </div>
+          </div>
+          <div class="fila-dos">
+            <div>
+              <label class="etiqueta" for="e-trabajadores">Número de trabajadores</label>
+              <input class="campo" id="e-trabajadores" type="number" min="0" step="1">
+            </div>
+            <div class="celda-interruptor">
+              <label class="interruptor">
+                <input type="checkbox" id="e-activa" checked>
+                <span>Empresa activa (sus códigos funcionan)</span>
+              </label>
+            </div>
+          </div>
+          <div class="acciones-form">
+            <button type="button" class="boton secundario" id="btn-cancelar-empresa">Cancelar</button>
+            <button type="submit" class="boton" id="btn-guardar-empresa">Guardar empresa</button>
+          </div>
+        </form>
+
+        <!-- Capacitaciones de la empresa -->
+        <div class="seccion-cabecera">
+          <h2>Capacitaciones</h2>
+          <button type="button" class="boton boton-chico" id="btn-nueva-conv">Nueva capacitación</button>
+        </div>
+
+        <form id="form-conv" class="formulario-item" novalidate hidden>
+          <h3>Nueva capacitación</h3>
+
+          <label class="etiqueta" for="v-curso">Curso o tema</label>
+          <select class="campo" id="v-curso"></select>
+
+          <fieldset class="grupo-modalidad">
+            <legend class="etiqueta">Modalidad</legend>
+            <label class="opcion-modalidad"><input type="radio" name="v-modalidad" value="presencial" checked><span><strong>Presencial</strong><small>Cartel QR en la charla</small></span></label>
+            <label class="opcion-modalidad"><input type="radio" name="v-modalidad" value="virtual"><span><strong>Virtual</strong><small>Lecciones y evaluación en línea</small></span></label>
+            <label class="opcion-modalidad"><input type="radio" name="v-modalidad" value="mixta"><span><strong>Mixta</strong><small>QR en la charla y código virtual para quienes faltaron</small></span></label>
+          </fieldset>
+
+          <div id="bloque-presencial" class="bloque-acceso">
+            <h4>Acceso presencial (QR)</h4>
+            <div class="fila-tres">
+              <div>
+                <label class="etiqueta" for="v-fecha">Fecha de la charla</label>
+                <input class="campo" id="v-fecha" type="date">
+              </div>
+              <div>
+                <label class="etiqueta" for="v-hora-desde">QR válido desde</label>
+                <input class="campo" id="v-hora-desde" type="time">
+              </div>
+              <div>
+                <label class="etiqueta" for="v-hora-hasta">QR válido hasta</label>
+                <input class="campo" id="v-hora-hasta" type="time">
+              </div>
+            </div>
+            <label class="interruptor">
+              <input type="checkbox" id="v-eval-presencial">
+              <span>Pedir evaluación a quienes escanean el QR</span>
+            </label>
+          </div>
+
+          <div id="bloque-virtual" class="bloque-acceso" hidden>
+            <h4>Acceso virtual (código)</h4>
+            <div class="fila-dos">
+              <div>
+                <label class="etiqueta" for="v-virtual-desde">Disponible desde</label>
+                <input class="campo" id="v-virtual-desde" type="date">
+              </div>
+              <div>
+                <label class="etiqueta" for="v-virtual-hasta">Disponible hasta (inclusive)</label>
+                <input class="campo" id="v-virtual-hasta" type="date">
+              </div>
+            </div>
+            <p class="ayuda">El acceso virtual siempre exige ver las lecciones y aprobar la evaluación.</p>
+          </div>
+
+          <div class="fila-dos">
+            <div>
+              <label class="etiqueta" for="v-horas">Horas del certificado (opcional)</label>
+              <input class="campo" id="v-horas" type="number" min="0.5" step="0.5" placeholder="Usar las del curso">
+            </div>
+            <div>
+              <label class="etiqueta" for="v-observaciones">Observaciones (opcional)</label>
+              <input class="campo" id="v-observaciones" maxlength="200" placeholder="Ej.: turno de la mañana">
+            </div>
+          </div>
+
+          <div class="acciones-form">
+            <button type="button" class="boton secundario" id="btn-cancelar-conv">Cancelar</button>
+            <button type="submit" class="boton" id="btn-guardar-conv">Crear capacitación y códigos</button>
+          </div>
+        </form>
+
+        <div id="lista-conv"></div>
+      </div>
+
+      <!-- ----- Vista: nómina ----- -->
+      <div id="vista-nomina" hidden>
+        <button type="button" class="enlace-boton" id="btn-volver">Volver a la empresa</button>
+        <h1 id="nomina-titulo"></h1>
+        <p id="nomina-sub" class="empresa-resumen"></p>
+
+        <div class="cifras" id="nomina-cifras"></div>
+
+        <div class="nomina-herramientas">
+          <input class="campo" id="buscar-nomina" placeholder="Buscar por nombre o cédula">
+          <button type="button" class="boton" id="btn-excel">Descargar Excel</button>
+        </div>
+
+        <div class="tabla-caja">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Nombres</th>
+                <th>Cédula</th>
+                <th>Modalidad</th>
+                <th>Estado</th>
+                <th>Nota</th>
+                <th>Certificado</th>
+                <th><span hidden>Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="nomina-filas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/cartel.js"></script>
+  <script src="js/empresas.js"></script>
+</body>
+</html>

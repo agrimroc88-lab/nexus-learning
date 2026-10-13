@@ -54,7 +54,7 @@ function errorSupabase(e, texto) {
 async function cargarCursos(seleccionarId) {
   const { data, error } = await nexusDb
     .from("cap_cursos")
-    .select("id, titulo, descripcion, horas, nota_minima, publicado, creado_en")
+    .select("id, titulo, descripcion, subtemas, horas, nota_minima, publicado, creado_en")
     .order("creado_en", { ascending: true });
   if (error) return errorSupabase(error, "No se pudieron cargar los cursos.");
 
@@ -101,7 +101,7 @@ el("btn-nuevo-curso").addEventListener("click", function () {
   el("editor-vacio").hidden = true;
   el("editor-curso").hidden = false;
   el("editor-titulo").textContent = "Nuevo curso";
-  llenarFormularioCurso({ titulo: "", descripcion: "", horas: 1, nota_minima: 70, publicado: true });
+  llenarFormularioCurso({ titulo: "", descripcion: "", subtemas: [], horas: 1, nota_minima: 70, publicado: true });
   el("btn-eliminar-curso").hidden = true;
   el("bloque-qr").hidden = true;
   cambiarPestana("datos");
@@ -164,6 +164,7 @@ function actualizarPestanas() {
 function llenarFormularioCurso(c) {
   el("c-titulo").value = c.titulo || "";
   el("c-descripcion").value = c.descripcion || "";
+  el("c-subtemas").value = (c.subtemas || []).join("\n");
   el("c-horas").value = c.horas;
   el("c-nota").value = c.nota_minima;
   el("c-publicado").checked = Boolean(c.publicado);
@@ -174,6 +175,7 @@ el("form-curso").addEventListener("submit", async function (ev) {
   const datos = {
     titulo: el("c-titulo").value.trim(),
     descripcion: el("c-descripcion").value.trim(),
+    subtemas: el("c-subtemas").value.split("\n").map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 30),
     horas: Number(el("c-horas").value),
     nota_minima: Number(el("c-nota").value),
     publicado: el("c-publicado").checked

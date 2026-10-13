@@ -729,7 +729,7 @@ async function abrirNomina(c) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   const [insc, certs, intentos] = await Promise.all([
-    nexusDb.from("cap_inscripciones").select("id, cedula, nombres, correo, modalidad, creado_en").eq("convocatoria_id", c.id).order("nombres"),
+    nexusDb.from("cap_inscripciones").select("id, cedula, nombres, correo, modalidad, creado_en, sexo, fecha_nacimiento, etnia").eq("convocatoria_id", c.id).order("nombres"),
     nexusDb.from("cap_certificados").select("id, codigo, cedula, inscripcion_id, tipo, nota, emitido_en").eq("convocatoria_id", c.id),
     nexusDb.from("cap_intentos").select("inscripcion_id, nota, aprobado").eq("convocatoria_id", c.id)
   ]);
@@ -753,6 +753,8 @@ async function abrirNomina(c) {
     }
     return {
       id: i.id, nombres: i.nombres, cedula: i.cedula, correo: i.correo || "",
+      sexo: i.sexo || "", edad: i.fecha_nacimiento ? edadEn(i.fecha_nacimiento, i.creado_en) : null,
+      etnia: ETNIAS[i.etnia] || "",
       modalidad: i.modalidad === "presencial" ? "Presencial" : "Virtual",
       registro: i.creado_en, estado: estado, clase: clase,
       nota: cert && cert.nota !== null ? Number(cert.nota) : (mejor >= 0 ? mejor : null),
@@ -771,9 +773,13 @@ async function abrirNomina(c) {
 function pintarCifras(filas, c) {
   const total = emp.actual.num_trabajadores;
   const certificados = filas.filter(function (f) { return f.certificado; }).length;
+  const hombres = filas.filter(function (f) { return f.sexo === "M"; }).length;
+  const mujeres = filas.filter(function (f) { return f.sexo === "F"; }).length;
   const datos = [
     ["Inscritos", filas.length],
     ["Con certificado", certificados],
+    ["Hombres", hombres],
+    ["Mujeres", mujeres],
     ["Pendientes o no aprobados", filas.length - certificados]
   ];
   if (total) datos.push(["Avance de la empresa", Math.min(100, Math.round(certificados * 100 / total)) + " %", certificados + " de " + total + " trabajadores · faltan " + Math.max(0, total - certificados)]);
@@ -808,7 +814,7 @@ function pintarFilasNomina() {
   if (filas.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 7;
+    td.colSpan = 10;
     td.className = "vacio-lista";
     td.textContent = emp.nomina.filas.length ? "Nadie coincide con la búsqueda." : "Todavía nadie se ha registrado en esta capacitación.";
     tr.appendChild(td);
@@ -818,10 +824,10 @@ function pintarFilasNomina() {
 
   filas.forEach(function (f) {
     const tr = document.createElement("tr");
-    const celdas = [f.nombres, f.cedula, f.modalidad, null, f.nota === null ? "—" : formatearNota(f.nota) + " %", f.certificado || "—"];
+    const celdas = [f.nombres, f.cedula, f.sexo || "—", f.edad ?? "—", f.etnia || "—", f.modalidad, null, f.nota === null ? "—" : formatearNota(f.nota) + " %", f.certificado || "—"];
     celdas.forEach(function (valor, i) {
       const td = document.createElement("td");
-      if (i === 3) {
+      if (i === 6) {
         const s = document.createElement("span");
         s.className = "estado-acceso " + f.clase;
         s.textContent = f.estado;
@@ -860,6 +866,9 @@ el("btn-excel").addEventListener("click", function () {
       "Nombres": f.nombres,
       "Cédula": f.cedula,
       "Correo": f.correo,
+      "Sexo": f.sexo,
+      "Edad": f.edad ?? "",
+      "Autoidentificación étnica": f.etnia,
       "Modalidad": f.modalidad,
       "Fecha de registro": fechaHora(f.registro),
       "Estado": f.estado,
@@ -871,6 +880,8 @@ el("btn-excel").addEventListener("click", function () {
   });
   const certificados = emp.nomina.filas.filter(function (f) { return f.certificado; }).length;
   const total = emp.actual.num_trabajadores;
+  const hombres = emp.nomina.filas.filter(function (f) { return f.sexo === "M"; }).length;
+  const mujeres = emp.nomina.filas.filter(function (f) { return f.sexo === "F"; }).length;
   const resumen = [
     ["Empresa", emp.actual.nombre],
     ["RUC", emp.actual.ruc || ""],
@@ -879,6 +890,8 @@ el("btn-excel").addEventListener("click", function () {
     ["Horas", Number(c.horas || c.cap_cursos.horas)],
     ["Inscritos", emp.nomina.filas.length],
     ["Con certificado", certificados],
+    ["Hombres", hombres],
+    ["Mujeres", mujeres],
     ["Trabajadores de la empresa", total === null || total === undefined ? "No registrado" : total],
     ["Avance", total ? Math.min(100, Math.round(certificados * 100 / total)) + " %" : ""],
     ["Generado el", fechaHora(new Date().toISOString())]
@@ -886,7 +899,7 @@ el("btn-excel").addEventListener("click", function () {
 
   const libro = XLSX.utils.book_new();
   const hoja = XLSX.utils.json_to_sheet(filas.length ? filas : [{ "Nombres": "Sin registros" }]);
-  hoja["!cols"] = [{ wch: 34 }, { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 9 }, { wch: 9 }, { wch: 20 }, { wch: 18 }];
+  hoja["!cols"] = [{ wch: 34 }, { wch: 14 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 9 }, { wch: 9 }, { wch: 20 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(libro, hoja, "Nómina");
   const hojaRes = XLSX.utils.aoa_to_sheet(resumen);
   hojaRes["!cols"] = [{ wch: 28 }, { wch: 50 }];
@@ -896,6 +909,21 @@ el("btn-excel").addEventListener("click", function () {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 80);
   XLSX.writeFile(libro, nombre + ".xlsx");
 });
+
+// Mismas opciones que el test ATD de NEXUS
+const ETNIAS = {
+  mestizo: "Mestizo", blanco: "Blanco", indigena: "Indígena", montubio: "Montubio",
+  afroecuatoriano: "Afroecuatoriano", otro: "Otro", no_responde: "No declara"
+};
+
+// Edad cumplida a la fecha del registro
+function edadEn(nacimiento, fecha) {
+  const n = String(nacimiento).slice(0, 10).split("-").map(Number);
+  const f = new Date(fecha);
+  let edad = f.getFullYear() - n[0];
+  if (f.getMonth() + 1 < n[1] || (f.getMonth() + 1 === n[1] && f.getDate() < n[2])) edad--;
+  return edad >= 0 && edad < 120 ? edad : null;
+}
 
 // ---------------------------------------------------------------------
 // Utilidades de fechas y formato

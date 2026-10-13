@@ -128,21 +128,29 @@ function mostrarRegistro() {
 
 $("form-registro").addEventListener("submit", async function (ev) {
   ev.preventDefault();
+  const sexoMarcado = document.querySelector('input[name="p-sexo"]:checked');
   const persona = {
     nombres: $("p-nombres").value.trim().replace(/\s+/g, " "),
     cedula: $("p-cedula").value.replace(/\s/g, ""),
-    correo: $("p-correo").value.trim()
+    correo: $("p-correo").value.trim(),
+    sexo: sexoMarcado ? sexoMarcado.value : "",
+    nacimiento: $("p-nacimiento").value,
+    etnia: $("p-etnia").value
   };
   const acepta = $("p-acepta").checked;
   let valido = true;
 
-  $("e-nombres").textContent = "";
-  $("e-cedula").textContent = "";
-  $("e-acepta").textContent = "";
+  ["e-nombres", "e-cedula", "e-acepta", "e-sexo", "e-nacimiento", "e-etnia"].forEach(function (id) { $(id).textContent = ""; });
   $("error-registro").hidden = true;
 
   if (persona.nombres.length < 5) { $("e-nombres").textContent = "Escribe tus nombres y apellidos completos."; valido = false; }
   if (persona.cedula.length < 5) { $("e-cedula").textContent = "Escribe tu número de cédula o pasaporte."; valido = false; }
+  if (!persona.sexo) { $("e-sexo").textContent = "Elige M o F."; valido = false; }
+  const anio = Number((persona.nacimiento || "").slice(0, 4));
+  if (!persona.nacimiento || anio < 1930 || anio > new Date().getFullYear() - 14) {
+    $("e-nacimiento").textContent = "Escribe tu fecha de nacimiento."; valido = false;
+  }
+  if (!persona.etnia) { $("e-etnia").textContent = "Elige una opción (puedes elegir \"Prefiero no responder\")."; valido = false; }
   if (!acepta) { $("e-acepta").textContent = "Debes aceptar el tratamiento de datos para continuar."; valido = false; }
   if (!valido) return;
 
@@ -158,7 +166,10 @@ async function registrar(persona, silencioso) {
     p_cedula: persona.cedula,
     p_nombres: persona.nombres,
     p_correo: persona.correo,
-    p_acepta: true
+    p_acepta: true,
+    p_sexo: persona.sexo || null,
+    p_fecha_nacimiento: persona.nacimiento || null,
+    p_etnia: persona.etnia || null
   });
   boton.disabled = false;
 

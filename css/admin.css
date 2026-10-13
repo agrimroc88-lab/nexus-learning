@@ -147,6 +147,17 @@
 .acciones-form .boton:only-child, .acciones-form [hidden] + .boton { margin-left: auto; }
 .boton.peligro { background: transparent; color: var(--error); border: 2px solid var(--error); }
 
+/* QR permanente del programa */
+.bloque-qr {
+  margin-top: 24px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--papel);
+  border: 1px dashed var(--pino-claro);
+}
+.bloque-qr h3 { margin: 0 0 4px; font-size: 18px; }
+.fila-botones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+
 /* Lista de lecciones / preguntas */
 .lista-items { list-style: none; margin: 0 0 28px; padding: 0; }
 .item {

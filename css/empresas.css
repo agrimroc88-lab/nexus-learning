@@ -43,6 +43,10 @@
 .bloque-acceso h4 { margin: 0; font-family: var(--fuente-titulo); color: var(--pino); font-size: 17px; }
 .bloque-acceso .interruptor { margin-top: 14px; }
 
+/* Claves de acceso */
+.fila-clave { display: flex; gap: 8px; }
+.campo-clave { text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em; }
+
 /* Tarjeta de capacitación */
 .conv {
   padding: 22px;
@@ -77,6 +81,7 @@
 
 .conv-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 
+.acceso .mini-form { flex-basis: 100%; margin-top: 4px; background: var(--blanco); }
 .mini-form { margin-top: 12px; padding: 16px; border-radius: 10px; background: var(--papel); }
 .mini-form .etiqueta { margin-top: 10px; }
 .mini-form .acciones-form { margin-top: 14px; padding-top: 12px; }

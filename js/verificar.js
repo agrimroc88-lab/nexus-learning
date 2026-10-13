@@ -94,16 +94,21 @@ function fichaValida(c) {
   dl.className = "ficha-datos";
 
   const horas = Number(c.horas);
+  const esAsistencia = c.tipo === "asistencia";
   const filas = [
     ["Otorgado a", c.nombres, "ancho nombre"],
     ["Cédula o pasaporte", c.cedula],
     ["Empresa", c.empresa || "No registrada"],
-    ["Curso aprobado", c.curso, "ancho"],
-    ["Duración", horas === 1 ? "1 hora" : horas.toLocaleString("es-EC") + " horas"],
-    ["Calificación", Number(c.nota).toLocaleString("es-EC", { maximumFractionDigits: 1 }) + " %"],
-    ["Fecha de emisión", new Date(c.emitido_en).toLocaleDateString("es-EC", { day: "numeric", month: "long", year: "numeric" })],
-    ["Código", c.codigo]
+    [esAsistencia ? "Capacitación" : "Curso aprobado", c.curso, "ancho"],
+    ["Tipo de certificado", esAsistencia ? "Asistencia" : "Aprobación"],
+    ["Modalidad", c.modalidad ? c.modalidad.charAt(0).toUpperCase() + c.modalidad.slice(1) : "Virtual"],
+    ["Duración", horas === 1 ? "1 hora" : horas.toLocaleString("es-EC") + " horas"]
   ];
+  if (!esAsistencia && c.nota !== null && c.nota !== undefined) {
+    filas.push(["Calificación", Number(c.nota).toLocaleString("es-EC", { maximumFractionDigits: 1 }) + " %"]);
+  }
+  filas.push(["Fecha de emisión", new Date(c.emitido_en).toLocaleDateString("es-EC", { day: "numeric", month: "long", year: "numeric" })]);
+  filas.push(["Código", c.codigo]);
 
   filas.forEach(function (fila) {
     const div = document.createElement("div");

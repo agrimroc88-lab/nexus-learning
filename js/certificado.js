@@ -73,8 +73,10 @@ const NexusCertificado = (function () {
     doc.line(CX - 22.8, 30, CX - 21.7, 30);
     texto(doc, "Nexus Learning", CX - 12, 31.6, { tam: 13, estilo: "bold", color: PINO, alinear: "left" });
 
+    const esAsistencia = d.tipo === "asistencia";
+
     // --- Título ---
-    texto(doc, "Certificado de aprobación", CX, 52, { tam: 30, estilo: "bold", color: PINO });
+    texto(doc, esAsistencia ? "Certificado de asistencia" : "Certificado de aprobación", CX, 52, { tam: 30, estilo: "bold", color: PINO });
     texto(doc, "Se certifica que", CX, 66, { tam: 13, color: GRIS });
 
     // --- Nombre ---
@@ -87,7 +89,7 @@ const NexusCertificado = (function () {
     let linea = "con cédula o pasaporte N.º " + d.cedula;
     if (d.empresa) linea += ", de la empresa " + d.empresa + ",";
     texto(doc, linea, CX, 94, { tam: 12, color: GRIS });
-    texto(doc, "aprobó el curso", CX, 102, { tam: 12, color: GRIS });
+    texto(doc, esAsistencia ? "asistió a la capacitación" : "aprobó el curso", CX, 102, { tam: 12, color: GRIS });
 
     // --- Curso (puede ocupar dos líneas) ---
     doc.setFont("helvetica", "bold");
@@ -97,10 +99,14 @@ const NexusCertificado = (function () {
     doc.text(lineasCurso, CX, 113, { align: "center" });
     const yDespues = 113 + (lineasCurso.length - 1) * 8;
 
+    // --- Duración, modalidad y nota ---
     const horas = Number(d.horas);
-    const nota = Number(d.nota).toLocaleString("es-EC", { maximumFractionDigits: 1 });
-    texto(doc, "con una duración de " + (horas === 1 ? "1 hora" : horas.toLocaleString("es-EC") + " horas") +
-      " y una calificación de " + nota + " %.", CX, yDespues + 10, { tam: 12, color: GRIS });
+    let detalle = "con una duración de " + (horas === 1 ? "1 hora" : horas.toLocaleString("es-EC") + " horas");
+    if (d.modalidad) detalle += ", en modalidad " + d.modalidad;
+    if (!esAsistencia && d.nota !== null && d.nota !== undefined) {
+      detalle += ", y una calificación de " + Number(d.nota).toLocaleString("es-EC", { maximumFractionDigits: 1 }) + " %";
+    }
+    texto(doc, detalle + ".", CX, yDespues + 10, { tam: 12, color: GRIS });
 
     // --- Firma (izquierda) ---
     doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]);
@@ -111,7 +117,7 @@ const NexusCertificado = (function () {
 
     // --- Fecha (centro) ---
     texto(doc, "Fecha de emisión", CX, 170, { tam: 10, color: GRIS });
-    texto(doc, fechaLarga(d.fecha), CX, 176, { tam: 12, estilo: "bold" });
+    texto(doc, fechaLarga(d.emitido_en || d.fecha), CX, 176, { tam: 12, estilo: "bold" });
 
     // --- QR y código (derecha) ---
     const url = urlVerificacion(d.codigo);

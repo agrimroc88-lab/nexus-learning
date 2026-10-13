@@ -1,80 +1,53 @@
 // =====================================================================
 // NEXUS LEARNING · PÁGINA DE INICIO
 // Carpeta: js/inicio.js
-// Carga los cursos publicados desde Supabase y los muestra en la lista.
+// Valida el código de capacitación y lleva al participante a su curso.
 // =====================================================================
 
-(async function cargarCursos() {
-  const estado = document.getElementById("estado-cursos");
-  const lista = document.getElementById("lista-cursos");
+const formAcceso = document.getElementById("form-acceso");
+const campoAcceso = document.getElementById("codigo-acceso");
+const errorAcceso = document.getElementById("error-acceso");
 
-  try {
-    const { data, error } = await nexusDb
-      .from("cap_cursos")
-      .select("id, titulo, descripcion, horas, cap_lecciones(count)")
-      .eq("publicado", true)
-      .order("creado_en", { ascending: true });
+// Ordena lo que escribe la persona: mayúsculas, sin espacios y con guion
+function normalizarCodigo(texto) {
+  let c = String(texto || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
+  if (c.length === 9 && c.indexOf("-") === -1) c = c.slice(0, 3) + "-" + c.slice(3);
+  return c;
+}
 
-    if (error) throw error;
+campoAcceso.addEventListener("input", function () {
+  errorAcceso.textContent = "";
+});
 
-    if (!data || data.length === 0) {
-      estado.textContent = "Todavía no hay cursos publicados. Vuelve pronto.";
-      return;
-    }
+formAcceso.addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  const codigo = normalizarCodigo(campoAcceso.value);
+  campoAcceso.value = codigo;
 
-    data.forEach(function (curso) {
-      lista.appendChild(crearFilaCurso(curso));
-    });
-
-    estado.hidden = true;
-    lista.hidden = false;
-  } catch (e) {
-    console.error("Error al cargar cursos:", e);
-    estado.classList.add("error");
-    estado.textContent = "No se pudieron cargar los cursos. Revisa tu conexión a internet y recarga la página.";
+  if (codigo.length < 8) {
+    errorAcceso.textContent = "Escribe el código completo, por ejemplo AND-7K4P9Q.";
+    campoAcceso.focus();
+    return;
   }
-})();
 
-// Crea la fila de un curso. Usa textContent (no innerHTML) para que
-// ningún texto guardado en la base de datos pueda inyectar código.
-function crearFilaCurso(curso) {
-  const li = document.createElement("li");
-  li.className = "curso";
+  const boton = document.getElementById("btn-acceso");
+  boton.disabled = true;
+  boton.textContent = "Revisando…";
 
-  const info = document.createElement("div");
+  const { data, error } = await nexusDb.rpc("cap_validar_acceso", { p_codigo: codigo });
 
-  const titulo = document.createElement("h3");
-  titulo.textContent = curso.titulo;
+  boton.disabled = false;
+  boton.textContent = "Ingresar";
 
-  const descripcion = document.createElement("p");
-  descripcion.textContent = curso.descripcion || "";
+  if (error) {
+    console.error(error);
+    errorAcceso.textContent = "No se pudo revisar el código. Comprueba tu conexión a internet e inténtalo de nuevo.";
+    return;
+  }
+  if (!data || !data.valido) {
+    errorAcceso.textContent = (data && data.motivo) || "Ese código no es válido.";
+    return;
+  }
 
-  const lecciones = (curso.cap_lecciones && curso.cap_lecciones[0]) ? curso.cap_lecciones[0].count : 0;
-
-  const datos = document.createElement("div");
-  datos.className = "datos";
-  [
-    formatearHoras(curso.horas),
-    lecciones + (lecciones === 1 ? " lección" : " lecciones"),
-    "Certificado incluido"
-  ].forEach(function (texto) {
-    const span = document.createElement("span");
-    span.textContent = texto;
-    datos.appendChild(span);
-  });
-
-  info.append(titulo, descripcion, datos);
-
-  const boton = document.createElement("a");
-  boton.className = "boton";
-  boton.href = "curso.html?id=" + encodeURIComponent(curso.id);
-  boton.textContent = "Empezar curso";
-
-  li.append(info, boton);
-  return li;
-}
-
-function formatearHoras(horas) {
-  const n = Number(horas);
-  return n === 1 ? "1 hora" : n.toLocaleString("es-EC") + " horas";
-}
+  location.href = "curso.html?codigo=" + encodeURIComponent(codigo);
+});

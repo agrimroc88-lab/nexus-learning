@@ -159,6 +159,17 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
   background: var(--papel);
 }
 .fila-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+.fila-tres-campos { grid-template-columns: 1fr 1.2fr 1.4fr; }
+.grupo-sexo { border: 0; margin: 0; padding: 0; min-width: 0; }
+.grupo-sexo legend { padding: 0; margin-bottom: 6px; }
+.opcion-sexo {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-width: 64px; min-height: 46px; margin-right: 8px; padding: 0 14px;
+  border: 2px solid var(--niebla); border-radius: var(--radio); background: var(--blanco);
+  font-weight: 700; cursor: pointer;
+}
+.opcion-sexo input { accent-color: var(--pino); }
+.opcion-sexo:has(input:checked) { border-color: var(--pino); background: #EEF4F1; }
 .consentimiento { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; font-size: 14px; color: var(--gris); cursor: pointer; }
 .consentimiento input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--pino); }
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Entrando · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="fondo-login">
+
+  <main class="caja-login">
+    <a class="marca marca-oscura" href="index.html" aria-label="Nexus Learning, inicio">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+        <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+        <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+        <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+      </svg>
+      Nexus Learning
+    </a>
+
+    <h1 id="titulo">Entrando…</h1>
+    <p class="intro" id="detalle">Estamos abriendo tu sesión desde NEXUS.</p>
+    <div id="mensaje" class="aviso error" role="alert" hidden></div>
+    <p class="nota-login" id="ayuda" hidden>
+      Vuelve a NEXUS y haz clic otra vez en el cuadro de Nexus Learning. Si el problema continúa, avisa al administrador.
+    </p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/entrar.js"></script>
+</body>
+</html>

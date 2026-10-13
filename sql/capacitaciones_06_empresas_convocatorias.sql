@@ -109,6 +109,7 @@ create unique index if not exists cap_certificados_conv_cedula_uq
 create or replace function public.cap_antes_de_guardar_acceso()
 returns trigger
 language plpgsql
+security definer
 set search_path = public, extensions
 as $$
 declare
@@ -157,7 +158,7 @@ create trigger cap_accesos_antes_guardar
   before insert or update on public.cap_accesos
   for each row execute function public.cap_antes_de_guardar_acceso();
 
-revoke all on function public.cap_antes_de_guardar_acceso() from public, anon;
+revoke all on function public.cap_antes_de_guardar_acceso() from public, anon, authenticated;
 
 
 -- =====================================================================

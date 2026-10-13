@@ -85,7 +85,7 @@ function pintarListaCursos() {
     t.textContent = c.titulo;
     const estado = document.createElement("span");
     estado.className = "estado " + (c.publicado ? "publicado" : "borrador");
-    estado.textContent = c.publicado ? "Publicado" : "Borrador";
+    estado.textContent = c.publicado ? "Activo" : "Inactivo";
     btn.append(t, estado);
     btn.addEventListener("click", function () { seleccionarCurso(c.id); });
     li.appendChild(btn);
@@ -101,7 +101,7 @@ el("btn-nuevo-curso").addEventListener("click", function () {
   el("editor-vacio").hidden = true;
   el("editor-curso").hidden = false;
   el("editor-titulo").textContent = "Nuevo curso";
-  llenarFormularioCurso({ titulo: "", descripcion: "", horas: 1, nota_minima: 70, publicado: false });
+  llenarFormularioCurso({ titulo: "", descripcion: "", horas: 1, nota_minima: 70, publicado: true });
   el("btn-eliminar-curso").hidden = true;
   cambiarPestana("datos");
   actualizarPestanas();
@@ -180,13 +180,6 @@ el("form-curso").addEventListener("submit", async function (ev) {
   if (datos.titulo.length < 5) return avisar("Escribe un título de al menos 5 caracteres.", "error");
   if (!(datos.horas > 0)) return avisar("Las horas deben ser mayores que 0.", "error");
   if (!(datos.nota_minima >= 1 && datos.nota_minima <= 100)) return avisar("La nota mínima debe estar entre 1 y 100.", "error");
-  if (datos.publicado && adm.curso && adm.preguntas.length === 0) {
-    return avisar("Agrega al menos una pregunta antes de publicar el curso.", "error");
-  }
-  if (datos.publicado && !adm.curso) {
-    datos.publicado = false;
-    el("c-publicado").checked = false;
-  }
 
   const boton = el("btn-guardar-curso");
   boton.disabled = true;
@@ -205,7 +198,7 @@ el("form-curso").addEventListener("submit", async function (ev) {
   adm.curso = resp.data;
   await cargarCursos(resp.data.id);
   avisar(nuevo
-    ? "Curso creado. Ahora agrega lecciones y preguntas, y luego publícalo."
+    ? "Curso creado. Si lo usarás de forma virtual o con evaluación, agrega lecciones y preguntas."
     : "Curso guardado.");
   if (nuevo) cambiarPestana("lecciones");
 });
@@ -221,7 +214,7 @@ el("btn-eliminar-curso").addEventListener("click", async function () {
   if (error) return errorSupabase(error, "No se pudo revisar el curso.");
 
   if (count > 0) {
-    return avisar("Este curso ya emitió " + count + " certificado(s). Para no invalidarlos, no se puede eliminar: desmarca \"Publicado\" para ocultarlo.", "error");
+    return avisar("Este curso ya emitió " + count + " certificado(s). Para no invalidarlos, no se puede eliminar: desmarca \"Activo\" para que no se use en nuevas capacitaciones.", "error");
   }
 
   const ok = confirm("¿Eliminar el curso \"" + adm.curso.titulo + "\" con todas sus lecciones y preguntas? Esta acción no se puede deshacer.");
@@ -416,9 +409,6 @@ el("form-pregunta").addEventListener("submit", async function (ev) {
 });
 
 async function eliminarPregunta(q) {
-  if (adm.preguntas.length === 1 && adm.curso.publicado) {
-    return avisar("Es la última pregunta de un curso publicado. Despublica el curso antes de eliminarla.", "error");
-  }
   if (!confirm("¿Eliminar la pregunta \"" + q.enunciado + "\"?")) return;
   const r = await nexusDb.from("cap_preguntas").delete().eq("id", q.id);
   if (r.error) return errorSupabase(r.error, "No se pudo eliminar la pregunta.");

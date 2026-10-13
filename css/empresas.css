@@ -1,0 +1,106 @@
+/* =====================================================================
+   NEXUS LEARNING · ESTILOS DE EMPRESAS Y NÓMINAS
+   Carpeta: css/empresas.css
+   Solo los usa empresas.html. Requiere estilos.css y admin.css.
+   ===================================================================== */
+
+.empresa-cabecera .boton-chico { white-space: nowrap; flex: none; }
+.buscador-lista { margin-bottom: 12px; min-height: 40px; font-size: 15px; }
+.detalle-empresa { font-weight: 400; color: var(--gris); font-size: 13px; }
+
+/* Encabezado de la empresa */
+.empresa-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+.empresa-cabecera h1 { margin-bottom: 4px; }
+.empresa-resumen { margin: 0 0 20px; color: var(--gris); font-size: 15px; }
+#form-empresa { margin-bottom: 28px; }
+
+.fila-tres { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 18px; }
+.celda-interruptor { display: flex; align-items: flex-end; padding-bottom: 10px; }
+
+.seccion-cabecera {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  margin: 12px 0 16px; padding-top: 20px; border-top: 2px solid var(--niebla);
+}
+.seccion-cabecera h2 { margin: 0; font-size: 24px; }
+#form-conv { margin-bottom: 24px; }
+
+/* Modalidad */
+.grupo-modalidad { border: 0; padding: 0; margin: 18px 0 0; }
+.grupo-modalidad legend { margin-bottom: 8px; }
+.grupo-modalidad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.grupo-modalidad legend { grid-column: 1 / -1; }
+.opcion-modalidad {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px; border: 2px solid var(--niebla); border-radius: 10px;
+  background: var(--blanco); cursor: pointer;
+}
+.opcion-modalidad input { margin-top: 4px; accent-color: var(--pino); }
+.opcion-modalidad strong { display: block; }
+.opcion-modalidad small { color: var(--gris); font-size: 13px; line-height: 1.35; display: block; }
+.opcion-modalidad:has(input:checked) { border-color: var(--pino); background: #EEF4F1; }
+
+.bloque-acceso { margin-top: 18px; padding: 16px 18px; border-radius: 10px; background: var(--blanco); border: 1px dashed var(--pino-claro); }
+.bloque-acceso h4 { margin: 0; font-family: var(--fuente-titulo); color: var(--pino); font-size: 17px; }
+.bloque-acceso .interruptor { margin-top: 14px; }
+
+/* Tarjeta de capacitación */
+.conv {
+  padding: 22px;
+  margin-bottom: 16px;
+  border: 2px solid var(--niebla);
+  border-radius: 14px;
+}
+.conv-cabecera h3 { margin: 0 0 8px; font-size: 21px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--papel); color: var(--pino-claro); }
+
+.avance { margin: 16px 0 6px; }
+.avance p { margin: 0 0 6px; font-weight: 600; font-size: 15px; }
+
+.accesos { margin-top: 12px; }
+.acceso {
+  display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 14px; margin-bottom: 8px; border-radius: 10px; background: var(--papel);
+}
+.acceso > div:first-child { display: grid; grid-template-columns: auto auto; gap: 2px 12px; align-items: center; }
+.acceso small { color: var(--gris); font-size: 13px; }
+.acceso .validez { grid-column: 1 / -1; }
+.codigo-acceso { font-size: 20px; letter-spacing: 0.06em; color: var(--pino); grid-column: 1; }
+.acceso-botones { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.acceso-botones .enlace-boton { font-size: 14px; }
+
+.estado-acceso { justify-self: start; display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.estado-acceso.vigente { background: #DDF0E5; color: var(--ok); }
+.estado-acceso.programado { background: #FDF1D3; color: #8A6200; }
+.estado-acceso.vencido { background: var(--niebla); color: var(--gris); }
+.estado-acceso.anulado { background: #F6DCD6; color: var(--error); }
+
+.conv-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+
+.mini-form { margin-top: 12px; padding: 16px; border-radius: 10px; background: var(--papel); }
+.mini-form .etiqueta { margin-top: 10px; }
+.mini-form .acciones-form { margin-top: 14px; padding-top: 12px; }
+
+/* Nómina */
+#btn-volver { margin-bottom: 12px; color: var(--pino-claro); }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.cifra { padding: 16px; border-radius: 12px; background: var(--papel); }
+.cifra strong { display: block; font-family: var(--fuente-titulo); font-size: 32px; color: var(--pino); line-height: 1.1; }
+.cifra span { font-weight: 600; font-size: 14px; }
+.cifra small { display: block; color: var(--gris); font-size: 13px; margin-top: 2px; }
+
+.nomina-herramientas { display: flex; gap: 10px; margin-bottom: 14px; }
+.nomina-herramientas .campo { max-width: 360px; }
+
+.tabla-caja { overflow-x: auto; border: 1px solid var(--niebla); border-radius: 10px; }
+.tabla { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tabla th { text-align: left; padding: 10px 12px; background: var(--papel); font-size: 13px; color: var(--gris); white-space: nowrap; }
+.tabla td { padding: 10px 12px; border-top: 1px solid var(--niebla); vertical-align: middle; }
+.tabla td:nth-child(2), .tabla td:nth-child(6) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .fila-tres { grid-template-columns: 1fr; }
+  .grupo-modalidad { grid-template-columns: 1fr; }
+  .empresa-cabecera { flex-direction: column; }
+  .nomina-herramientas { flex-direction: column; }
+}

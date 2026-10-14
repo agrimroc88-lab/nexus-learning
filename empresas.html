@@ -73,8 +73,31 @@
             <h1 id="empresa-nombre"></h1>
             <p id="empresa-resumen" class="empresa-resumen"></p>
           </div>
-          <button type="button" class="boton secundario boton-chico" id="btn-editar-empresa">Editar datos</button>
+          <div class="empresa-botones">
+            <button type="button" class="boton boton-chico" id="btn-informe">Informe PDF</button>
+            <button type="button" class="boton secundario boton-chico" id="btn-editar-empresa">Editar datos</button>
+          </div>
         </div>
+
+        <!-- Informe PDF de la empresa -->
+        <form id="form-informe" class="formulario-item form-informe" novalidate hidden>
+          <h3>Informe de capacitación para la empresa</h3>
+          <p class="ayuda">PDF con las cifras, las capacitaciones realizadas, las personas capacitadas y la nómina de cada capacitación con sus códigos de certificado. Deja las fechas vacías para incluir todo.</p>
+          <div class="fila-dos fila-iguales">
+            <div>
+              <label class="etiqueta" for="inf-desde">Desde (opcional)</label>
+              <input class="campo" id="inf-desde" type="date">
+            </div>
+            <div>
+              <label class="etiqueta" for="inf-hasta">Hasta (opcional)</label>
+              <input class="campo" id="inf-hasta" type="date">
+            </div>
+          </div>
+          <div class="acciones-form">
+            <button type="button" class="boton secundario" id="btn-cancelar-informe">Cancelar</button>
+            <button type="submit" class="boton" id="btn-generar-informe">Descargar informe</button>
+          </div>
+        </form>
 
         <!-- Formulario de empresa -->
         <form id="form-empresa" class="formulario-item" novalidate hidden>
@@ -295,6 +318,7 @@
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
+  <script src="js/reporte-empresa.js"></script>
   <script src="js/empresas.js"></script>
 </body>
 </html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Resumen · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="admin.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Administración
+      </a>
+      <nav class="nav-admin">
+        <a href="resumen.html" aria-current="page">Resumen</a>
+        <a href="admin.html">Cursos</a>
+        <a href="empresas.html">Empresas</a>
+        <a href="administradores.html">Administradores</a>
+        <a href="apariencia.html">Apariencia</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <a data-nexus="" href="#" class="enlace-nexus">NEXUS</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <main id="panel" class="contenedor pagina-resumen" hidden>
+    <div class="resumen-cabecera">
+      <div>
+        <h1>Resumen</h1>
+        <p class="ayuda" id="r-fecha"></p>
+      </div>
+      <a class="boton secundario boton-chico" href="empresas.html">Ir a Empresas</a>
+    </div>
+
+    <div id="aviso" class="aviso" role="status" hidden></div>
+
+    <!-- Cifras principales -->
+    <section class="tiles" aria-label="Cifras principales">
+      <article class="tile tile-principal"><span class="tile-etiqueta">Certificados este mes</span><strong id="t-mes">—</strong></article>
+      <article class="tile"><span class="tile-etiqueta">Certificados en total</span><strong id="t-total">—</strong></article>
+      <article class="tile"><span class="tile-etiqueta">Personas capacitadas</span><strong id="t-personas">—</strong></article>
+      <article class="tile"><span class="tile-etiqueta">Empresas activas</span><strong id="t-empresas">—</strong></article>
+      <article class="tile"><span class="tile-etiqueta">Claves activas ahora</span><strong id="t-claves">—</strong></article>
+      <article class="tile"><span class="tile-etiqueta">Nota promedio (aprobación)</span><strong id="t-nota">—</strong></article>
+    </section>
+
+    <!-- Certificados por mes -->
+    <section class="tarjeta-panel">
+      <h2>Certificados emitidos por mes</h2>
+      <p class="ayuda">Últimos 12 meses. Pasa el cursor sobre una barra para ver el número.</p>
+      <div class="grafico" id="grafico-meses"></div>
+      <details class="ver-tabla">
+        <summary>Ver como tabla</summary>
+        <table class="tabla-simple"><thead><tr><th>Mes</th><th>Certificados</th></tr></thead><tbody id="tabla-meses"></tbody></table>
+      </details>
+    </section>
+
+    <div class="dos-columnas">
+      <!-- Avance por empresa -->
+      <section class="tarjeta-panel">
+        <h2>Avance por empresa</h2>
+        <p class="ayuda">Personas con al menos un certificado, frente al número de trabajadores registrado.</p>
+        <div class="tabla-caja-simple">
+          <table class="tabla-simple">
+            <thead><tr><th>Empresa</th><th>Capacitaciones</th><th>Personas</th><th>Avance</th><th>Último certificado</th></tr></thead>
+            <tbody id="tabla-empresas"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Programas -->
+      <section class="tarjeta-panel">
+        <h2>Programas más dictados</h2>
+        <p class="ayuda">Por número de certificados emitidos.</p>
+        <ol class="barras-programas" id="lista-programas"></ol>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/resumen.js"></script>
+</body>
+</html>

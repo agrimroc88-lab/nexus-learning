@@ -214,7 +214,7 @@
   background: linear-gradient(120deg, var(--vp-principal), var(--vp-claro));
   background-size: cover; background-position: center;
 }
-.vp-banner.con-foto { width: 100%; height: auto; aspect-ratio: 8 / 3; max-height: 240px; }
+.vp-banner.con-foto { width: 100%; height: auto; aspect-ratio: 8 / 3; }
 .vp-zona {
   display: grid; grid-template-columns: minmax(0, 1fr) 46%; gap: 12px; align-items: start;
   padding: 14px 16px; background: var(--vp-fondo);

@@ -305,12 +305,11 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   box-shadow: -230px 0 0 -42px color-mix(in srgb, var(--senal) 5%, transparent);
   pointer-events: none;
 }
-/* Con foto: la imagen completa, sin textos encima (proporción 1600 × 600) */
+/* Con foto: la imagen completa, sin textos encima ni recortes */
 .banner.con-foto {
   width: 100%;
   height: auto;
-  aspect-ratio: 8 / 3;
-  max-height: 520px;   /* hasta ~1390 px de ancho la foto se ve completa, sin recortes */
+  aspect-ratio: 8 / 3;   /* inicio.js lo cambia a la proporción real de la foto: se ve completa */
   background: var(--pino-noche) var(--foto-banner) center / cover no-repeat;
 }
 .banner.con-foto::after { display: none; }

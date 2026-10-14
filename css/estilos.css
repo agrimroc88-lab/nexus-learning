@@ -150,6 +150,73 @@ h1, h2, h3 {
   margin-bottom: 6px;
 }
 
+/* ---------- Ventana "Iniciar sesión" ---------- */
+.barra .boton-sesion { min-height: 38px; padding: 0 18px; font-size: 15px; }
+.ventana {
+  width: min(640px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  padding: 36px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--papel);
+  color: var(--tinta);
+  box-shadow: 0 24px 60px rgba(15, 61, 62, 0.35);
+}
+.ventana::backdrop { background: rgba(15, 61, 62, 0.72); }
+.ventana h2 { font-size: 28px; margin-bottom: 4px; }
+.ventana-intro { margin: 0 0 24px; color: var(--gris); }
+.ventana-cerrar {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gris);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ventana-cerrar:hover { background: var(--niebla); }
+.opciones-sesion { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.opcion-sesion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 20px;
+  border: 2px solid var(--niebla);
+  border-radius: 16px;
+  background: var(--blanco);
+  color: var(--pino);
+  font-family: var(--fuente-texto);
+  font-size: 15px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.opcion-sesion:hover { border-color: var(--pino); transform: translateY(-2px); }
+.opcion-sesion strong { font-family: var(--fuente-titulo); font-size: 22px; }
+.opcion-sesion span { color: var(--gris); line-height: 1.45; }
+.enlace-volver {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pino-claro);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.campo-clave-ventana { min-height: 54px; font-size: 20px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.paso-estudiante .boton { min-height: 54px; }
+.paso-estudiante .acceso-fila .campo { border-color: var(--niebla); }
+.paso-estudiante .acceso-fila .campo:focus { border-color: var(--pino-claro); }
+.error-ventana { min-height: 1.4em; margin: 10px 0 0; color: var(--error); font-weight: 600; font-size: 15px; }
+
 /* ---------- Mensajes ---------- */
 .aviso {
   padding: 14px 18px;
@@ -323,6 +390,10 @@ h1, h2, h3 {
   .barra nav .nav-extra { display: none; }
   .nav-publica { gap: 14px; }
   .marca { font-size: 18px; white-space: nowrap; }
+  .barra .boton-sesion { min-height: 36px; padding: 0 14px; font-size: 14px; }
+  .ventana { padding: 28px 20px 22px; }
+  .opciones-sesion { grid-template-columns: 1fr; }
+  .opcion-sesion { padding: 20px 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

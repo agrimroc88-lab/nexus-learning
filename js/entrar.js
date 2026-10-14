@@ -32,7 +32,8 @@
 
   document.getElementById("titulo").textContent = "¡Listo!";
   document.getElementById("detalle").textContent = "Llevándote a tu espacio…";
-  location.replace(rol === "docente" ? "docente.html" : "empresas.html");
+  // Docentes: panel de sus programas (admin.html se adapta al papel)
+  location.replace(rol === "docente" ? "admin.html" : "empresas.html");
 })();
 
 function fallar(texto) {

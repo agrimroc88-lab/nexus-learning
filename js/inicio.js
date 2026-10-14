@@ -2,6 +2,7 @@
 // NEXUS LEARNING · PÁGINA DE INICIO
 // Carpeta: js/inicio.js
 // Valida el código de capacitación y lleva al participante a su curso.
+// Además: catálogo público de programas.
 // =====================================================================
 
 const formAcceso = document.getElementById("form-acceso");
@@ -49,3 +50,76 @@ formAcceso.addEventListener("submit", async function (ev) {
 
   location.href = "curso.html?codigo=" + encodeURIComponent(codigo);
 });
+
+// =====================================================================
+// CATÁLOGO PÚBLICO DE PROGRAMAS
+// =====================================================================
+(async function cargarCatalogo() {
+  const estado = document.getElementById("cursos-estado");
+  const lista = document.getElementById("lista-cursos");
+
+  const { data, error } = await nexusDb.rpc("cap_catalogo");
+  if (error) {
+    console.error(error);
+    estado.textContent = "No se pudieron cargar los programas. Recarga la página para intentarlo de nuevo.";
+    estado.classList.add("error");
+    return;
+  }
+
+  const cursos = Array.isArray(data) ? data : [];
+  if (cursos.length === 0) {
+    estado.textContent = "Pronto publicaremos nuestros programas. Escríbenos con lo que tu empresa necesita.";
+    return;
+  }
+
+  cursos.forEach(function (c) { lista.appendChild(crearTarjetaCurso(c)); });
+  estado.hidden = true;
+  lista.hidden = false;
+})();
+
+function crearTarjetaCurso(c) {
+  const li = document.createElement("li");
+  li.className = "curso";
+
+  const info = document.createElement("div");
+  const h3 = document.createElement("h3");
+  h3.textContent = c.titulo;
+  info.appendChild(h3);
+
+  if (c.descripcion) {
+    const p = document.createElement("p");
+    p.textContent = c.descripcion;
+    info.appendChild(p);
+  }
+
+  const subtemas = Array.isArray(c.subtemas) ? c.subtemas : [];
+  if (subtemas.length) {
+    const s = document.createElement("p");
+    s.className = "subtemas";
+    s.textContent = "Incluye: " + subtemas.join(" · ");
+    info.appendChild(s);
+  }
+
+  const datos = document.createElement("div");
+  datos.className = "datos";
+  const partes = [formatearHorasCatalogo(c.horas)];
+  if (c.lecciones > 0) partes.push(c.lecciones + (c.lecciones === 1 ? " lección en línea" : " lecciones en línea"));
+  if (c.evaluacion) partes.push("Con evaluación");
+  partes.push("Certificado verificable");
+  partes.forEach(function (t) {
+    const span = document.createElement("span");
+    span.textContent = t;
+    datos.appendChild(span);
+  });
+  info.appendChild(datos);
+
+  li.appendChild(info);
+  return li;
+}
+
+function formatearHorasCatalogo(horas) {
+  const n = Number(horas) || 0;
+  const texto = Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ",");
+  return texto + (n === 1 ? " hora" : " horas");
+}
+

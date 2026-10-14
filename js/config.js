@@ -14,8 +14,18 @@ const NEXUS_CONFIG = {
   empresa: "VitalWork S.A.S.",
   // Los administradores pueden ingresar con su cédula. Por dentro, su
   // cuenta en Supabase es "CEDULA@" + este dominio (no recibe correos).
-  dominioCedula: "nexuslearning.local"
+  dominioCedula: "nexuslearning.local",
+  // Ecosistema: dirección de NEXUS (Seguridad y Salud Ocupacional).
+  // Si cambia el dominio, se cambia solo aquí.
+  nexusUrl: "https://agrimroc88-lab.github.io/Nexus/"
 };
+
+// Llena todos los enlaces marcados con data-nexus="ruta" con la dirección de NEXUS
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("[data-nexus]").forEach(function (a) {
+    a.href = NEXUS_CONFIG.nexusUrl + (a.getAttribute("data-nexus") || "");
+  });
+});
 
 // Convierte lo que escribe la persona (cédula o correo) en el correo de la cuenta
 function nexusCorreoDeUsuario(texto) {

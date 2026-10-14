@@ -13,7 +13,7 @@ function mostrarMensaje(texto, tipo) {
 
 // Mensaje si viene de una página protegida sin permiso
 if (new URLSearchParams(location.search).get("motivo") === "sin-permiso") {
-  mostrarMensaje("Tu cuenta no tiene permiso de administrador. Pide que te agreguen a la lista de administradores.");
+  mostrarMensaje("Tu cuenta no tiene permiso de administrador ni de docente vigente. Pide acceso al administrador de la plataforma.");
 }
 
 // Si ya hay una sesión activa, ir directo al panel

@@ -302,6 +302,7 @@ function mostrarLeccion(i) {
     video.hidden = true;
   }
 
+  pintarDiapositivas(leccion);
   pintarContenido($("leccion-contenido"), leccion.contenido || "");
 
   $("btn-anterior").disabled = i === 0;
@@ -317,6 +318,32 @@ function mostrarLeccion(i) {
 
   actualizarTemario(i);
   mostrarVista("vista-leccion");
+}
+
+// Diapositivas PDF de la lección (espacio público "diapositivas")
+function pintarDiapositivas(leccion) {
+  const caja = $("leccion-pdf");
+  caja.innerHTML = "";
+  const ruta = leccion.archivo_pdf;
+  if (!ruta) { caja.hidden = true; return; }
+
+  const url = nexusDb.storage.from("diapositivas").getPublicUrl(ruta).data.publicUrl;
+
+  const visor = document.createElement("iframe");
+  visor.src = url + "#view=FitH";
+  visor.title = "Diapositivas: " + leccion.titulo;
+  visor.loading = "lazy";
+
+  // En celulares el PDF no siempre se muestra incrustado: botón para abrirlo
+  const abrir = document.createElement("a");
+  abrir.className = "boton secundario";
+  abrir.href = url;
+  abrir.target = "_blank";
+  abrir.rel = "noopener";
+  abrir.textContent = "Abrir diapositivas en PDF";
+
+  caja.append(visor, abrir);
+  caja.hidden = false;
 }
 
 // Texto de la lección en párrafos y listas (sin innerHTML con datos de la base)

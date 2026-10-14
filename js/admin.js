@@ -1,11 +1,18 @@
 // =====================================================================
 // NEXUS LEARNING · PANEL DE ADMINISTRACIÓN DE CURSOS
 // Carpeta: js/admin.js
-// Crear y editar cursos, lecciones y preguntas.
+// Crear y editar cursos, lecciones (con diapositivas PDF), preguntas y
+// docentes. La misma página sirve a dos papeles:
+//   · admin:   todo.
+//   · docente: solo lecciones y preguntas de SUS programas (RLS filtra
+//              los cursos; aquí solo se oculta lo que no le corresponde).
 // =====================================================================
 
 const adm = {
+  papel: "admin",
   cursos: [],
+  docentes: [],         // todos los docentes (solo admin)
+  asignados: [],        // ids de docentes del curso seleccionado
   curso: null,          // curso seleccionado (null = nuevo)
   lecciones: [],
   preguntas: [],
@@ -21,10 +28,12 @@ const NUM_OPCIONES = 4;
 // Inicio
 // ---------------------------------------------------------------------
 (async function iniciar() {
-  const usuario = await exigirAdministrador();
-  if (!usuario) return;
+  const acceso = await exigirPersonal();
+  if (!acceso) return;
+  adm.papel = acceso.papel;
+  if (esDocente()) prepararModoDocente();
 
-  el("usuario-correo").textContent = nexusUsuarioVisible(usuario.email);
+  el("usuario-correo").textContent = nexusUsuarioVisible(acceso.usuario.email);
   el("cargando").hidden = true;
   el("panel").hidden = false;
 
@@ -33,6 +42,22 @@ const NUM_OPCIONES = 4;
 })();
 
 el("btn-salir").addEventListener("click", cerrarSesion);
+
+function esDocente() { return adm.papel === "docente"; }
+
+// El docente ve sus programas en solo lectura y edita lecciones y preguntas
+function prepararModoDocente() {
+  document.body.classList.add("modo-docente");
+  document.title = "Mis programas · Nexus Learning";
+  el("marca-texto").textContent = "Mis programas";
+  ["btn-nuevo-curso", "btn-eliminar-curso", "bloque-qr", "btn-guardar-curso"].forEach(function (id) {
+    el(id).setAttribute("data-solo-admin", "");
+  });
+  el("form-curso").querySelectorAll("input, textarea").forEach(function (c) { c.disabled = true; });
+  el("editor-vacio").querySelector("h2").textContent = "Elige uno de tus programas";
+  el("editor-vacio").querySelector("p").textContent = "Puedes editar sus lecciones, diapositivas y preguntas.";
+  adm.pestana = "lecciones";
+}
 
 function avisar(texto, tipo) {
   const aviso = el("aviso");
@@ -61,7 +86,9 @@ async function cargarCursos(seleccionarId) {
   adm.cursos = data || [];
   pintarListaCursos();
 
-  const id = seleccionarId || (adm.curso && adm.curso.id);
+  // Docente con un solo programa: abrirlo directamente
+  const unico = esDocente() && adm.cursos.length === 1 ? adm.cursos[0].id : null;
+  const id = seleccionarId || (adm.curso && adm.curso.id) || unico;
   const curso = adm.cursos.find(function (c) { return c.id === id; });
   if (curso) seleccionarCurso(curso.id);
 }
@@ -72,7 +99,7 @@ function pintarListaCursos() {
   if (adm.cursos.length === 0) {
     const li = document.createElement("li");
     li.className = "vacio-lista";
-    li.textContent = "Aún no hay cursos.";
+    li.textContent = esDocente() ? "Aún no tienes programas asignados." : "Aún no hay cursos.";
     ul.appendChild(li);
     return;
   }
@@ -121,7 +148,9 @@ async function seleccionarCurso(id) {
   el("bloque-qr").hidden = false;
   llenarFormularioCurso(adm.curso);
 
-  await Promise.all([cargarLecciones(), cargarPreguntas()]);
+  const cargas = [cargarLecciones(), cargarPreguntas()];
+  if (!esDocente()) cargas.push(cargarDocentes());
+  await Promise.all(cargas);
   actualizarPestanas();
   cambiarPestana(adm.pestana);
 }
@@ -150,12 +179,13 @@ function cambiarPestana(nombre) {
 
 function actualizarPestanas() {
   const hayCurso = Boolean(adm.curso);
-  document.querySelectorAll('.pestana[data-pestana="lecciones"], .pestana[data-pestana="preguntas"]').forEach(function (b) {
+  document.querySelectorAll('.pestana[data-pestana="lecciones"], .pestana[data-pestana="preguntas"], .pestana[data-pestana="docentes"]').forEach(function (b) {
     b.disabled = !hayCurso;
     b.title = hayCurso ? "" : "Guarda primero el curso";
   });
   el("n-lecciones").textContent = hayCurso ? "(" + adm.lecciones.length + ")" : "";
   el("n-preguntas").textContent = hayCurso ? "(" + adm.preguntas.length + ")" : "";
+  el("n-docentes").textContent = hayCurso && !esDocente() ? "(" + adm.asignados.length + ")" : "";
 }
 
 // ---------------------------------------------------------------------
@@ -172,6 +202,7 @@ function llenarFormularioCurso(c) {
 
 el("form-curso").addEventListener("submit", async function (ev) {
   ev.preventDefault();
+  if (esDocente()) return;
   const datos = {
     titulo: el("c-titulo").value.trim(),
     descripcion: el("c-descripcion").value.trim(),
@@ -277,7 +308,7 @@ el("btn-enlace-programa").addEventListener("click", async function () {
 async function cargarLecciones() {
   const { data, error } = await nexusDb
     .from("cap_lecciones")
-    .select("id, orden, titulo, contenido, video_url")
+    .select("id, orden, titulo, contenido, video_url, archivo_pdf")
     .eq("curso_id", adm.curso.id)
     .order("orden", { ascending: true });
   if (error) return errorSupabase(error, "No se pudieron cargar las lecciones.");
@@ -288,7 +319,10 @@ async function cargarLecciones() {
 
 function pintarLecciones() {
   pintarItems(el("lista-lecciones"), adm.lecciones, function (l) {
-    return { titulo: l.titulo, detalle: l.video_url ? "Con video" : "Solo texto" };
+    const partes = [];
+    if (l.video_url) partes.push("video");
+    if (l.archivo_pdf) partes.push("diapositivas PDF");
+    return { titulo: l.titulo, detalle: partes.length ? "Con " + partes.join(" y ") : "Solo texto" };
   }, editarLeccion, eliminarLeccion, "Este curso aún no tiene lecciones. Agrega la primera con el formulario.");
   actualizarPestanas();
 }
@@ -300,6 +334,44 @@ function limpiarFormLeccion() {
   el("l-video").value = "";
   el("l-contenido").value = "";
   el("l-orden").value = siguienteOrden(adm.lecciones);
+  mostrarPdfActual(null);
+}
+
+// Diapositiva actual de la lección en edición
+function mostrarPdfActual(ruta) {
+  el("l-pdf").value = "";
+  el("l-pdf-quitar").checked = false;
+  el("l-pdf-quitar-caja").hidden = !ruta;
+  const actual = el("l-pdf-actual");
+  actual.innerHTML = "";
+  actual.hidden = !ruta;
+  if (!ruta) return;
+  const a = document.createElement("a");
+  a.href = urlDiapositiva(ruta);
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = "Ver diapositivas actuales";
+  actual.append("Esta lección ya tiene diapositivas. ", a, ". Si eliges otro archivo, se reemplazan.");
+}
+
+function urlDiapositiva(ruta) {
+  return nexusDb.storage.from("diapositivas").getPublicUrl(ruta).data.publicUrl;
+}
+
+// Sube el PDF a <id-del-curso>/<aleatorio>.pdf (ruta que exigen las reglas)
+async function subirDiapositiva(archivo) {
+  const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + Math.random().toString(16).slice(2);
+  const ruta = adm.curso.id + "/" + id + ".pdf";
+  const { error } = await nexusDb.storage.from("diapositivas")
+    .upload(ruta, archivo, { contentType: "application/pdf", upsert: false });
+  if (error) throw error;
+  return ruta;
+}
+
+async function borrarDiapositiva(ruta) {
+  if (!ruta) return;
+  const { error } = await nexusDb.storage.from("diapositivas").remove([ruta]);
+  if (error) console.warn("No se pudo borrar el PDF anterior", error);
 }
 
 function editarLeccion(l) {
@@ -309,6 +381,7 @@ function editarLeccion(l) {
   el("l-orden").value = l.orden;
   el("l-video").value = l.video_url || "";
   el("l-contenido").value = l.contenido || "";
+  mostrarPdfActual(l.archivo_pdf);
   el("form-leccion").scrollIntoView({ behavior: "smooth", block: "start" });
   el("l-titulo").focus();
 }
@@ -328,11 +401,42 @@ el("form-leccion").addEventListener("submit", async function (ev) {
     return avisar("El enlace del video debe ser de YouTube y empezar con https://", "error");
   }
 
-  const r = adm.editandoLeccion
-    ? await nexusDb.from("cap_lecciones").update(datos).eq("id", adm.editandoLeccion.id)
-    : await nexusDb.from("cap_lecciones").insert(Object.assign({ curso_id: adm.curso.id }, datos));
-  if (r.error) return errorSupabase(r.error, "No se pudo guardar la lección.");
+  const archivo = el("l-pdf").files[0] || null;
+  if (archivo) {
+    if (archivo.type !== "application/pdf" && !/\.pdf$/i.test(archivo.name)) return avisar("Las diapositivas deben ser un archivo PDF.", "error");
+    if (archivo.size > 20 * 1024 * 1024) return avisar("El PDF pesa más de 20 MB. Redúcelo (por ejemplo, exportándolo con calidad menor) e inténtalo de nuevo.", "error");
+  }
 
+  const boton = el("btn-guardar-leccion");
+  boton.disabled = true;
+  boton.textContent = archivo ? "Subiendo PDF…" : "Guardando…";
+
+  const anterior = adm.editandoLeccion ? adm.editandoLeccion.archivo_pdf : null;
+  let nuevaRuta = null;
+  try {
+    if (archivo) {
+      nuevaRuta = await subirDiapositiva(archivo);
+      datos.archivo_pdf = nuevaRuta;
+    } else if (anterior && el("l-pdf-quitar").checked) {
+      datos.archivo_pdf = null;
+    }
+
+    const r = adm.editandoLeccion
+      ? await nexusDb.from("cap_lecciones").update(datos).eq("id", adm.editandoLeccion.id)
+      : await nexusDb.from("cap_lecciones").insert(Object.assign({ curso_id: adm.curso.id }, datos));
+    if (r.error) throw r.error;
+  } catch (e) {
+    if (nuevaRuta) await borrarDiapositiva(nuevaRuta);   // no dejar archivos huérfanos
+    boton.disabled = false;
+    boton.textContent = "Guardar lección";
+    return errorSupabase(e, "No se pudo guardar la lección.");
+  }
+
+  // El PDF anterior ya no se usa: se borra
+  if (anterior && "archivo_pdf" in datos) await borrarDiapositiva(anterior);
+
+  boton.disabled = false;
+  boton.textContent = "Guardar lección";
   avisar(adm.editandoLeccion ? "Lección actualizada." : "Lección agregada.");
   await cargarLecciones();
 });
@@ -341,6 +445,7 @@ async function eliminarLeccion(l) {
   if (!confirm("¿Eliminar la lección \"" + l.titulo + "\"?")) return;
   const r = await nexusDb.from("cap_lecciones").delete().eq("id", l.id);
   if (r.error) return errorSupabase(r.error, "No se pudo eliminar la lección.");
+  await borrarDiapositiva(l.archivo_pdf);
   avisar("Lección eliminada.");
   await cargarLecciones();
 }
@@ -458,9 +563,115 @@ async function eliminarPregunta(q) {
 }
 
 // ---------------------------------------------------------------------
+// Docentes del programa (solo administradores)
+// ---------------------------------------------------------------------
+async function cargarDocentes() {
+  const [todos, propios] = await Promise.all([
+    nexusDb.from("cap_docentes")
+      .select("id, cedula, nombres, correo, origen, vigente_hasta, activo, user_id")
+      .order("nombres", { ascending: true }),
+    nexusDb.from("cap_docente_cursos").select("docente_id").eq("curso_id", adm.curso.id)
+  ]);
+  if (todos.error) return errorSupabase(todos.error, "No se pudieron cargar los docentes.");
+  if (propios.error) return errorSupabase(propios.error, "No se pudieron cargar los docentes del programa.");
+  adm.docentes = todos.data || [];
+  adm.asignados = (propios.data || []).map(function (r) { return r.docente_id; });
+  pintarDocentes();
+}
+
+function pintarDocentes() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const lista = adm.docentes
+    .filter(function (d) { return adm.asignados.includes(d.id); })
+    .map(function (d, i) { return Object.assign({ orden: i + 1 }, d); });
+
+  pintarItems(el("lista-docentes"), lista, function (d) {
+    const partes = ["Cédula " + d.cedula, d.origen === "nexus" ? "Equipo NEXUS" : "Externo"];
+    if (!d.activo) partes.push("INACTIVO");
+    else if (d.vigente_hasta && d.vigente_hasta < hoy) partes.push("acceso vencido el " + d.vigente_hasta);
+    else if (d.vigente_hasta) partes.push("acceso hasta " + d.vigente_hasta);
+    if (!d.user_id) partes.push("aún no ha ingresado");
+    return { titulo: d.nombres, detalle: partes.join(" · ") };
+  }, alternarDocente, quitarDocente, "Este programa aún no tiene docentes asignados.",
+  { editar: function (d) { return d.activo ? "Desactivar" : "Activar"; }, eliminar: "Quitar" });
+
+  // Opciones: docentes registrados que aún no están en este programa
+  const sel = el("d-existente");
+  sel.innerHTML = "";
+  sel.appendChild(new Option("— Registrar un docente nuevo —", ""));
+  adm.docentes.forEach(function (d) {
+    if (!adm.asignados.includes(d.id)) sel.appendChild(new Option(d.nombres + " · " + d.cedula, d.id));
+  });
+  el("d-nuevo").hidden = false;
+  ["d-nombres", "d-cedula", "d-correo", "d-vigencia"].forEach(function (id) { el(id).value = ""; });
+  el("d-origen").value = "nexus";
+  actualizarPestanas();
+}
+
+el("d-existente").addEventListener("change", function () {
+  el("d-nuevo").hidden = Boolean(el("d-existente").value);
+});
+
+el("form-docente").addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  if (esDocente() || !adm.curso) return;
+  let docenteId = el("d-existente").value;
+
+  const boton = el("btn-guardar-docente");
+  boton.disabled = true;
+  try {
+    if (!docenteId) {
+      const nuevo = {
+        nombres: el("d-nombres").value.trim().replace(/\s+/g, " "),
+        cedula: el("d-cedula").value.replace(/\D/g, ""),
+        correo: el("d-correo").value.trim() || null,
+        origen: el("d-origen").value,
+        vigente_hasta: el("d-vigencia").value || null
+      };
+      if (nuevo.nombres.length < 5) return avisar("Escribe los nombres y apellidos del docente.", "error");
+      if (!/^[0-9]{10}$/.test(nuevo.cedula)) return avisar("La cédula debe tener 10 dígitos.", "error");
+      const r = await nexusDb.from("cap_docentes").insert(nuevo).select("id").single();
+      if (r.error) {
+        if (r.error.code === "23505") return avisar("Ya existe un docente con esa cédula: elígelo en \"Docente registrado\".", "error");
+        return errorSupabase(r.error, "No se pudo registrar el docente.");
+      }
+      docenteId = r.data.id;
+    }
+    const a = await nexusDb.from("cap_docente_cursos").insert({ docente_id: docenteId, curso_id: adm.curso.id });
+    if (a.error && a.error.code !== "23505") return errorSupabase(a.error, "No se pudo asignar el docente.");
+    avisar("Docente asignado al programa.");
+    await cargarDocentes();
+  } finally {
+    boton.disabled = false;
+  }
+});
+
+async function alternarDocente(d) {
+  const texto = d.activo
+    ? "¿Desactivar a " + d.nombres + "? Dejará de poder editar TODOS sus programas."
+    : "¿Activar de nuevo a " + d.nombres + "?";
+  if (!confirm(texto)) return;
+  const r = await nexusDb.from("cap_docentes").update({ activo: !d.activo }).eq("id", d.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo cambiar el estado del docente.");
+  avisar(d.activo ? "Docente desactivado." : "Docente activado.");
+  await cargarDocentes();
+}
+
+async function quitarDocente(d) {
+  if (!confirm("¿Quitar a " + d.nombres + " de este programa? Seguirá registrado y conservará sus otros programas.")) return;
+  const r = await nexusDb.from("cap_docente_cursos").delete()
+    .eq("docente_id", d.id).eq("curso_id", adm.curso.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo quitar el docente.");
+  avisar("Docente quitado del programa.");
+  await cargarDocentes();
+}
+
+// ---------------------------------------------------------------------
 // Utilidades
 // ---------------------------------------------------------------------
-function pintarItems(ol, items, describir, alEditar, alEliminar, textoVacio) {
+// etiquetas (opcional): { editar: texto o función(item), eliminar: texto }
+function pintarItems(ol, items, describir, alEditar, alEliminar, textoVacio, etiquetas) {
+  etiquetas = etiquetas || {};
   ol.innerHTML = "";
   if (items.length === 0) {
     const li = document.createElement("li");
@@ -489,13 +700,13 @@ function pintarItems(ol, items, describir, alEditar, alEliminar, textoVacio) {
     const editar = document.createElement("button");
     editar.type = "button";
     editar.className = "enlace-boton";
-    editar.textContent = "Editar";
+    editar.textContent = typeof etiquetas.editar === "function" ? etiquetas.editar(item) : (etiquetas.editar || "Editar");
     editar.addEventListener("click", function () { alEditar(item); });
 
     const borrar = document.createElement("button");
     borrar.type = "button";
     borrar.className = "enlace-boton rojo";
-    borrar.textContent = "Eliminar";
+    borrar.textContent = etiquetas.eliminar || "Eliminar";
     borrar.addEventListener("click", function () { alEliminar(item); });
 
     li.append(num, info, editar, borrar);

@@ -50,6 +50,80 @@ const NexusCertificado = (function () {
     }
   }
 
+  // Texto centrado en varias líneas; devuelve la "y" de la última línea
+  function parrafo(doc, contenido, x, y, ancho, tam, alto) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(tam);
+    doc.setTextColor(GRIS[0], GRIS[1], GRIS[2]);
+    const lineas = doc.splitTextToSize(contenido, ancho).slice(0, 3);
+    lineas.forEach(function (l, i) { doc.text(l, x, y + i * alto, { align: "center" }); });
+    return y + (lineas.length - 1) * alto;
+  }
+
+  function horasTexto(h) {
+    const n = Number(h) || 0;
+    return n === 1 ? "1 hora" : n.toLocaleString("es-EC") + " horas";
+  }
+
+  function fechaCorta(iso) {
+    // "2026-10-10" como fecha local (sin correr un día por la zona horaria)
+    const p = String(iso).split("-");
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+      .toLocaleDateString("es-EC", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  // Frase que describe cómo se realizó y con qué resultado
+  function descripcion(d, esAsistencia) {
+    const partes = [];
+    partes.push((esAsistencia ? "Capacitación desarrollada" : "Curso desarrollado") +
+      (d.modalidad ? " en modalidad " + d.modalidad : ""));
+    if (d.fecha_capacitacion) partes.push("el " + fechaCorta(d.fecha_capacitacion));
+    partes.push("con una duración de " + horasTexto(d.horas));
+    let frase = partes.join(", ");
+    if (!esAsistencia && d.nota !== null && d.nota !== undefined) {
+      frase += ", habiendo aprobado la evaluación de conocimientos con una calificación de " +
+        Number(d.nota).toLocaleString("es-EC", { maximumFractionDigits: 1 }) + " %";
+    }
+    return frase + ", como parte del programa de formación en Seguridad y Salud en el Trabajo.";
+  }
+
+  // Lista de subtemas: en una línea si son pocos; en dos columnas si son más.
+  // Respeta el espacio de la firma y del código QR.
+  function contenidos(doc, temas, cx, y) {
+    texto(doc, "Contenidos desarrollados", cx, y + 4, { tam: 10, estilo: "bold", color: PINO });
+    let yy = y + 10;
+    const limite = 165;            // debajo empiezan firma, fecha y QR
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
+
+    if (temas.length <= 3) {
+      doc.splitTextToSize(temas.join("  •  "), 210).slice(0, 2).forEach(function (l, i) {
+        doc.text(l, cx, yy + i * 4.6, { align: "center" });
+      });
+      return;
+    }
+
+    const anchoCol = 84, x1 = cx - anchoCol - 2, x2 = cx + 4;   // la 2.ª columna termina antes del QR
+    const filas = Math.max(1, Math.floor((limite - yy) / 4.6) + 1);
+    let lista = temas.slice();
+    if (lista.length > filas * 2) {
+      lista = lista.slice(0, filas * 2 - 1);
+      lista.push("Otros temas del programa");
+    }
+    const porColumna = Math.ceil(lista.length / 2);
+    lista.forEach(function (t, i) {
+      const x = i < porColumna ? x1 : x2;
+      const fila = i < porColumna ? i : i - porColumna;
+      let linea = doc.splitTextToSize(t, anchoCol - 5)[0];
+      if (linea.length < t.length) linea = linea.replace(/\s*\S*$/, "") + "…";
+      doc.setFillColor(SENAL[0], SENAL[1], SENAL[2]);
+      doc.circle(x + 1.2, yy + fila * 4.6 - 1.1, 0.8, "F");
+      doc.text(linea, x + 4, yy + fila * 4.6);
+    });
+  }
+
   function generar(d) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -76,55 +150,53 @@ const NexusCertificado = (function () {
     const esAsistencia = d.tipo === "asistencia";
 
     // --- Título ---
-    texto(doc, esAsistencia ? "Certificado de asistencia" : "Certificado de aprobación", CX, 52, { tam: 30, estilo: "bold", color: PINO });
-    texto(doc, "Se certifica que", CX, 66, { tam: 13, color: GRIS });
+    texto(doc, esAsistencia ? "Certificado de asistencia" : "Certificado de aprobación", CX, 47, { tam: 28, estilo: "bold", color: PINO });
+    texto(doc, "Se certifica que", CX, 57, { tam: 12, color: GRIS });
 
     // --- Nombre ---
     const nombre = String(d.nombres || "").toUpperCase();
-    texto(doc, nombre, CX, 81, { tam: nombre.length > 34 ? 22 : 27, estilo: "bold" });
+    texto(doc, nombre, CX, 70, { tam: nombre.length > 34 ? 21 : 25, estilo: "bold" });
     doc.setDrawColor(SENAL[0], SENAL[1], SENAL[2]);
     doc.setLineWidth(0.6);
-    doc.line(CX - 85, 85, CX + 85, 85);
+    doc.line(CX - 85, 74, CX + 85, 74);
 
     let linea = "con cédula o pasaporte N.º " + d.cedula;
     if (d.empresa) linea += ", de la empresa " + d.empresa + ",";
-    texto(doc, linea, CX, 94, { tam: 12, color: GRIS });
-    texto(doc, esAsistencia ? "asistió a la capacitación" : "aprobó el curso", CX, 102, { tam: 12, color: GRIS });
+    texto(doc, linea, CX, 82, { tam: 11.5, color: GRIS });
+    texto(doc, esAsistencia ? "asistió a la capacitación" : "aprobó el curso", CX, 88.5, { tam: 11.5, color: GRIS });
 
     // --- Curso (puede ocupar dos líneas) ---
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(19);
-    const lineasCurso = doc.splitTextToSize(String(d.curso || ""), 210);
+    doc.setFontSize(18);
+    const lineasCurso = doc.splitTextToSize(String(d.curso || ""), 220).slice(0, 2);
     doc.setTextColor(PINO[0], PINO[1], PINO[2]);
-    doc.text(lineasCurso, CX, 113, { align: "center" });
-    const yDespues = 113 + (lineasCurso.length - 1) * 8;
+    doc.text(lineasCurso, CX, 98, { align: "center" });
+    let y = 98 + (lineasCurso.length - 1) * 7.5;
 
-    // --- Duración, modalidad y nota ---
-    const horas = Number(d.horas);
-    let detalle = "con una duración de " + (horas === 1 ? "1 hora" : horas.toLocaleString("es-EC") + " horas");
-    if (d.modalidad) detalle += ", en modalidad " + d.modalidad;
-    if (!esAsistencia && d.nota !== null && d.nota !== undefined) {
-      detalle += ", y una calificación de " + Number(d.nota).toLocaleString("es-EC", { maximumFractionDigits: 1 }) + " %";
-    }
-    texto(doc, detalle + ".", CX, yDespues + 10, { tam: 12, color: GRIS });
+    // --- Descripción ampliada: modalidad, fecha, duración y resultado ---
+    y = parrafo(doc, descripcion(d, esAsistencia), CX, y + 8.5, 225, 10.5, 5);
+
+    // --- Contenidos desarrollados (subtemas) ---
+    const subtemas = (Array.isArray(d.subtemas) ? d.subtemas : []).map(function (t) { return String(t).trim(); }).filter(Boolean);
+    if (subtemas.length) contenidos(doc, subtemas, CX, y + 3);
 
     // --- Firma (izquierda) ---
     doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]);
     doc.setLineWidth(0.3);
-    doc.line(32, 170, 102, 170);
-    texto(doc, "Responsable de capacitación", 67, 176, { tam: 10, estilo: "bold" });
-    texto(doc, "VitalWork S.A.S.", 67, 181, { tam: 10, color: GRIS });
+    doc.line(32, 174, 102, 174);
+    texto(doc, "Responsable de capacitación", 67, 179, { tam: 10, estilo: "bold" });
+    texto(doc, "VitalWork S.A.S.", 67, 184, { tam: 10, color: GRIS });
 
     // --- Fecha (centro) ---
-    texto(doc, "Fecha de emisión", CX, 170, { tam: 10, color: GRIS });
-    texto(doc, fechaLarga(d.emitido_en || d.fecha), CX, 176, { tam: 12, estilo: "bold" });
+    texto(doc, "Fecha de emisión", CX, 174, { tam: 10, color: GRIS });
+    texto(doc, fechaLarga(d.emitido_en || d.fecha), CX, 180, { tam: 12, estilo: "bold" });
 
     // --- QR y código (derecha) ---
     const url = urlVerificacion(d.codigo);
-    dibujarQR(doc, url, 238, 146, 30);
-    texto(doc, "Código: " + d.codigo, 229, 162, { tam: 10, estilo: "bold", color: PINO_CLARO, alinear: "right" });
-    texto(doc, "Escanea el código QR o verifica", 229, 168, { tam: 8.5, color: GRIS, alinear: "right" });
-    texto(doc, "en la página de Nexus Learning", 229, 172.5, { tam: 8.5, color: GRIS, alinear: "right" });
+    dibujarQR(doc, url, 240, 154, 28);
+    texto(doc, "Código: " + d.codigo, 234, 170, { tam: 10, estilo: "bold", color: PINO_CLARO, alinear: "right" });
+    texto(doc, "Escanea el código QR o verifica", 234, 176, { tam: 8.5, color: GRIS, alinear: "right" });
+    texto(doc, "en la página de Nexus Learning", 234, 180.5, { tam: 8.5, color: GRIS, alinear: "right" });
 
     doc.save("Certificado_" + d.codigo + ".pdf");
   }

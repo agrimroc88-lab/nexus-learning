@@ -67,6 +67,28 @@
         </div>
       </form>
     </section>
+
+    <!-- ===== Mi contraseña ===== -->
+    <section class="editor bloque-clave">
+      <h2>Mi contraseña</h2>
+      <p class="ayuda">Para entrar a Nexus Learning directamente (sin pasar por NEXUS): crea aquí tu contraseña y luego usa <strong>Iniciar sesión → ¿Eres administrador?</strong> con tu cédula y esta contraseña. Entrar desde NEXUS sigue funcionando igual.</p>
+      <form id="form-clave" class="formulario-item" novalidate>
+        <div class="fila-dos fila-iguales">
+          <div>
+            <label class="etiqueta" for="k-nueva">Nueva contraseña (mínimo 8 caracteres)</label>
+            <input class="campo" id="k-nueva" type="password" autocomplete="new-password" minlength="8">
+          </div>
+          <div>
+            <label class="etiqueta" for="k-repetir">Repite la contraseña</label>
+            <input class="campo" id="k-repetir" type="password" autocomplete="new-password" minlength="8">
+          </div>
+        </div>
+        <p class="ayuda" id="k-usuario"></p>
+        <div class="acciones-form">
+          <button type="submit" class="boton" id="btn-clave">Guardar mi contraseña</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

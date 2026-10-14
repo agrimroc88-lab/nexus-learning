@@ -36,6 +36,13 @@ async function entrarConClave(campoAcceso, errorAcceso, boton) {
 
   const { data, error } = await nexusDb.rpc("cap_validar_acceso", { p_codigo: codigo });
 
+  // Si no es la clave de una capacitación, puede ser la de una jornada (varias el mismo día)
+  let jornada = null;
+  if (!error && data && !data.valido && /^No encontramos/.test(data.motivo || "")) {
+    const j = await nexusDb.rpc("cap_jornada", { p_codigo: codigo });
+    if (!j.error) jornada = j.data;
+  }
+
   boton.disabled = false;
   boton.textContent = "Ingresar";
 
@@ -44,7 +51,11 @@ async function entrarConClave(campoAcceso, errorAcceso, boton) {
     errorAcceso.textContent = "No se pudo revisar el código. Comprueba tu conexión a internet e inténtalo de nuevo.";
     return;
   }
-  if (!data || !data.valido) {
+  if (jornada && !jornada.valido) {
+    errorAcceso.textContent = jornada.motivo;
+    return;
+  }
+  if (!jornada && (!data || !data.valido)) {
     errorAcceso.textContent = (data && data.motivo) || "Ese código no es válido.";
     return;
   }

@@ -8,6 +8,7 @@ const emp = {
   actual: null,     // empresa seleccionada (null = nueva)
   cursos: [],
   convs: [],
+  jornadas: [],
   nomina: null      // { conv, filas }
 };
 
@@ -125,7 +126,8 @@ el("btn-nueva-empresa").addEventListener("click", function () {
   llenarFormEmpresa({ nombre: "", ruc: "", contacto: "", correo: "", telefono: "", num_trabajadores: null, activa: true });
   el("form-empresa").hidden = false;
   el("form-conv").hidden = true;
-  document.querySelector(".seccion-cabecera").hidden = true;
+  el("bloque-jornadas").hidden = true;
+  document.querySelectorAll(".seccion-cabecera").forEach(function (s) { s.hidden = true; });
   el("lista-conv").innerHTML = "";
   el("e-nombre").focus();
 });
@@ -138,8 +140,10 @@ async function seleccionarEmpresa(id) {
   el("btn-editar-empresa").hidden = false;
   el("form-empresa").hidden = true;
   el("form-conv").hidden = true;
-  document.querySelector(".seccion-cabecera").hidden = false;
-  await cargarConvocatorias();
+  el("form-jornada").hidden = true;
+  el("bloque-jornadas").hidden = false;
+  document.querySelectorAll(".seccion-cabecera").forEach(function (s) { s.hidden = false; });
+  await Promise.all([cargarConvocatorias(), cargarJornadas()]);
 }
 
 function pintarCabeceraEmpresa() {
@@ -554,6 +558,256 @@ function formNuevoCodigo(tarjeta, c, tipo) {
   tarjeta.querySelector(".conv-acciones").before(f);
   inputs[0].focus();
 }
+
+// ---------------------------------------------------------------------
+// JORNADAS: varias capacitaciones el mismo día con una sola clave.
+// Se crea la jornada (con su clave) y, por cada programa elegido, una
+// capacitación presencial normal con su propia clave. Así cada una
+// conserva su nómina, sus certificados y su registro de asistencia.
+// ---------------------------------------------------------------------
+async function cargarJornadas() {
+  const cont = el("lista-jornadas");
+  cont.innerHTML = "";
+  const { data, error } = await nexusDb
+    .from("cap_jornadas")
+    .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " +
+            "cap_convocatorias(id, cap_cursos(titulo), cap_accesos(id, tipo, anulado), cap_certificados(count))")
+    .eq("empresa_id", emp.actual.id)
+    .order("fecha", { ascending: false });
+  if (error) {
+    // Si aún no se ejecutó el SQL 18, la sección queda oculta sin romper el resto
+    console.warn("Jornadas no disponibles", error);
+    el("bloque-jornadas").hidden = true;
+    return;
+  }
+  emp.jornadas = data || [];
+  emp.jornadas.forEach(function (j) { cont.appendChild(tarjetaJornada(j)); });
+}
+
+function tarjetaJornada(j) {
+  const art = document.createElement("article");
+  art.className = "conv conv-jornada";
+
+  const cab = document.createElement("div");
+  cab.className = "conv-cabecera";
+  const h3 = document.createElement("h3");
+  h3.textContent = j.nombre;
+  const chips = document.createElement("div");
+  chips.className = "chips";
+  const certificados = j.cap_convocatorias.reduce(function (n, c) { return n + (c.cap_certificados[0] ? c.cap_certificados[0].count : 0); }, 0);
+  ["Jornada", fechaCorta(j.fecha + "T12:00"), j.cap_convocatorias.length + " capacitaciones", certificados + " certificados emitidos"]
+    .forEach(function (t) {
+      const s = document.createElement("span");
+      s.className = "chip";
+      s.textContent = t;
+      chips.appendChild(s);
+    });
+  cab.append(h3, chips);
+
+  const temas = document.createElement("ul");
+  temas.className = "temas-jornada";
+  j.cap_convocatorias.forEach(function (c) {
+    const li = document.createElement("li");
+    li.textContent = c.cap_cursos.titulo;
+    temas.appendChild(li);
+  });
+
+  // Clave de la jornada (mismo aspecto que las claves de capacitación)
+  const fila = document.createElement("div");
+  fila.className = "acceso";
+  const est = estadoAcceso(j);
+  const info = document.createElement("div");
+  const tipo = document.createElement("small");
+  tipo.textContent = "Clave de la jornada";
+  const codigo = document.createElement("strong");
+  codigo.className = "codigo-acceso";
+  codigo.textContent = j.codigo;
+  const estado = document.createElement("span");
+  estado.className = "estado-acceso " + est.clase;
+  estado.textContent = est.texto;
+  const validez = document.createElement("small");
+  validez.className = "validez";
+  validez.textContent = "Del " + fechaHora(j.valido_desde) + " al " + fechaHora(j.valido_hasta);
+  info.append(tipo, codigo, estado, validez);
+
+  const botones = document.createElement("div");
+  botones.className = "acceso-botones";
+  if (est.clase === "vigente" || est.clase === "programado") {
+    botones.appendChild(boton("Cartel QR con clave", "enlace-boton", function () { cartelJornada(j); }));
+    botones.appendChild(boton("Copiar enlace", "enlace-boton", function () { copiar(enlaceAcceso(j.codigo), "Enlace copiado."); }));
+    botones.appendChild(boton("Copiar mensaje", "enlace-boton", function () { copiar(mensajeJornada(j), "Mensaje copiado. Pégalo en WhatsApp o en un correo para la empresa."); }));
+  }
+  if (est.clase !== "anulado") {
+    botones.appendChild(boton("Extender vigencia", "enlace-boton", function () { extenderJornada(j); }));
+    botones.appendChild(boton("Anular", "enlace-boton rojo", function () { anularJornada(j); }));
+  }
+  fila.append(info, botones);
+
+  const nota = document.createElement("p");
+  nota.className = "ayuda";
+  nota.textContent = "La nómina y el registro de asistencia de cada capacitación están abajo, en Capacitaciones.";
+
+  art.append(cab, temas, fila, nota);
+  return art;
+}
+
+function mensajeJornada(j) {
+  return "Jornada de capacitación del " + fechaCorta(j.fecha + "T12:00") + ":\n" +
+    j.cap_convocatorias.map(function (c) { return "• " + c.cap_cursos.titulo; }).join("\n") + "\n" +
+    "Escanea el código QR o ingresa a " + enlaceAcceso(j.codigo) + "\n" +
+    "Clave de acceso: " + j.codigo + "\n" +
+    "Válida hasta el " + fechaHora(j.valido_hasta) + "\n" +
+    "Regístrate una sola vez y descarga un certificado por cada capacitación.";
+}
+
+function cartelJornada(j) {
+  try {
+    NexusCartel.generarJornada({
+      empresa: emp.actual.nombre,
+      nombre: j.nombre,
+      fecha: j.fecha,
+      cursos: j.cap_convocatorias.map(function (c) { return c.cap_cursos.titulo; }),
+      url: enlaceAcceso(j.codigo),
+      sitio: BASE_SITIO,
+      codigo: j.codigo,
+      valido_hasta: j.valido_hasta
+    });
+  } catch (e) {
+    console.error(e);
+    avisar("No se pudo generar el cartel. Recarga la página e inténtalo de nuevo.", "error");
+  }
+}
+
+// Extiende la jornada y, con ella, las claves presenciales de sus capacitaciones
+async function extenderJornada(j) {
+  const propuesta = new Date(Math.max(Date.now(), new Date(j.valido_hasta).getTime()) + 2 * 3600 * 1000);
+  const texto = prompt("Nueva fecha y hora de fin (AAAA-MM-DD HH:MM):",
+    propuesta.getFullYear() + "-" + dos(propuesta.getMonth() + 1) + "-" + dos(propuesta.getDate()) + " " +
+    dos(propuesta.getHours()) + ":" + dos(propuesta.getMinutes()));
+  if (texto === null) return;
+  const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})$/.exec(texto.trim());
+  if (!m) return avisar("Escribe la fecha y hora así: 2026-10-14 18:00", "error");
+  const hasta = new Date(m[1] + "T" + m[2]);
+  if (!(hasta > new Date()) || !(hasta > new Date(j.valido_desde))) return avisar("La nueva hora de fin debe ser posterior a este momento.", "error");
+
+  const r = await nexusDb.from("cap_jornadas").update({ valido_hasta: hasta.toISOString() }).eq("id", j.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo extender la jornada.");
+  const ids = [];
+  j.cap_convocatorias.forEach(function (c) {
+    c.cap_accesos.forEach(function (a) { if (a.tipo === "presencial" && !a.anulado) ids.push(a.id); });
+  });
+  if (ids.length) {
+    const a = await nexusDb.from("cap_accesos").update({ valido_hasta: hasta.toISOString() }).in("id", ids);
+    if (a.error) return errorSupabase(a.error, "La jornada se extendió, pero no las claves de sus capacitaciones.");
+  }
+  avisar("Jornada extendida hasta el " + fechaHora(hasta.toISOString()) + ", junto con sus capacitaciones.");
+  await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+}
+
+async function anularJornada(j) {
+  if (!confirm("¿Anular la clave de la jornada " + j.codigo + "? Ya nadie podrá entrar con ella. Las capacitaciones y los certificados emitidos se conservan.")) return;
+  const r = await nexusDb.from("cap_jornadas").update({ anulado: true }).eq("id", j.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo anular la jornada.");
+  avisar("Clave de la jornada anulada.");
+  await cargarJornadas();
+}
+
+el("btn-nueva-jornada").addEventListener("click", function () {
+  const activos = emp.cursos.filter(function (c) { return c.activo; });
+  if (activos.length < 2) return avisar("Para una jornada se necesitan al menos 2 cursos activos. Revisa la sección Cursos.", "error");
+  const cont = el("j-cursos");
+  cont.innerHTML = "";
+  activos.forEach(function (c) {
+    const fila = document.createElement("div");
+    fila.className = "curso-jornada";
+    const lab = document.createElement("label");
+    lab.className = "opcion-curso";
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.value = c.id;
+    chk.className = "j-curso";
+    const t = document.createElement("span");
+    t.textContent = c.titulo + " (" + formatearHoras(c.horas) + ")";
+    lab.append(chk, t);
+    const ev = document.createElement("label");
+    ev.className = "opcion-evaluacion";
+    const chkEv = document.createElement("input");
+    chkEv.type = "checkbox";
+    chkEv.className = "j-eval";
+    chkEv.dataset.curso = c.id;
+    chkEv.disabled = c.preguntas === 0;
+    const te = document.createElement("span");
+    te.textContent = c.preguntas === 0 ? "Sin preguntas" : "Pedir evaluación";
+    ev.append(chkEv, te);
+    fila.append(lab, ev);
+    cont.appendChild(fila);
+  });
+  el("j-nombre").value = "";
+  el("j-fecha").value = hoyISO();
+  el("j-desde").value = horaActual();
+  el("j-hasta").value = horaMas(6);
+  el("j-clave").value = "";
+  el("form-jornada").hidden = false;
+  el("form-jornada").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+el("btn-cancelar-jornada").addEventListener("click", function () { el("form-jornada").hidden = true; });
+
+el("form-jornada").addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  const elegidos = Array.from(document.querySelectorAll(".j-curso:checked")).map(function (c) { return c.value; });
+  if (elegidos.length < 2) return avisar("Elige al menos 2 capacitaciones para la jornada.", "error");
+  const r = rangoPresencial(el("j-fecha").value, el("j-desde").value, el("j-hasta").value);
+  if (r.error) return avisar(r.error, "error");
+  const clave = normalizarClave(el("j-clave").value);
+  if (clave && !claveValida(clave)) return avisar("La clave debe tener de 4 a 12 letras o números, sin espacios ni símbolos.", "error");
+
+  const botonGuardar = el("btn-guardar-jornada");
+  botonGuardar.disabled = true;
+
+  const jr = await nexusDb.from("cap_jornadas").insert(Object.assign({
+    empresa_id: emp.actual.id,
+    nombre: el("j-nombre").value.trim() || "Jornada de capacitación",
+    fecha: el("j-fecha").value,
+    valido_desde: r.desde,
+    valido_hasta: r.hasta
+  }, clave ? { codigo: clave } : {})).select().single();
+  if (jr.error) {
+    botonGuardar.disabled = false;
+    return errorSupabase(jr.error, "No se pudo crear la jornada.");
+  }
+
+  // Una capacitación presencial (con su clave) por cada programa elegido
+  const creadas = [];
+  let fallo = null;
+  for (const cursoId of elegidos) {
+    const conEval = document.querySelector('.j-eval[data-curso="' + cursoId + '"]').checked;
+    const conv = await nexusDb.from("cap_convocatorias").insert({
+      empresa_id: emp.actual.id, curso_id: cursoId, modalidad: "presencial",
+      evaluacion_presencial: conEval, fecha_capacitacion: el("j-fecha").value,
+      jornada_id: jr.data.id, observaciones: "Jornada " + jr.data.codigo
+    }).select().single();
+    if (conv.error) { fallo = conv.error; break; }
+    creadas.push(conv.data.id);
+    const acc = await nexusDb.from("cap_accesos").insert({
+      convocatoria_id: conv.data.id, tipo: "presencial", valido_desde: r.desde, valido_hasta: r.hasta
+    });
+    if (acc.error) { fallo = acc.error; break; }
+  }
+
+  if (fallo) {
+    // Deshacer todo lo creado (las claves se borran con su capacitación)
+    if (creadas.length) await nexusDb.from("cap_convocatorias").delete().in("id", creadas);
+    await nexusDb.from("cap_jornadas").delete().eq("id", jr.data.id);
+    botonGuardar.disabled = false;
+    return errorSupabase(fallo, "No se pudo crear la jornada. No se guardó nada.");
+  }
+
+  botonGuardar.disabled = false;
+  el("form-jornada").hidden = true;
+  avisar("Jornada creada con la clave " + jr.data.codigo + ". Descarga el cartel QR o copia el mensaje para la empresa.");
+  await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+});
 
 // ---------------------------------------------------------------------
 // Nueva capacitación

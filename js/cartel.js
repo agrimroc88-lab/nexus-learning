@@ -191,5 +191,69 @@ const NexusCartel = (function () {
     doc.save("QR_Programa_" + nombre + (d.clave ? "_" + d.clave : "") + ".pdf");
   }
 
-  return { generar: generar, generarPrograma: generarPrograma };
+  // -------------------------------------------------------------------
+  // Cartel de una JORNADA: un QR y una clave para varias capacitaciones
+  // del mismo día. Lista los programas incluidos.
+  // -------------------------------------------------------------------
+  function generarJornada(d) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const W = 210, CX = W / 2;
+
+    // --- Franja superior ---
+    color(doc, PINO, "relleno");
+    doc.rect(0, 0, W, 62, "F");
+    color(doc, SENAL, "relleno");
+    doc.circle(CX - 24, 16, 2.6, "F");
+    color(doc, SENAL, "borde");
+    doc.setLineWidth(1.1);
+    doc.circle(CX - 18, 16, 2.6, "S");
+    doc.line(CX - 21.4, 16, CX - 20.6, 16);
+    texto(doc, "Nexus Learning", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
+    texto(doc, String(d.empresa || "").toUpperCase(), CX, 31, { tam: 13, estilo: "bold", color: SENAL });
+    texto(doc, d.nombre || "Jornada de capacitación", CX, 44, { tam: 22, estilo: "bold", color: [255, 255, 255] });
+    const p = String(d.fecha || "").split("-");
+    const fecha = p.length === 3 ? new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+      .toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+    texto(doc, fecha, CX, 54, { tam: 12, color: [207, 224, 218] });
+
+    // --- Capacitaciones del día ---
+    texto(doc, "Capacitaciones de hoy", CX, 74, { tam: 13, estilo: "bold", color: PINO });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    color(doc, TINTA, "texto");
+    let y = 82;
+    (d.cursos || []).slice(0, 6).forEach(function (c, i) {
+      const linea = doc.splitTextToSize((i + 1) + ".  " + c, 160)[0];
+      doc.text(linea, CX, y, { align: "center" });
+      y += 6.5;
+    });
+
+    // --- QR ---
+    const lado = Math.min(92, 236 - y - 60);
+    const yQR = y + 8, xQR = CX - lado / 2;
+    texto(doc, "Escanea con la cámara de tu celular", CX, yQR - 1, { tam: 15, estilo: "bold", color: PINO });
+    color(doc, SENAL, "borde");
+    doc.setLineWidth(1.6);
+    doc.roundedRect(xQR - 6, yQR + 4, lado + 12, lado + 12, 5, 5, "S");
+    dibujarQR(doc, d.url, xQR, yQR + 10, lado);
+
+    // --- Código escrito ---
+    const yCod = yQR + lado + 26;
+    texto(doc, "¿No puedes escanear? Entra a la página e ingresa la clave:", CX, yCod, { tam: 11, color: GRIS });
+    texto(doc, d.sitio.replace(/^https?:\/\//, "").replace(/\/$/, ""), CX, yCod + 7, { tam: 11, estilo: "bold", color: PINO_CLARO });
+    texto(doc, d.codigo, CX, yCod + 22, { tam: 32, estilo: "bold", color: TINTA });
+
+    // --- Indicación ---
+    texto(doc, "Regístrate una sola vez y obtén un certificado por cada capacitación.", CX, 272, { tam: 11, color: TINTA });
+
+    // --- Validez ---
+    color(doc, PINO, "relleno");
+    doc.rect(0, 280, W, 17, "F");
+    texto(doc, "Válido hasta el " + fechaLarga(d.valido_hasta), CX, 290.5, { tam: 12, estilo: "bold", color: [255, 255, 255] });
+
+    doc.save("Cartel_Jornada_" + d.codigo + ".pdf");
+  }
+
+  return { generar: generar, generarPrograma: generarPrograma, generarJornada: generarJornada };
 })();

@@ -10,6 +10,7 @@
 const st = {
   codigo: normalizarCodigo(new URLSearchParams(location.search).get("codigo")),
   acceso: null,        // datos del código: empresa, curso, tipo, etc.
+  jornada: null,       // si la clave es de una jornada: sus capacitaciones del día
   persona: null,       // { cedula, nombres, correo }
   lecciones: [],
   vistas: new Set(),
@@ -37,6 +38,14 @@ const CLAVE_SESION = "nexus_" + st.codigo;
   }
   if (!data || !data.valido) {
     const motivo = (data && data.motivo) || "Ese código no es válido.";
+    // ¿Es la clave de una jornada (varias capacitaciones el mismo día)?
+    if (/^No encontramos/.test(motivo)) {
+      const j = await nexusDb.rpc("cap_jornada", { p_codigo: st.codigo });
+      if (!j.error && j.data) {
+        if (j.data.valido) return iniciarJornada(j.data);
+        return mostrarCodigoInvalido(j.data.motivo, false);
+      }
+    }
     mostrarCodigoInvalido(motivo, !/^No encontramos/.test(motivo));
     return;
   }
@@ -163,7 +172,8 @@ $("form-registro").addEventListener("submit", async function (ev) {
   if (!acepta) { $("e-acepta").textContent = "Debes aceptar el tratamiento de datos para continuar."; valido = false; }
   if (!valido) return;
 
-  await registrar(persona, false);
+  if (st.jornada) await registrarJornada(persona, false);
+  else await registrar(persona, false);
 });
 
 async function registrar(persona, silencioso) {
@@ -578,6 +588,7 @@ function mostrarReprobado(r) {
     otra.addEventListener("click", mostrarEvaluacion);
     acciones.appendChild(otra);
   }
+  agregarVolverJornada(acciones);
 
   cont.append(paso, titulo, detalle, acciones);
   mostrarVista("vista-resultado");
@@ -633,6 +644,7 @@ function mostrarCertificado(cert, yaEmitido) {
   verificar.href = "verificar.html?codigo=" + encodeURIComponent(cert.codigo);
   verificar.textContent = "Ver página de verificación";
   acciones.append(descargar, verificar);
+  agregarVolverJornada(acciones);
 
   cont.append(detalle, codigo, acciones);
   mostrarVista("vista-resultado");
@@ -652,6 +664,144 @@ function leerSesion() {
 }
 function borrarSesion() {
   try { sessionStorage.removeItem(CLAVE_SESION); } catch (e) { /* nada */ }
+}
+
+// ---------------------------------------------------------------------
+// JORNADA: una clave para varias capacitaciones de la empresa en el día.
+// La persona se registra una vez; se inscribe en cada capacitación con la
+// clave presencial de cada una (cada una conserva su nómina, sus
+// certificados y su registro de asistencia).
+// ---------------------------------------------------------------------
+const CLAVE_VOLVER_JORNADA = "nexus_jornada_volver";
+
+function iniciarJornada(j) {
+  st.jornada = j;
+  document.title = j.nombre + " · Nexus Learning";
+  $("curso-empresa").textContent = j.empresa;
+  $("curso-titulo").textContent = j.nombre;
+  const n = j.capacitaciones.length;
+  $("curso-datos").textContent = n + (n === 1 ? " capacitación" : " capacitaciones") + " · " + fechaJornada(j.fecha);
+  pintarPortada($("curso-portada"), j.nombre, null);
+  $("estado").hidden = true;
+  $("curso").hidden = false;
+
+  const guardado = leerSesion();
+  if (guardado && guardado.persona) return registrarJornada(guardado.persona, true);
+
+  $("registro-titulo").textContent = "Regístrate una sola vez";
+  $("registro-intro").textContent = "Con estos datos quedarás registrado en las " + n + " capacitaciones del día: " +
+    j.capacitaciones.map(function (c) { return c.curso; }).join(", ") + ". Escríbelos tal como deben aparecer en tus certificados.";
+  $("btn-registro").textContent = "Registrarme";
+  $("vista-registro").hidden = false;
+}
+
+async function registrarJornada(persona, silencioso) {
+  const boton = $("btn-registro");
+  boton.disabled = true;
+  boton.textContent = "Registrando…";
+
+  const resultados = [];
+  for (const c of st.jornada.capacitaciones) {
+    if (!c.codigo) { resultados.push({ cap: c, error: "Esta capacitación no tiene una clave activa. Avisa al facilitador." }); continue; }
+    const r = await nexusDb.rpc("cap_inscribir", {
+      p_codigo: c.codigo, p_cedula: persona.cedula, p_nombres: persona.nombres, p_correo: persona.correo,
+      p_acepta: true, p_sexo: persona.sexo || null, p_fecha_nacimiento: persona.nacimiento || null, p_etnia: persona.etnia || null
+    });
+    resultados.push({ cap: c, data: r.data, error: r.error ? (r.error.message || "No se pudo registrar.") : null });
+  }
+
+  boton.disabled = false;
+  boton.textContent = "Registrarme";
+
+  // Si ninguna funcionó, el problema está en los datos: mostrarlo en el formulario
+  if (resultados.every(function (r) { return r.error; })) {
+    if (silencioso) { borrarSesion(); return iniciarJornada(st.jornada); }
+    $("error-registro").textContent = resultados[0].error;
+    $("error-registro").hidden = false;
+    return;
+  }
+
+  // Recordar a la persona aquí y en cada capacitación (para rendir el test sin volver a escribir sus datos)
+  st.persona = persona;
+  guardarSesion();
+  try {
+    resultados.forEach(function (r) {
+      if (r.cap.codigo && !r.error) {
+        sessionStorage.setItem("nexus_" + normalizarCodigo(r.cap.codigo), JSON.stringify({ persona: persona, vistas: [] }));
+      }
+    });
+    sessionStorage.setItem(CLAVE_VOLVER_JORNADA, st.codigo);
+  } catch (e) { /* sin memoria disponible */ }
+
+  $("vista-registro").hidden = true;
+  pintarJornada(resultados, persona);
+}
+
+function pintarJornada(resultados, persona) {
+  $("jornada-saludo").textContent = "¡Listo, " + primerNombre(persona.nombres) + "! Tus capacitaciones de hoy";
+  const ol = $("lista-jornada");
+  ol.innerHTML = "";
+  resultados.forEach(function (r) {
+    const li = document.createElement("li");
+    li.className = "item-jornada";
+    const info = document.createElement("div");
+    const t = document.createElement("strong");
+    t.textContent = r.cap.curso;
+    const d = document.createElement("small");
+    d.textContent = formatearHoras(r.cap.horas) + (r.cap.requiere_evaluacion ? " · Con evaluación" : " · Certificado de asistencia");
+    info.append(t, d);
+
+    const accion = document.createElement("div");
+    accion.className = "accion-jornada";
+    const estado = document.createElement("span");
+    if (r.error) {
+      estado.className = "estado-jornada error";
+      estado.textContent = r.error;
+      accion.appendChild(estado);
+    } else if (r.data && r.data.estado === "certificado") {
+      estado.className = "estado-jornada ok";
+      estado.textContent = "Certificado listo";
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "boton boton-chico";
+      b.textContent = "Descargar";
+      b.addEventListener("click", function () {
+        try { NexusCertificado.generar(r.data.certificado); }
+        catch (e) { console.error(e); alert("No se pudo generar el PDF. Recarga la página e inténtalo de nuevo."); }
+      });
+      accion.append(estado, b);
+    } else {
+      estado.className = "estado-jornada pendiente";
+      estado.textContent = "Falta la evaluación";
+      const a = document.createElement("a");
+      a.className = "boton boton-chico";
+      a.href = "curso.html?codigo=" + encodeURIComponent(r.cap.codigo);
+      a.textContent = "Rendir evaluación";
+      accion.append(estado, a);
+    }
+    li.append(info, accion);
+    ol.appendChild(li);
+  });
+  $("vista-jornada").hidden = false;
+}
+
+// En una capacitación abierta desde la jornada: enlace para volver a la lista del día
+function agregarVolverJornada(contenedor) {
+  let volver = null;
+  try { volver = sessionStorage.getItem(CLAVE_VOLVER_JORNADA); } catch (e) { /* nada */ }
+  if (!volver || st.jornada || volver === st.codigo) return;
+  const a = document.createElement("a");
+  a.className = "boton secundario";
+  a.href = "curso.html?codigo=" + encodeURIComponent(volver);
+  a.textContent = "Volver a mis capacitaciones del día";
+  contenedor.appendChild(a);
+}
+
+function fechaJornada(iso) {
+  const p = String(iso || "").split("-");
+  if (p.length !== 3) return "";
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+    .toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
 }
 
 // ---------------------------------------------------------------------

@@ -11,8 +11,14 @@ function mostrarMensaje(texto, tipo) {
   mensajeLogin.hidden = false;
 }
 
-// Si llega desde "Iniciar sesión > Docente" en la página de inicio
-if (new URLSearchParams(location.search).get("papel") === "docente") {
+// Título según desde dónde llega (ventana "Iniciar sesión" de la página de inicio)
+const papelLogin = new URLSearchParams(location.search).get("papel");
+if (papelLogin === "admin") {
+  document.title = "Ingreso de administradores · Nexus Learning";
+  document.getElementById("login-titulo").textContent = "Ingreso de administradores";
+  document.getElementById("login-intro").textContent = "Entra con tu cédula (o correo) y tu contraseña. Si aún no tienes contraseña, entra una vez desde NEXUS y créala en Administradores → Mi contraseña.";
+}
+if (papelLogin === "docente") {
   document.title = "Ingreso de docentes · Nexus Learning";
   document.getElementById("login-titulo").textContent = "Ingreso de docentes";
   document.getElementById("login-intro").textContent = "Entra con tu cédula y la contraseña que te dio el administrador. Si trabajas en NEXUS, entra desde allí sin otra contraseña.";

@@ -17,6 +17,7 @@ let miCedula = "";
   $a("usuario-correo").textContent = nexusUsuarioVisible(usuario.email);
   const sufijo = "@" + NEXUS_CONFIG.dominioCedula;
   miCedula = usuario.email && usuario.email.endsWith(sufijo) ? usuario.email.slice(0, -sufijo.length) : "";
+  $a("k-usuario").textContent = "Usuario para entrar: " + (miCedula ? "tu cédula " + miCedula : usuario.email) + ".";
   $a("cargando").hidden = true;
   $a("panel").hidden = false;
   await cargar();
@@ -29,6 +30,7 @@ function avisar(texto, tipo) {
   a.textContent = texto;
   a.className = "aviso " + (tipo || "ok");
   a.hidden = false;
+  a.scrollIntoView({ behavior: "smooth", block: "nearest" });
   clearTimeout(avisar.t);
   avisar.t = setTimeout(function () { a.hidden = true; }, tipo === "error" ? 8000 : 3500);
 }
@@ -112,3 +114,25 @@ async function quitarAdmin(a) {
   avisar("Administrador quitado.");
   await cargar();
 }
+
+// ---------------------------------------------------------------------
+// Mi contraseña: la persona con sesión abierta crea o cambia la suya
+// ---------------------------------------------------------------------
+$a("form-clave").addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  const nueva = $a("k-nueva").value;
+  if (nueva.length < 8) return avisar("La contraseña debe tener al menos 8 caracteres.", "error");
+  if (nueva !== $a("k-repetir").value) return avisar("Las dos contraseñas no coinciden.", "error");
+
+  const boton = $a("btn-clave");
+  boton.disabled = true;
+  const { error } = await nexusDb.auth.updateUser({ password: nueva });
+  boton.disabled = false;
+  if (error) {
+    console.error(error);
+    return avisar("No se pudo guardar la contraseña. Detalle: " + (error.message || "error desconocido"), "error");
+  }
+  $a("k-nueva").value = "";
+  $a("k-repetir").value = "";
+  avisar("Contraseña guardada. Ya puedes entrar directamente con " + (miCedula ? "tu cédula" : "tu correo") + " y esta contraseña.");
+});

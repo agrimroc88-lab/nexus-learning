@@ -79,7 +79,7 @@ function errorSupabase(e, texto) {
 async function cargarCursos(seleccionarId) {
   const { data, error } = await nexusDb
     .from("cap_cursos")
-    .select("id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, creado_en")
+    .select("id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, preguntas_por_evaluacion, creado_en")
     .order("creado_en", { ascending: true });
   if (error) return errorSupabase(error, "No se pudieron cargar los cursos.");
 
@@ -198,6 +198,7 @@ function llenarFormularioCurso(c) {
   el("c-horas").value = c.horas;
   el("c-nota").value = c.nota_minima;
   el("c-publicado").checked = Boolean(c.publicado);
+  el("c-por-eval").value = c.preguntas_por_evaluacion || "";
   el("c-imagen").value = "";
   el("c-imagen-quitar").checked = false;
   el("c-imagen-quitar-caja").hidden = !c.imagen;
@@ -238,12 +239,16 @@ el("form-curso").addEventListener("submit", async function (ev) {
     subtemas: el("c-subtemas").value.split("\n").map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 30),
     horas: Number(el("c-horas").value),
     nota_minima: Number(el("c-nota").value),
-    publicado: el("c-publicado").checked
+    publicado: el("c-publicado").checked,
+    preguntas_por_evaluacion: el("c-por-eval").value ? parseInt(el("c-por-eval").value, 10) : null
   };
 
   if (datos.titulo.length < 5) return avisar("Escribe un título de al menos 5 caracteres.", "error");
   if (!(datos.horas > 0)) return avisar("Las horas deben ser mayores que 0.", "error");
   if (!(datos.nota_minima >= 1 && datos.nota_minima <= 100)) return avisar("La nota mínima debe estar entre 1 y 100.", "error");
+  if (datos.preguntas_por_evaluacion !== null && !(datos.preguntas_por_evaluacion >= 5 && datos.preguntas_por_evaluacion <= 8)) {
+    return avisar("Las preguntas por evaluación deben ser de 5 a 8 (o vacío para usar 8).", "error");
+  }
 
   const imagen = el("c-imagen").files[0] || null;
   if (imagen) {
@@ -542,8 +547,21 @@ function pintarPreguntas() {
   pintarItems(el("lista-preguntas"), adm.preguntas, function (q) {
     const ops = Array.isArray(q.opciones) ? q.opciones : [];
     return { titulo: q.enunciado, detalle: "Correcta: " + (ops[q.respuesta_correcta] || "sin definir") };
-  }, editarPregunta, eliminarPregunta, "Este curso aún no tiene preguntas. Agrega la primera con el formulario.");
+  }, editarPregunta, eliminarPregunta, "Este curso aún no tiene preguntas. Agrégalas con el formulario o con \"Cargar varias preguntas\".");
+  pintarResumenBanco();
   actualizarPestanas();
+}
+
+// "Banco: 20 preguntas · cada estudiante recibe 8 al azar (5 en jornadas)"
+function pintarResumenBanco() {
+  const n = adm.preguntas.length;
+  const k = (adm.curso && adm.curso.preguntas_por_evaluacion) || 8;
+  let texto = "Banco: " + n + (n === 1 ? " pregunta" : " preguntas") + " · ";
+  if (n === 0) texto += "agrega preguntas para poder pedir evaluación.";
+  else if (n <= 5) texto += "cada estudiante responde las " + n + ". Agrega más para que salgan al azar (recomendado: 15 o más).";
+  else if (n <= k) texto += "cada estudiante responde las " + n + " (en jornadas, 5 al azar). Agrega más para que varíen.";
+  else texto += "cada estudiante recibe " + k + " al azar en cada intento (en jornadas, 5).";
+  el("banco-resumen").textContent = texto;
 }
 
 function limpiarFormPregunta() {

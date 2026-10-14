@@ -123,6 +123,8 @@ el("btn-nueva-empresa").addEventListener("click", function () {
   el("empresa-nombre").textContent = "Nueva empresa";
   el("empresa-resumen").textContent = "";
   el("btn-editar-empresa").hidden = true;
+  el("btn-informe").hidden = true;
+  el("form-informe").hidden = true;
   llenarFormEmpresa({ nombre: "", ruc: "", contacto: "", correo: "", telefono: "", num_trabajadores: null, activa: true });
   el("form-empresa").hidden = false;
   el("form-conv").hidden = true;
@@ -138,6 +140,8 @@ async function seleccionarEmpresa(id) {
   mostrar("vista-empresa");
   pintarCabeceraEmpresa();
   el("btn-editar-empresa").hidden = false;
+  el("btn-informe").hidden = false;
+  el("form-informe").hidden = true;
   el("form-empresa").hidden = true;
   el("form-conv").hidden = true;
   el("form-jornada").hidden = true;
@@ -164,6 +168,36 @@ function mostrar(vista) {
   el("vista-empresa").hidden = vista !== "vista-empresa";
   el("vista-nomina").hidden = vista !== "vista-nomina";
 }
+
+// ---------------------------------------------------------------------
+// Informe PDF de la empresa (js/reporte-empresa.js)
+// ---------------------------------------------------------------------
+el("btn-informe").addEventListener("click", function () {
+  const f = el("form-informe");
+  f.hidden = !f.hidden;
+  if (!f.hidden) f.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+el("btn-cancelar-informe").addEventListener("click", function () { el("form-informe").hidden = true; });
+el("form-informe").addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  const desde = el("inf-desde").value, hasta = el("inf-hasta").value;
+  if (desde && hasta && desde > hasta) return avisar("La fecha \"Desde\" no puede ser posterior a \"Hasta\".", "error");
+  if (!window.jspdf) return avisar("No se pudo cargar el generador de PDF. Recarga la página.", "error");
+  const boton = el("btn-generar-informe");
+  boton.disabled = true;
+  boton.textContent = "Preparando informe…";
+  try {
+    const t = await NexusReporte.generar(emp.actual, { desde: desde, hasta: hasta, sitio: BASE_SITIO });
+    avisar("Informe descargado: " + t.capacitaciones + (t.capacitaciones === 1 ? " capacitación" : " capacitaciones") +
+      ", " + t.personas + (t.personas === 1 ? " persona capacitada." : " personas capacitadas."));
+    el("form-informe").hidden = true;
+  } catch (e) {
+    errorSupabase(e, "No se pudo generar el informe.");
+  } finally {
+    boton.disabled = false;
+    boton.textContent = "Descargar informe";
+  }
+});
 
 el("btn-editar-empresa").addEventListener("click", function () {
   llenarFormEmpresa(emp.actual);

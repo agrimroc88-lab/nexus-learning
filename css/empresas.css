@@ -107,3 +107,25 @@
   .empresa-cabecera { flex-direction: column; }
   .nomina-herramientas { flex-direction: column; }
 }
+
+/* ---------- Jornadas (varias capacitaciones el mismo día) ---------- */
+#bloque-jornadas { margin-bottom: 8px; }
+.ayuda-seccion { margin: -6px 0 16px; }
+#form-jornada { margin-bottom: 20px; }
+.grupo-cursos-jornada { border: 0; margin: 18px 0 0; padding: 0; }
+.curso-jornada {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 16px;
+  padding: 10px 12px; margin-bottom: 6px;
+  border: 2px solid var(--niebla); border-radius: 10px; background: var(--blanco);
+}
+.curso-jornada:has(.j-curso:checked) { border-color: var(--pino); background: #EEF4F1; }
+.opcion-curso, .opcion-evaluacion { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.opcion-curso { font-weight: 600; }
+.opcion-evaluacion { font-size: 14px; color: var(--gris); }
+.opcion-curso input, .opcion-evaluacion input { width: 18px; height: 18px; accent-color: var(--pino); }
+.opcion-evaluacion:has(input:disabled) { opacity: 0.55; cursor: not-allowed; }
+.conv-jornada { border-color: color-mix(in srgb, var(--senal) 60%, var(--niebla)); background: color-mix(in srgb, var(--senal) 5%, var(--blanco)); }
+.temas-jornada { margin: 12px 0 4px; padding-left: 20px; color: var(--tinta); }
+.temas-jornada li { margin-bottom: 2px; }
+.conv-jornada .ayuda { margin-top: 10px; font-size: 13px; }
+

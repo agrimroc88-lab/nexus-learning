@@ -147,6 +147,7 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   border: 2px solid var(--pino);
 }
 .boton:disabled { opacity: 0.55; cursor: not-allowed; }
+.boton-chico { min-height: 38px; padding: 0 16px; font-size: 14px; }
 
 .campo {
   width: 100%;

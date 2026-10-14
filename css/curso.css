@@ -224,6 +224,20 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
 .opcion:has(input:checked) { border-color: var(--pino); background: #EEF4F1; }
 .pregunta.sin-responder .opcion { border-color: #E9B8AD; }
 
+/* ---------- Jornada (varias capacitaciones con una sola clave) ---------- */
+.lista-jornada { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 10px; }
+.item-jornada {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 18px; border: 2px solid var(--niebla); border-radius: 12px;
+}
+.item-jornada strong { display: block; font-size: 17px; color: var(--tinta); }
+.item-jornada small { color: var(--gris); font-size: 14px; }
+.accion-jornada { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.estado-jornada { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
+.estado-jornada.ok { background: #DDF0E5; color: var(--ok); }
+.estado-jornada.pendiente { background: color-mix(in srgb, var(--senal) 22%, transparent); color: #7A5A06; }
+.estado-jornada.error { background: #F8E1DB; color: var(--error); font-weight: 600; }
+
 /* ---------- Resultado ---------- */
 .resultado-nota {
   font-family: var(--fuente-titulo);

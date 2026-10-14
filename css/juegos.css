@@ -190,6 +190,73 @@
 }
 .paso-juego:hover { border-style: solid; background: var(--papel); }
 
+/* ---------- 4. Caza de riesgos ---------- */
+.foto-riesgos {
+  position: relative;
+  container-type: inline-size;   /* los círculos se miden en % del ancho de la foto (cqw) */
+  border-radius: var(--radio);
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: manipulation;
+  user-select: none;
+  line-height: 0;
+}
+.foto-riesgos img { display: block; width: 100%; height: auto; }
+.marca-riesgo {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  min-height: 26px;
+  border: 3px solid var(--ok);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ok) 18%, transparent);
+  color: var(--blanco);
+  font: 700 14px/1 var(--fuente-texto);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: marca-entra 0.25s ease-out;
+}
+.marca-riesgo.pendiente { border-color: var(--error); background: color-mix(in srgb, var(--error) 22%, transparent); border-style: dashed; }
+.marca-fallo {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: var(--error);
+  font: 700 30px/1 var(--fuente-texto);
+  text-shadow: 0 0 4px #FFFFFF;
+  pointer-events: none;
+  animation: fallo-sale 0.9s ease-out forwards;
+}
+@keyframes marca-entra { from { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } }
+@keyframes fallo-sale { to { opacity: 0; transform: translate(-50%, -70%); } }
+.retro-riesgo { margin-top: 12px; padding: 12px 16px; border-radius: var(--radio); background: #E4F2EA; border-left: 5px solid var(--ok); }
+.retro-riesgo p { margin: 4px 0 0; }
+.lista-riesgos { text-align: left; padding-left: 24px; margin: 12px 0; }
+.lista-riesgos li { margin-bottom: 6px; }
+.lista-riesgos li.bien strong { color: var(--ok); }
+.lista-riesgos li.mal strong { color: var(--error); }
+
+/* ---------- 5. ¿Qué harías? ---------- */
+.pregunta-escenario { margin: 12px 0 8px; }
+.opciones-escenario { display: grid; gap: 10px; }
+.opcion-escenario { text-align: left; font-weight: 600; font-size: 15px; line-height: 1.4; }
+
+/* Editor de "Caza de riesgos" */
+.editor-riesgos .foto-riesgos { margin-top: 10px; border: 2px dashed var(--pino-claro); }
+.editor-riesgos .marca-riesgo { border-color: var(--senal); background: color-mix(in srgb, var(--senal) 25%, transparent); }
+.lista-peligros { margin: 12px 0 0; padding-left: 0; list-style: none; display: grid; gap: 10px; }
+.peligro-editor { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 8px 10px; padding: 12px; border-radius: var(--radio); background: var(--blanco); border: 1px solid var(--niebla); }
+.peligro-editor .item-num { width: 28px; height: 28px; background: var(--senal); color: var(--pino); }
+.peligro-editor .campos { display: grid; gap: 8px; }
+.peligro-editor .campo { margin: 0; }
+.peligro-fila { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+.escenario-editor { margin-bottom: 14px; padding: 12px; border-radius: var(--radio); background: var(--blanco); border: 1px solid var(--niebla); display: grid; gap: 8px; }
+.escenario-editor .campo { margin: 0; }
+.opcion-escenario-editor { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.opcion-escenario-editor input[type="radio"] { width: 20px; height: 20px; accent-color: var(--ok); }
+.opcion-escenario-editor .t-exp { grid-column: 2; }
+
 /* ---------- Biblioteca de juegos (juegos.html, administradores) ---------- */
 .pagina-juegos .item .enlace-boton { font-size: 15px; }
 .pagina-juegos .fila-botones { align-items: center; }

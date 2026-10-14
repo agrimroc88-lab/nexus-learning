@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nexus Learning · Capacitación laboral certificada</title>
-  <meta name="description" content="Cursos de capacitación laboral con evaluación y certificado verificable.">
+  <meta name="description" content="Capacitación laboral en Seguridad y Salud Ocupacional con evaluación y certificado verificable. Parte del ecosistema NEXUS de VitalWork S.A.S.">
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,8 +27,10 @@
         </svg>
         Nexus Learning
       </a>
-      <nav>
-        <a href="verificar.html">Verificar certificado</a>
+      <nav class="nav-publica" aria-label="Principal">
+        <a href="#cursos">Cursos</a>
+        <a href="verificar.html" class="nav-extra">Verificar certificado</a>
+        <a data-nexus="" href="#" class="enlace-nexus" title="Gestión de Seguridad y Salud Ocupacional">NEXUS SST</a>
       </nav>
     </div>
   </header>
@@ -68,8 +70,47 @@
     </div>
   </section>
 
+  <main>
+  <!-- ===== Catálogo de programas ===== -->
+  <section class="seccion" id="cursos" aria-labelledby="cursos-titulo">
+    <div class="contenedor">
+      <h2 id="cursos-titulo">Programas de capacitación</h2>
+      <p class="intro">Cada programa se dicta para una empresa en modalidad presencial, virtual o mixta. Al terminar, cada participante recibe un certificado con código verificable.</p>
+      <p class="aviso" id="cursos-estado" role="status">Cargando programas…</p>
+      <ul class="cursos" id="lista-cursos" hidden></ul>
+    </div>
+  </section>
+
+  <!-- ===== Ecosistema NEXUS ===== -->
+  <section class="seccion" aria-labelledby="eco-titulo">
+    <div class="contenedor">
+      <div class="ecosistema">
+        <div class="eco-texto">
+          <p class="eco-etiqueta">Ecosistema NEXUS · VitalWork S.A.S.</p>
+          <h2 id="eco-titulo">La capacitación, conectada con la gestión de Seguridad y Salud</h2>
+          <p>NEXUS es la plataforma de Seguridad y Salud Ocupacional de VitalWork. Las capacitaciones que se dictan en Nexus Learning se registran en el cumplimiento de cada empresa, con su nómina, asistencia y certificados, conforme al Acuerdo Ministerial MDT-2024-196.</p>
+          <a class="boton" data-nexus="" href="#">Ingresar a NEXUS</a>
+        </div>
+        <ul class="eco-lista">
+          <li>
+            <strong>Seguridad industrial</strong>
+            <span>Cumplimiento del Anexo 1 en seguridad, emergencias y registro de eventos SST.</span>
+          </li>
+          <li>
+            <strong>Salud ocupacional</strong>
+            <span>Atenciones médicas, evaluaciones periódicas, psicología, trabajo social y certificados médicos.</span>
+          </li>
+          <li>
+            <strong>Capacitación con evidencia</strong>
+            <span>Avance por empresa: quién se capacitó, quién falta y registro de asistencia listo para auditoría.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Verificación de certificados ===== -->
-  <main class="seccion">
+  <section class="seccion">
     <div class="contenedor">
       <div class="verificar-caja">
         <div>
@@ -83,13 +124,18 @@
         </form>
       </div>
     </div>
+  </section>
   </main>
 
   <!-- ===== Pie ===== -->
   <footer class="pie">
     <div class="contenedor">
-      <span>Nexus Learning, de VitalWork S.A.S.</span>
-      <a href="verificar.html">Verificar un certificado</a>
+      <span>Nexus Learning y NEXUS son plataformas de VitalWork S.A.S.</span>
+      <span class="pie-enlaces">
+        <a href="verificar.html">Verificar un certificado</a>
+        <a data-nexus="" href="#">NEXUS · Seguridad y Salud Ocupacional</a>
+        <a href="login.html">Equipo de capacitación</a>
+      </span>
     </div>
   </footer>
 

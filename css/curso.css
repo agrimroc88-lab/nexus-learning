@@ -33,7 +33,7 @@
   margin: 0 0 12px;
   padding: 4px 12px;
   border-radius: 99px;
-  background: rgba(242, 193, 78, 0.16);
+  background: color-mix(in srgb, var(--senal) 16%, transparent);
   color: var(--senal) !important;
   font-size: 14px;
   font-weight: 700;

@@ -1,7 +1,8 @@
 /* =====================================================================
    NEXUS LEARNING · ESTILOS DE ADMINISTRACIÓN
    Carpeta: css/admin.css
-   Lo usan login.html, entrar.html, admin.html, empresas.html y administradores.html.
+   Lo usan login.html, entrar.html y las páginas del panel (admin, empresas,
+   administradores y apariencia).
    Requiere cargar antes css/estilos.css.
    ===================================================================== */
 
@@ -29,7 +30,9 @@
 .nota-login { margin: 20px 0 0; font-size: 14px; color: var(--gris); }
 
 /* ---------- Barra del panel ---------- */
-.nav-admin { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.nav-admin { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.nav-admin a { white-space: nowrap; }
+@media (max-width: 1300px) { .nav-admin .usuario { display: none; } }
 .nav-admin a[aria-current="page"] { opacity: 1; font-weight: 700; text-decoration: underline; text-underline-offset: 6px; }
 .usuario { font-size: 14px; color: #A9C6BD; }
 .enlace-boton {
@@ -101,6 +104,61 @@
 .pagina-simple .editor > .aviso { margin: 16px 0; }
 .pagina-simple .ayuda { margin-bottom: 20px; }
 .pagina-simple .etiqueta { margin-top: 14px; }
+
+/* ---------- Apariencia (apariencia.html) ---------- */
+.pagina-apariencia { max-width: 900px; padding-top: 32px; }
+.pagina-apariencia .editor > .aviso { margin: 12px 0; }
+.grupo-apariencia { margin: 28px 0 0; padding: 24px 0 0; border: 0; border-top: 1px solid var(--niebla); }
+.grupo-apariencia legend { padding: 0 12px 0 0; font-family: var(--fuente-titulo); font-size: 20px; font-weight: 700; color: var(--pino); }
+.grupo-apariencia .etiqueta { margin-top: 14px; }
+.grupo-apariencia > .aviso { margin-top: 14px; }
+.grupo-apariencia > .enlace-boton { margin-top: 12px; color: var(--pino-claro); }
+.fila-colores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.color-campo { display: grid; align-content: start; gap: 6px; cursor: pointer; }
+.color-campo .etiqueta { margin: 0; }
+.color-campo .ayuda { margin: 0; font-size: 13px; }
+.color-fila { display: flex; align-items: center; gap: 10px; }
+.color-fila input[type="color"] {
+  width: 56px; height: 44px; padding: 2px;
+  border: 2px solid var(--niebla); border-radius: 8px; background: var(--blanco); cursor: pointer;
+}
+.color-fila code { font-size: 15px; font-weight: 600; color: var(--tinta); }
+
+/* Vista previa en miniatura del sitio público */
+.vista-previa {
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--niebla);
+  box-shadow: var(--sombra);
+  font-size: 13px;
+}
+.vp-barra {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: var(--vp-noche); color: #FFFFFF;
+}
+.vp-barra strong { font-family: var(--fuente-titulo); font-size: 14px; }
+.vp-logo { width: 14px; height: 14px; border-radius: 50%; background: var(--vp-acento); }
+.vp-barra .vp-boton { margin-left: auto; }
+.vp-boton {
+  display: inline-block; justify-self: start;
+  padding: 5px 14px; border-radius: 99px;
+  background: var(--vp-acento); color: var(--vp-principal);
+  font-weight: 700;
+}
+.vp-banner {
+  display: grid; gap: 6px;
+  padding: 26px 20px;
+  background: linear-gradient(120deg, var(--vp-principal), var(--vp-claro));
+  background-size: cover; background-position: center;
+  color: #CFE0DA;
+}
+.vp-banner small { color: var(--vp-acento); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+.vp-banner b { color: #FFFFFF; font-family: var(--fuente-titulo); font-size: 22px; line-height: 1.15; max-width: 22ch; }
+.vp-banner span:not(.vp-boton) { max-width: 46ch; }
+.vp-zona { display: grid; gap: 8px; padding: 14px 20px; background: var(--vp-fondo); }
+.vp-zona span { height: 22px; border-radius: 6px; background: #FFFFFF; }
 
 /* ---------- Editor ---------- */
 .editor {
@@ -223,6 +281,7 @@
   .editor { padding: 20px; }
   .fila-dos, .fila-tres, #form-curso .fila-dos { grid-template-columns: 1fr; }
   .bloque-portada { grid-template-columns: 1fr; }
+  .fila-colores { grid-template-columns: 1fr; }
   .item-info { flex-basis: calc(100% - 50px); }
   .item .enlace-boton:first-of-type { margin-left: 46px; }
   .nav-admin .usuario { display: none; }

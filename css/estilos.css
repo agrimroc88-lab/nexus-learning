@@ -17,6 +17,8 @@
   --error: #B3402A;
   --pino-noche: #0B2C2D;  /* barra superior */
   --zona: #E8ECE9;        /* fondo del área de cursos */
+  /* Estos colores los puede cambiar el administrador en "Apariencia"
+     (se guardan en Supabase y js/config.js los aplica al cargar). */
   --sombra: 0 1px 2px rgba(15, 61, 62, 0.06), 0 4px 14px rgba(15, 61, 62, 0.06);
 
   --fuente-titulo: "Bricolage Grotesque", "Segoe UI", Arial, sans-serif;
@@ -84,6 +86,9 @@ h1, h2, h3 {
   font-size: 20px;
 }
 .marca svg { flex: none; }
+/* Logotipo e íconos: toman el color de acento elegido en "Apariencia" */
+svg [fill="#F2C14E"] { fill: var(--senal); }
+svg [stroke="#F2C14E"] { stroke: var(--senal); }
 .barra nav a {
   color: var(--blanco);
   text-decoration: none;
@@ -111,7 +116,7 @@ h1, h2, h3 {
 /* Enlace al ecosistema NEXUS (barra de todas las páginas) */
 .barra .enlace-nexus {
   padding: 4px 12px;
-  border: 1px solid rgba(242, 193, 78, 0.6);
+  border: 1px solid color-mix(in srgb, var(--senal) 60%, transparent);
   border-radius: 99px;
   color: var(--senal);
   opacity: 1;
@@ -278,9 +283,9 @@ h1, h2, h3 {
   padding: 64px 0 56px;
   color: var(--blanco);
   background:
-    radial-gradient(circle at 85% 20%, rgba(242, 193, 78, 0.18) 0, transparent 38%),
-    radial-gradient(circle at 70% 110%, rgba(28, 92, 93, 0.9) 0, transparent 55%),
-    linear-gradient(120deg, var(--pino) 0%, #134849 55%, #1C5C5D 100%);
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--senal) 18%, transparent) 0, transparent 38%),
+    radial-gradient(circle at 70% 110%, color-mix(in srgb, var(--pino-claro) 90%, transparent) 0, transparent 55%),
+    linear-gradient(120deg, var(--pino) 0%, color-mix(in srgb, var(--pino), var(--pino-claro)) 55%, var(--pino-claro) 100%);
   overflow: hidden;
 }
 .banner::after {
@@ -292,14 +297,14 @@ h1, h2, h3 {
   width: 420px;
   height: 420px;
   transform: translateY(-50%);
-  border: 42px solid rgba(242, 193, 78, 0.07);
+  border: 42px solid color-mix(in srgb, var(--senal) 7%, transparent);
   border-radius: 50%;
-  box-shadow: -230px 0 0 -42px rgba(242, 193, 78, 0.05);
+  box-shadow: -230px 0 0 -42px color-mix(in srgb, var(--senal) 5%, transparent);
   pointer-events: none;
 }
 .banner.con-foto {
   background:
-    linear-gradient(90deg, rgba(11, 44, 45, 0.92) 0%, rgba(11, 44, 45, 0.7) 50%, rgba(11, 44, 45, 0.25) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--pino-noche) 92%, transparent) 0%, color-mix(in srgb, var(--pino-noche) 70%, transparent) 50%, color-mix(in srgb, var(--pino-noche) 25%, transparent) 100%),
     var(--foto-banner) center / cover no-repeat;
 }
 .banner.con-foto::after { display: none; }
@@ -480,7 +485,7 @@ h1, h2, h3 {
   content: "";
   position: absolute;
   border-radius: 50%;
-  border: 10px solid rgba(242, 193, 78, 0.22);
+  border: 10px solid color-mix(in srgb, var(--senal) 22%, transparent);
 }
 .portada:not(:has(img))::before { width: 140px; height: 140px; right: -40px; bottom: -50px; }
 .portada:not(:has(img))::after { width: 70px; height: 70px; left: -20px; top: -24px; border-width: 8px; }

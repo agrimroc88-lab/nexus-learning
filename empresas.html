@@ -119,6 +119,49 @@
           </div>
         </form>
 
+        <!-- Jornadas: varias capacitaciones el mismo día con una sola clave -->
+        <div id="bloque-jornadas">
+          <div class="seccion-cabecera">
+            <h2>Jornadas</h2>
+            <button type="button" class="boton boton-chico" id="btn-nueva-jornada">Nueva jornada</button>
+          </div>
+          <p class="ayuda ayuda-seccion">Para dar 2 o más capacitaciones el mismo día: una sola clave y un solo QR. Cada trabajador se registra una vez y obtiene un certificado por capacitación. Cada capacitación conserva su nómina y su registro de asistencia.</p>
+
+          <form id="form-jornada" class="formulario-item" novalidate hidden>
+            <h3>Nueva jornada</h3>
+            <label class="etiqueta" for="j-nombre">Nombre (opcional)</label>
+            <input class="campo" id="j-nombre" maxlength="100" placeholder="Jornada de capacitación">
+            <div class="fila-tres">
+              <div>
+                <label class="etiqueta" for="j-fecha">Fecha</label>
+                <input class="campo" id="j-fecha" type="date">
+              </div>
+              <div>
+                <label class="etiqueta" for="j-desde">Clave válida desde</label>
+                <input class="campo" id="j-desde" type="time">
+              </div>
+              <div>
+                <label class="etiqueta" for="j-hasta">Clave válida hasta</label>
+                <input class="campo" id="j-hasta" type="time">
+              </div>
+            </div>
+            <fieldset class="grupo-cursos-jornada">
+              <legend class="etiqueta">Capacitaciones del día (elige 2 o más)</legend>
+              <div id="j-cursos"></div>
+            </fieldset>
+            <label class="etiqueta" for="j-clave">Clave de la jornada</label>
+            <div class="fila-clave">
+              <input class="campo campo-clave" id="j-clave" maxlength="12" placeholder="Vacío = se genera sola" autocomplete="off" spellcheck="false">
+              <button type="button" class="boton secundario boton-chico" data-sugerir="j-clave">Sugerir</button>
+            </div>
+            <div class="acciones-form">
+              <button type="button" class="boton secundario" id="btn-cancelar-jornada">Cancelar</button>
+              <button type="submit" class="boton" id="btn-guardar-jornada">Crear jornada y clave</button>
+            </div>
+          </form>
+          <div id="lista-jornadas"></div>
+        </div>
+
         <!-- Capacitaciones de la empresa -->
         <div class="seccion-cabecera">
           <h2>Capacitaciones</h2>

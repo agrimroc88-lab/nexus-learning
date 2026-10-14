@@ -82,11 +82,29 @@ ventana.addEventListener("click", function (ev) { if (ev.target === ventana) ven
 // =====================================================================
 const catalogo = { cursos: [], filtro: "todos" };
 
-// Foto del banner (opcional, ver config.js)
-if (NEXUS_CONFIG.imagenPortada) {
-  document.getElementById("banner").style.setProperty("--foto-banner", "url(\"" + NEXUS_CONFIG.imagenPortada + "\")");
-  document.getElementById("banner").classList.add("con-foto");
+// Banner: foto y textos definidos por el administrador en "Apariencia".
+// Campo vacío = se queda el texto original escrito en index.html.
+const BANNER_ORIGINAL = {
+  etiqueta: document.getElementById("banner-etiqueta").textContent,
+  titulo: document.getElementById("banner-titulo").textContent,
+  texto: document.getElementById("banner-texto").textContent
+};
+function pintarBanner(ap) {
+  if (!ap) return;
+  document.getElementById("banner-etiqueta").textContent = ap.banner_etiqueta || BANNER_ORIGINAL.etiqueta;
+  document.getElementById("banner-titulo").textContent = ap.banner_titulo || BANNER_ORIGINAL.titulo;
+  document.getElementById("banner-texto").textContent = ap.banner_texto || BANNER_ORIGINAL.texto;
+  const banner = document.getElementById("banner");
+  if (ap.banner_imagen) {
+    const url = nexusDb.storage.from("portadas").getPublicUrl(ap.banner_imagen).data.publicUrl;
+    banner.style.setProperty("--foto-banner", "url(\"" + url + "\")");
+    banner.classList.add("con-foto");
+  } else {
+    banner.classList.remove("con-foto");
+  }
 }
+pintarBanner(aparienciaGuardada());
+document.addEventListener("nexus:apariencia", function (ev) { pintarBanner(ev.detail); });
 
 (async function cargarCatalogo() {
   const estado = document.getElementById("cursos-estado");

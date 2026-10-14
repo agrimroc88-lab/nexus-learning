@@ -17,10 +17,7 @@ const NEXUS_CONFIG = {
   dominioCedula: "nexuslearning.local",
   // Ecosistema: dirección de NEXUS (Seguridad y Salud Ocupacional).
   // Si cambia el dominio, se cambia solo aquí.
-  nexusUrl: "https://agrimroc88-lab.github.io/Nexus/",
-  // Foto del encabezado de la página de inicio (opcional).
-  // Ejemplo: "img/portada.jpg". Vacío = fondo de color de la marca.
-  imagenPortada: ""
+  nexusUrl: "https://agrimroc88-lab.github.io/Nexus/"
 };
 
 // Llena todos los enlaces marcados con data-nexus="ruta" con la dirección de NEXUS
@@ -79,3 +76,55 @@ if (!window.supabase) {
   console.error("Nexus Learning: falta cargar la librería de Supabase antes de config.js");
 }
 const nexusDb = window.supabase.createClient(NEXUS_CONFIG.supabaseUrl, NEXUS_CONFIG.supabaseKey);
+
+// =====================================================================
+// APARIENCIA (colores, foto y textos del banner)
+// La define el administrador en apariencia.html y se guarda en Supabase
+// (tabla cap_apariencia). Se recuerda en el navegador para aplicarla al
+// instante en la siguiente visita, y luego se actualiza desde la base.
+// =====================================================================
+const NEXUS_APARIENCIA_MEMORIA = "nexus_apariencia";
+
+// Mezcla dos colores #RRGGBB (p = cuánto del segundo, de 0 a 1)
+function nexusMezclar(c1, c2, p) {
+  const a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);
+  const canal = function (desp) {
+    const x = (a >> desp) & 255, y = (b >> desp) & 255;
+    return Math.round(x + (y - x) * p);
+  };
+  return "#" + [16, 8, 0].map(function (d) { return canal(d).toString(16).padStart(2, "0"); }).join("");
+}
+
+function aplicarApariencia(ap) {
+  if (!ap) return;
+  const raiz = document.documentElement.style;
+  const hex = /^#[0-9A-Fa-f]{6}$/;
+  // Vacío = se quita el ajuste y vuelve el color original de estilos.css
+  if (hex.test(ap.color_principal || "")) {
+    raiz.setProperty("--pino", ap.color_principal);
+    raiz.setProperty("--pino-claro", nexusMezclar(ap.color_principal, "#FFFFFF", 0.18));
+    raiz.setProperty("--pino-noche", nexusMezclar(ap.color_principal, "#000000", 0.28));
+  } else {
+    ["--pino", "--pino-claro", "--pino-noche"].forEach(function (v) { raiz.removeProperty(v); });
+  }
+  if (hex.test(ap.color_acento || "")) raiz.setProperty("--senal", ap.color_acento);
+  else raiz.removeProperty("--senal");
+  if (hex.test(ap.color_fondo || "")) raiz.setProperty("--zona", ap.color_fondo);
+  else raiz.removeProperty("--zona");
+}
+
+// 1. Lo recordado: sin esperar a la base (evita el parpadeo de colores)
+try { aplicarApariencia(JSON.parse(localStorage.getItem(NEXUS_APARIENCIA_MEMORIA))); } catch (e) { /* sin memoria */ }
+
+// 2. Lo vigente en la base. Avisa a la página con el evento "nexus:apariencia".
+nexusDb.from("cap_apariencia").select("*").eq("id", 1).maybeSingle().then(function (r) {
+  if (r.error || !r.data) return;
+  aplicarApariencia(r.data);
+  try { localStorage.setItem(NEXUS_APARIENCIA_MEMORIA, JSON.stringify(r.data)); } catch (e) { /* sin memoria */ }
+  document.dispatchEvent(new CustomEvent("nexus:apariencia", { detail: r.data }));
+});
+
+// Lo último conocido (para las páginas que lo necesitan al cargar)
+function aparienciaGuardada() {
+  try { return JSON.parse(localStorage.getItem(NEXUS_APARIENCIA_MEMORIA)); } catch (e) { return null; }
+}

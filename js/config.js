@@ -17,7 +17,12 @@ const NEXUS_CONFIG = {
   dominioCedula: "nexuslearning.local",
   // Ecosistema: dirección de NEXUS (Seguridad y Salud Ocupacional).
   // Si cambia el dominio, se cambia solo aquí.
-  nexusUrl: "https://agrimroc88-lab.github.io/Nexus/"
+  nexusUrl: "https://agrimroc88-lab.github.io/Nexus/",
+  // Base de datos de NEXUS: permite entrar aquí con la cédula y la
+  // contraseña de NEXUS (se validan en NEXUS; aquí no se guardan).
+  // Clave pública (anon) por diseño, la misma que usa NEXUS en js/supabase.js.
+  nexusSupabaseUrl: "https://ydqwkxpkjwydxownwapv.supabase.co",
+  nexusSupabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcXdreHBrand5ZHhvd253YXB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMzY4ODQsImV4cCI6MjA5OTgxMjg4NH0.QWuQaipGukrMipJ1Z3TmP3t66ggsHzb1Fe-QROJiXrw"
 };
 
 // Llena todos los enlaces marcados con data-nexus="ruta" con la dirección de NEXUS

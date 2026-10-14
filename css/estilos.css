@@ -305,11 +305,11 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   box-shadow: -230px 0 0 -42px color-mix(in srgb, var(--senal) 5%, transparent);
   pointer-events: none;
 }
-/* Con foto: la imagen completa, sin textos encima ni recortes */
+/* Con foto: franja panorámica, sin textos encima */
 .banner.con-foto {
   width: 100%;
   height: auto;
-  aspect-ratio: 8 / 3;   /* inicio.js lo cambia a la proporción real de la foto: se ve completa */
+  aspect-ratio: 16 / 5;  /* franja fina: de una foto 1600 × 600 recorta un poco arriba y abajo */
   background: var(--pino-noche) var(--foto-banner) center / cover no-repeat;
 }
 .banner.con-foto::after { display: none; }

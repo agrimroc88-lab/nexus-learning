@@ -349,7 +349,8 @@ function filaAcceso(a, c) {
   botones.className = "acceso-botones";
   if (est.clase === "vigente" || est.clase === "programado") {
     botones.appendChild(boton("Cartel QR con clave", "enlace-boton", function () { descargarCartel(a, c); }));
-    botones.appendChild(boton("Copiar enlace", "enlace-boton", function () { copiar(enlaceAcceso(a.codigo), "Enlace copiado."); }));
+    botones.appendChild(boton("Copiar enlace", "enlace-boton", function () { copiar(enlacePrograma(c), "Enlace permanente del programa copiado (el mismo del QR). La clave se envía aparte."); }));
+    botones.appendChild(boton("Enviar por WhatsApp", "enlace-boton", function () { enviarWhatsApp(mensajeAcceso(a, c)); }));
     botones.appendChild(boton("Copiar mensaje", "enlace-boton", function () { copiar(mensajeAcceso(a, c), "Mensaje copiado. Pégalo en WhatsApp o en un correo para la empresa."); }));
   }
   if (est.clase !== "anulado") {
@@ -434,27 +435,30 @@ function boton(texto, clase, accion) {
   return b;
 }
 
-function enlaceAcceso(codigo) {
-  return BASE_SITIO + "curso.html?codigo=" + encodeURIComponent(codigo);
-}
-
 function enlacePrograma(c) {
   return BASE_SITIO + "programa.html?p=" + encodeURIComponent(c.cap_cursos.id);
 }
 
+// Mensaje para WhatsApp o correo. El enlace es el PERMANENTE del programa
+// (el mismo del QR: nunca cambia); lo que cambia en cada capacitación es la clave.
 function mensajeAcceso(a, c) {
   const curso = c.cap_cursos.titulo;
   const intro = a.tipo === "virtual"
-    ? "Capacitación virtual: \"" + curso + "\"."
-    : "Certificado de la capacitación \"" + curso + "\".";
+    ? "*Capacitación virtual: " + curso + "*"
+    : "*Capacitación: " + curso + "*";
   const cierre = a.tipo === "virtual"
     ? "Revisa las lecciones, aprueba la evaluación y descarga tu certificado."
     : "Escribe tus datos y descarga tu certificado.";
-  return intro + "\n" +
-    "Escanea el código QR del programa o ingresa a " + enlacePrograma(c) + "\n" +
-    "Clave de acceso: " + a.codigo + "\n" +
-    "Válida hasta el " + fechaHora(a.valido_hasta) + "\n" +
+  return intro + "\n" + emp.actual.nombre + "\n\n" +
+    "1. Toca este enlace para ingresar:\n" + enlacePrograma(c) + "\n\n" +
+    "2. Escribe la clave de acceso: *" + a.codigo + "*\n" +
+    "(válida hasta el " + fechaHora(a.valido_hasta) + ")\n\n" +
     cierre;
+}
+
+// Abre WhatsApp (en el celular o en WhatsApp Web) con el mensaje ya escrito
+function enviarWhatsApp(texto) {
+  window.open("https://wa.me/?text=" + encodeURIComponent(texto), "_blank", "noopener");
 }
 
 async function copiar(texto, mensaje) {
@@ -634,8 +638,9 @@ function tarjetaJornada(j) {
   botones.className = "acceso-botones";
   if (est.clase === "vigente" || est.clase === "programado") {
     botones.appendChild(boton("Cartel QR con clave", "enlace-boton", function () { cartelJornada(j); }));
-    botones.appendChild(boton("Copiar enlace", "enlace-boton", function () { copiar(enlaceAcceso(j.codigo), "Enlace copiado."); }));
+    botones.appendChild(boton("Enviar por WhatsApp", "enlace-boton", function () { enviarWhatsApp(mensajeJornada(j)); }));
     botones.appendChild(boton("Copiar mensaje", "enlace-boton", function () { copiar(mensajeJornada(j), "Mensaje copiado. Pégalo en WhatsApp o en un correo para la empresa."); }));
+    botones.appendChild(boton("Copiar enlace", "enlace-boton", function () { copiar(ENLACE_INGRESO, "Enlace copiado."); }));
   }
   if (est.clase !== "anulado") {
     botones.appendChild(boton("Extender vigencia", "enlace-boton", function () { extenderJornada(j); }));
@@ -651,12 +656,16 @@ function tarjetaJornada(j) {
   return art;
 }
 
+// Enlace PERMANENTE de ingreso (el mismo para todas las jornadas y el
+// mismo del QR de las jornadas): la página de inicio con la clave a la vista.
+const ENLACE_INGRESO = BASE_SITIO + "index.html#clave";
+
 function mensajeJornada(j) {
-  return "Jornada de capacitación del " + fechaCorta(j.fecha + "T12:00") + ":\n" +
-    j.cap_convocatorias.map(function (c) { return "• " + c.cap_cursos.titulo; }).join("\n") + "\n" +
-    "Escanea el código QR o ingresa a " + enlaceAcceso(j.codigo) + "\n" +
-    "Clave de acceso: " + j.codigo + "\n" +
-    "Válida hasta el " + fechaHora(j.valido_hasta) + "\n" +
+  return "*" + j.nombre + "*\n" + emp.actual.nombre + " · " + fechaCorta(j.fecha + "T12:00") + "\n" +
+    j.cap_convocatorias.map(function (c) { return "• " + c.cap_cursos.titulo; }).join("\n") + "\n\n" +
+    "1. Toca este enlace para ingresar:\n" + ENLACE_INGRESO + "\n\n" +
+    "2. Escribe la clave de acceso: *" + j.codigo + "*\n" +
+    "(válida hasta el " + fechaHora(j.valido_hasta) + ")\n\n" +
     "Regístrate una sola vez y descarga un certificado por cada capacitación.";
 }
 
@@ -667,7 +676,7 @@ function cartelJornada(j) {
       nombre: j.nombre,
       fecha: j.fecha,
       cursos: j.cap_convocatorias.map(function (c) { return c.cap_cursos.titulo; }),
-      url: enlaceAcceso(j.codigo),
+      url: ENLACE_INGRESO,          // QR permanente: la clave se escribe aparte
       sitio: BASE_SITIO,
       codigo: j.codigo,
       valido_hasta: j.valido_hasta

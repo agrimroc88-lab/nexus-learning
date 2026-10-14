@@ -64,6 +64,13 @@ async function entrarConClave(campoAcceso, errorAcceso, boton) {
 }
 
 conectarAcceso("form-acceso", "codigo-acceso", "error-acceso", "btn-acceso");
+
+// Enlace permanente de ingreso (QR de jornadas y mensajes de WhatsApp): index.html#clave
+if (location.hash === "#clave") {
+  const campo = document.getElementById("codigo-acceso");
+  campo.scrollIntoView({ block: "center" });
+  campo.focus();
+}
 conectarAcceso("paso-estudiante", "clave-ventana", "error-clave-ventana", "btn-clave-ventana");
 
 // =====================================================================

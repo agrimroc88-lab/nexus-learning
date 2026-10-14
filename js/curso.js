@@ -330,12 +330,6 @@ function mostrarLeccion(i) {
   pintarDiapositivas(leccion);
   pintarContenido($("leccion-contenido"), leccion.contenido || "");
 
-  // Juego de práctica (opcional, no cuenta para la nota)
-  const juego = $("leccion-juego");
-  juego.hidden = !(leccion.juego && typeof NexusJuegos !== "undefined");
-  if (juego.hidden) juego.innerHTML = "";
-  else NexusJuegos.montar(juego, leccion.juego);
-
   $("btn-anterior").disabled = i === 0;
   $("btn-anterior").onclick = function () { mostrarLeccion(i - 1); };
   const siguiente = $("btn-siguiente");

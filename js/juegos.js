@@ -90,6 +90,7 @@ function pintar() {
       (n ? "En " + n + (n === 1 ? " lección" : " lecciones") : "Sin usar");
     info.append(t, s);
     li.append(num, info,
+      accion("Presentar", "", function () { location.href = "charla.html#" + encodeURIComponent(j.id); }),
       accion("Probar", "", function () { probar(j); }),
       accion("Editar", "", function () { editar(j); }),
       accion("Duplicar", "", function () { duplicar(j); }),

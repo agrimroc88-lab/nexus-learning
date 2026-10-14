@@ -9,7 +9,7 @@
 //                ordenar) y comparación de tiempos.
 //   clasificar → Tarjetas con dos opciones y explicación.
 //   ordenar    → Tocar los pasos en el orden correcto.
-// Lo usan curso.html (estudiantes) y juegos.html (vista previa).
+// Lo usan charla.html (el docente lo proyecta en la charla) y juegos.html (vista previa).
 // Todo el texto se pinta con textContent (nunca HTML de la base).
 // =====================================================================
 

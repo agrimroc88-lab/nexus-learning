@@ -18,6 +18,7 @@ const adm = {
   preguntas: [],
   editandoLeccion: null,
   editandoPregunta: null,
+  juegos: [],           // biblioteca de juegos (para el selector de la lección)
   pestana: "datos"
 };
 
@@ -38,6 +39,7 @@ const NUM_OPCIONES = 4;
   el("panel").hidden = false;
 
   construirOpcionesPregunta();
+  cargarJuegos();
   await cargarCursos();
 })();
 
@@ -365,7 +367,7 @@ el("btn-enlace-programa").addEventListener("click", async function () {
 async function cargarLecciones() {
   const { data, error } = await nexusDb
     .from("cap_lecciones")
-    .select("id, orden, titulo, contenido, video_url, archivo_pdf")
+    .select("id, orden, titulo, contenido, video_url, archivo_pdf, juego_id")
     .eq("curso_id", adm.curso.id)
     .order("orden", { ascending: true });
   if (error) return errorSupabase(error, "No se pudieron cargar las lecciones.");
@@ -379,7 +381,12 @@ function pintarLecciones() {
     const partes = [];
     if (l.video_url) partes.push("video");
     if (l.archivo_pdf) partes.push("diapositivas PDF");
-    return { titulo: l.titulo, detalle: partes.length ? "Con " + partes.join(" y ") : "Solo texto" };
+    let detalle = partes.length ? "Con " + partes.join(" y ") : "Solo texto";
+    if (l.juego_id) {
+      const j = adm.juegos.find(function (x) { return x.id === l.juego_id; });
+      detalle += " · Juego: " + (j ? j.titulo : "asignado");
+    }
+    return { titulo: l.titulo, detalle: detalle };
   }, editarLeccion, eliminarLeccion, "Este curso aún no tiene lecciones. Agrega la primera con el formulario.");
   actualizarPestanas();
 }
@@ -390,6 +397,7 @@ function limpiarFormLeccion() {
   el("l-titulo").value = "";
   el("l-video").value = "";
   el("l-contenido").value = "";
+  el("l-juego").value = "";
   el("l-orden").value = siguienteOrden(adm.lecciones);
   mostrarPdfActual(null);
 }
@@ -438,6 +446,7 @@ function editarLeccion(l) {
   el("l-orden").value = l.orden;
   el("l-video").value = l.video_url || "";
   el("l-contenido").value = l.contenido || "";
+  el("l-juego").value = l.juego_id || "";
   mostrarPdfActual(l.archivo_pdf);
   el("form-leccion").scrollIntoView({ behavior: "smooth", block: "start" });
   el("l-titulo").focus();
@@ -451,7 +460,8 @@ el("form-leccion").addEventListener("submit", async function (ev) {
     titulo: el("l-titulo").value.trim(),
     orden: parseInt(el("l-orden").value, 10) || siguienteOrden(adm.lecciones),
     video_url: el("l-video").value.trim() || null,
-    contenido: el("l-contenido").value.trim()
+    contenido: el("l-contenido").value.trim(),
+    juego_id: el("l-juego").value || null
   };
   if (datos.titulo.length < 3) return avisar("Escribe el título de la lección.", "error");
   if (datos.video_url && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(datos.video_url)) {
@@ -497,6 +507,27 @@ el("form-leccion").addEventListener("submit", async function (ev) {
   avisar(adm.editandoLeccion ? "Lección actualizada." : "Lección agregada.");
   await cargarLecciones();
 });
+
+// Biblioteca de juegos para el selector "Juego (opcional)".
+// Si aún no se ejecutó el archivo 23, el selector se oculta.
+async function cargarJuegos() {
+  const { data, error } = await nexusDb.from("cap_juegos").select("id, tipo, titulo").order("titulo");
+  const sel = el("l-juego");
+  if (error) {
+    console.warn("Juegos no disponibles", error);
+    [sel, sel.previousElementSibling, sel.nextElementSibling].forEach(function (x) { x.hidden = true; });
+    return;
+  }
+  adm.juegos = data || [];
+  sel.length = 1;
+  adm.juegos.forEach(function (j) {
+    const o = document.createElement("option");
+    o.value = j.id;
+    o.textContent = j.titulo + " (" + (NexusJuegos.NOMBRES[j.tipo] || j.tipo) + ")";
+    sel.appendChild(o);
+  });
+  if (adm.curso) pintarLecciones();
+}
 
 async function eliminarLeccion(l) {
   if (!confirm("¿Eliminar la lección \"" + l.titulo + "\"?")) return;

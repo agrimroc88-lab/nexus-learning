@@ -330,6 +330,12 @@ function mostrarLeccion(i) {
   pintarDiapositivas(leccion);
   pintarContenido($("leccion-contenido"), leccion.contenido || "");
 
+  // Juego de práctica (opcional, no cuenta para la nota)
+  const juego = $("leccion-juego");
+  juego.hidden = !(leccion.juego && typeof NexusJuegos !== "undefined");
+  if (juego.hidden) juego.innerHTML = "";
+  else NexusJuegos.montar(juego, leccion.juego);
+
   $("btn-anterior").disabled = i === 0;
   $("btn-anterior").onclick = function () { mostrarLeccion(i - 1); };
   const siguiente = $("btn-siguiente");
@@ -551,6 +557,7 @@ $("form-evaluacion").addEventListener("submit", async function (ev) {
 // Resultados
 // ---------------------------------------------------------------------
 function mostrarReprobado(r) {
+  st.preguntas = [];   // en el próximo intento se piden preguntas nuevas (pueden salir otras al azar)
   $("curso-cuerpo").hidden = false;
   const cont = $("resultado");
   cont.innerHTML = "";

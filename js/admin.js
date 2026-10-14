@@ -79,7 +79,7 @@ function errorSupabase(e, texto) {
 async function cargarCursos(seleccionarId) {
   const { data, error } = await nexusDb
     .from("cap_cursos")
-    .select("id, titulo, descripcion, subtemas, horas, nota_minima, publicado, creado_en")
+    .select("id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, creado_en")
     .order("creado_en", { ascending: true });
   if (error) return errorSupabase(error, "No se pudieron cargar los cursos.");
 
@@ -198,7 +198,36 @@ function llenarFormularioCurso(c) {
   el("c-horas").value = c.horas;
   el("c-nota").value = c.nota_minima;
   el("c-publicado").checked = Boolean(c.publicado);
+  el("c-imagen").value = "";
+  el("c-imagen-quitar").checked = false;
+  el("c-imagen-quitar-caja").hidden = !c.imagen;
+  pintarPortada(el("c-imagen-vista"), c.titulo || "Nuevo curso", c.imagen ? urlPortada(c.imagen) : null);
 }
+
+function urlPortada(ruta) {
+  return nexusDb.storage.from("portadas").getPublicUrl(ruta).data.publicUrl;
+}
+
+// Sube la portada a <id-del-curso>/<aleatorio>.<ext> y devuelve la ruta
+async function subirPortada(cursoId, archivo) {
+  const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[archivo.type] || "jpg";
+  const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
+  const ruta = cursoId + "/" + id + "." + ext;
+  const { error } = await nexusDb.storage.from("portadas").upload(ruta, archivo, { contentType: archivo.type, upsert: false });
+  if (error) throw error;
+  return ruta;
+}
+
+async function borrarPortada(ruta) {
+  if (!ruta) return;
+  const { error } = await nexusDb.storage.from("portadas").remove([ruta]);
+  if (error) console.warn("No se pudo borrar la portada anterior", error);
+}
+
+el("c-imagen").addEventListener("change", function () {
+  const archivo = el("c-imagen").files[0];
+  if (archivo) pintarPortada(el("c-imagen-vista"), el("c-titulo").value || "Curso", URL.createObjectURL(archivo));
+});
 
 el("form-curso").addEventListener("submit", async function (ev) {
   ev.preventDefault();
@@ -216,6 +245,14 @@ el("form-curso").addEventListener("submit", async function (ev) {
   if (!(datos.horas > 0)) return avisar("Las horas deben ser mayores que 0.", "error");
   if (!(datos.nota_minima >= 1 && datos.nota_minima <= 100)) return avisar("La nota mínima debe estar entre 1 y 100.", "error");
 
+  const imagen = el("c-imagen").files[0] || null;
+  if (imagen) {
+    if (!/^image\/(jpeg|png|webp)$/.test(imagen.type)) return avisar("La portada debe ser JPG, PNG o WEBP.", "error");
+    if (imagen.size > 2 * 1024 * 1024) return avisar("La portada pesa más de 2 MB. Redúcela e inténtalo de nuevo.", "error");
+  }
+  const portadaAnterior = adm.curso ? adm.curso.imagen : null;
+  if (!imagen && portadaAnterior && el("c-imagen-quitar").checked) datos.imagen = null;
+
   const boton = el("btn-guardar-curso");
   boton.disabled = true;
 
@@ -228,6 +265,21 @@ el("form-curso").addEventListener("submit", async function (ev) {
   boton.disabled = false;
 
   if (resp.error) return errorSupabase(resp.error, "No se pudo guardar el curso.");
+
+  // Portada: se sube cuando el curso ya tiene id
+  if (imagen) {
+    try {
+      const ruta = await subirPortada(resp.data.id, imagen);
+      const u = await nexusDb.from("cap_cursos").update({ imagen: ruta }).eq("id", resp.data.id).select().single();
+      if (u.error) { await borrarPortada(ruta); throw u.error; }
+      resp.data = u.data;
+      await borrarPortada(portadaAnterior);
+    } catch (e) {
+      errorSupabase(e, "El curso se guardó, pero no se pudo subir la portada.");
+    }
+  } else if (portadaAnterior && datos.imagen === null) {
+    await borrarPortada(portadaAnterior);
+  }
 
   const nuevo = !adm.curso;
   adm.curso = resp.data;
@@ -593,7 +645,12 @@ function pintarDocentes() {
     if (!d.user_id) partes.push("aún no ha ingresado");
     return { titulo: d.nombres, detalle: partes.join(" · ") };
   }, alternarDocente, quitarDocente, "Este programa aún no tiene docentes asignados.",
-  { editar: function (d) { return d.activo ? "Desactivar" : "Activar"; }, eliminar: "Quitar" });
+  {
+    editar: function (d) { return d.activo ? "Desactivar" : "Activar"; },
+    eliminar: "Quitar",
+    // Docentes externos (sin NEXUS): contraseña para entrar con su cédula
+    extra: { texto: "Contraseña", mostrar: function (d) { return d.origen === "externo"; }, accion: claveDocente }
+  });
 
   // Opciones: docentes registrados que aún no están en este programa
   const sel = el("d-existente");
@@ -657,6 +714,25 @@ async function alternarDocente(d) {
   await cargarDocentes();
 }
 
+// Crea o cambia la contraseña de un docente externo (lo hace el puente,
+// que es el único que puede crear cuentas). Entra por login.html con su cédula.
+async function claveDocente(d) {
+  const clave = prompt("Nueva contraseña para " + d.nombres + " (mínimo 8 caracteres).\nEntrará en \"Iniciar sesión > Docente\" con su cédula " + d.cedula + " y esta contraseña.");
+  if (clave === null) return;
+  if (clave.length < 8) return avisar("La contraseña debe tener al menos 8 caracteres.", "error");
+  const { data, error } = await nexusDb.functions.invoke("puente-nexus", {
+    body: { accion: "cuenta_docente", cedula: d.cedula, clave: clave }
+  });
+  if (error) {
+    let detalle = error.message;
+    try { detalle = (await error.context.json()).error || detalle; } catch (e) { /* sin detalle */ }
+    return avisar("No se pudo guardar la contraseña. " + detalle, "error");
+  }
+  if (!data || !data.ok) return avisar("No se pudo guardar la contraseña.", "error");
+  avisar("Contraseña guardada. " + d.nombres + " ya puede entrar con su cédula.");
+  await cargarDocentes();
+}
+
 async function quitarDocente(d) {
   if (!confirm("¿Quitar a " + d.nombres + " de este programa? Seguirá registrado y conservará sus otros programas.")) return;
   const r = await nexusDb.from("cap_docente_cursos").delete()
@@ -669,7 +745,8 @@ async function quitarDocente(d) {
 // ---------------------------------------------------------------------
 // Utilidades
 // ---------------------------------------------------------------------
-// etiquetas (opcional): { editar: texto o función(item), eliminar: texto }
+// etiquetas (opcional): { editar: texto o función(item), eliminar: texto,
+//                         extra: { texto, mostrar(item), accion(item) } }
 function pintarItems(ol, items, describir, alEditar, alEliminar, textoVacio, etiquetas) {
   etiquetas = etiquetas || {};
   ol.innerHTML = "";
@@ -709,7 +786,16 @@ function pintarItems(ol, items, describir, alEditar, alEliminar, textoVacio, eti
     borrar.textContent = etiquetas.eliminar || "Eliminar";
     borrar.addEventListener("click", function () { alEliminar(item); });
 
-    li.append(num, info, editar, borrar);
+    li.append(num, info);
+    if (etiquetas.extra && etiquetas.extra.mostrar(item)) {
+      const extra = document.createElement("button");
+      extra.type = "button";
+      extra.className = "enlace-boton";
+      extra.textContent = etiquetas.extra.texto;
+      extra.addEventListener("click", function () { etiquetas.extra.accion(item); });
+      li.appendChild(extra);
+    }
+    li.append(editar, borrar);
     ol.appendChild(li);
   });
 }

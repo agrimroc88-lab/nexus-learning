@@ -78,11 +78,18 @@ document.getElementById("btn-cerrar-sesion").addEventListener("click", function 
 ventana.addEventListener("click", function (ev) { if (ev.target === ventana) ventana.close(); });
 
 // =====================================================================
-// CATÁLOGO PÚBLICO DE PROGRAMAS
+// CATÁLOGO PÚBLICO DE PROGRAMAS (tarjetas, filtros y búsqueda)
 // =====================================================================
+const catalogo = { cursos: [], filtro: "todos" };
+
+// Foto del banner (opcional, ver config.js)
+if (NEXUS_CONFIG.imagenPortada) {
+  document.getElementById("banner").style.setProperty("--foto-banner", "url(\"" + NEXUS_CONFIG.imagenPortada + "\")");
+  document.getElementById("banner").classList.add("con-foto");
+}
+
 (async function cargarCatalogo() {
   const estado = document.getElementById("cursos-estado");
-  const lista = document.getElementById("lista-cursos");
 
   const { data, error } = await nexusDb.rpc("cap_catalogo");
   if (error) {
@@ -92,55 +99,114 @@ ventana.addEventListener("click", function (ev) { if (ev.target === ventana) ven
     return;
   }
 
-  const cursos = Array.isArray(data) ? data : [];
-  if (cursos.length === 0) {
-    estado.textContent = "Pronto publicaremos nuestros programas. Escríbenos con lo que tu empresa necesita.";
+  catalogo.cursos = Array.isArray(data) ? data : [];
+  if (catalogo.cursos.length === 0) {
+    estado.textContent = "Pronto publicaremos nuestros programas.";
     return;
   }
 
-  cursos.forEach(function (c) { lista.appendChild(crearTarjetaCurso(c)); });
+  const lista = document.getElementById("lista-cursos");
+  catalogo.cursos.forEach(function (c) {
+    c.tarjeta = crearTarjetaCurso(c);
+    c.texto = simplificar([c.titulo, c.descripcion].concat(c.subtemas || []).join(" "));
+    lista.appendChild(c.tarjeta);
+  });
+  contarFiltros();
   estado.hidden = true;
   lista.hidden = false;
 })();
 
+const FILTROS = {
+  todos: function () { return true; },
+  linea: function (c) { return c.lecciones > 0; },
+  evaluacion: function (c) { return Boolean(c.evaluacion); }
+};
+
+function contarFiltros() {
+  document.querySelectorAll(".filtro").forEach(function (b) {
+    const n = catalogo.cursos.filter(FILTROS[b.dataset.filtro]).length;
+    b.querySelector("span").textContent = "(" + n + ")";
+  });
+}
+
+function aplicarFiltros() {
+  const q = simplificar(document.getElementById("buscar-curso").value);
+  let visibles = 0;
+  catalogo.cursos.forEach(function (c) {
+    const ver = FILTROS[catalogo.filtro](c) && (!q || c.texto.includes(q));
+    c.tarjeta.hidden = !ver;
+    if (ver) visibles++;
+  });
+  document.getElementById("cursos-vacio").hidden = visibles > 0 || catalogo.cursos.length === 0;
+}
+
+document.querySelectorAll(".filtro").forEach(function (b) {
+  b.addEventListener("click", function () {
+    catalogo.filtro = b.dataset.filtro;
+    document.querySelectorAll(".filtro").forEach(function (x) {
+      x.classList.toggle("activo", x === b);
+      x.setAttribute("aria-selected", x === b ? "true" : "false");
+    });
+    aplicarFiltros();
+  });
+});
+document.getElementById("buscar-curso").addEventListener("input", aplicarFiltros);
+
+// Minúsculas y sin tildes, para buscar "prevencion" y encontrar "Prevención"
+function simplificar(texto) {
+  return String(texto || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function crearTarjetaCurso(c) {
   const li = document.createElement("li");
-  li.className = "curso";
+  li.className = "tarjeta-curso";
 
-  const info = document.createElement("div");
+  const portada = document.createElement("div");
+  const url = c.imagen ? nexusDb.storage.from("portadas").getPublicUrl(c.imagen).data.publicUrl : null;
+  pintarPortada(portada, c.titulo, url);
+
+  const cuerpo = document.createElement("div");
+  cuerpo.className = "tarjeta-cuerpo";
   const h3 = document.createElement("h3");
   h3.textContent = c.titulo;
-  info.appendChild(h3);
+  cuerpo.appendChild(h3);
+
+  const partes = [formatearHorasCatalogo(c.horas)];
+  if (c.lecciones > 0) partes.push(c.lecciones + (c.lecciones === 1 ? " lección" : " lecciones"));
+  partes.push("Certificado verificable");
+  const meta = document.createElement("p");
+  meta.className = "tarjeta-meta";
+  meta.textContent = partes.join(" • ");
+  cuerpo.appendChild(meta);
 
   if (c.descripcion) {
     const p = document.createElement("p");
+    p.className = "tarjeta-descripcion";
     p.textContent = c.descripcion;
-    info.appendChild(p);
+    cuerpo.appendChild(p);
   }
-
   const subtemas = Array.isArray(c.subtemas) ? c.subtemas : [];
   if (subtemas.length) {
     const s = document.createElement("p");
-    s.className = "subtemas";
+    s.className = "tarjeta-subtemas";
     s.textContent = "Incluye: " + subtemas.join(" · ");
-    info.appendChild(s);
+    cuerpo.appendChild(s);
   }
 
-  const datos = document.createElement("div");
-  datos.className = "datos";
-  const partes = [formatearHorasCatalogo(c.horas)];
-  if (c.lecciones > 0) partes.push(c.lecciones + (c.lecciones === 1 ? " lección en línea" : " lecciones en línea"));
-  if (c.evaluacion) partes.push("Con evaluación");
-  partes.push("Certificado verificable");
-  partes.forEach(function (t) {
-    const span = document.createElement("span");
-    span.textContent = t;
-    datos.appendChild(span);
-  });
-  info.appendChild(datos);
+  const lado = document.createElement("div");
+  lado.className = "tarjeta-lado";
+  lado.appendChild(crearChip(c.lecciones > 0 ? "Presencial o en línea" : "Presencial"));
+  if (c.evaluacion) lado.appendChild(crearChip("Con evaluación", true));
 
-  li.appendChild(info);
+  li.append(portada, cuerpo, lado);
   return li;
+}
+
+function crearChip(texto, destacado) {
+  const span = document.createElement("span");
+  span.className = "chip" + (destacado ? " chip-destacado" : "");
+  span.textContent = texto;
+  return span;
 }
 
 function formatearHorasCatalogo(horas) {
@@ -148,4 +214,3 @@ function formatearHorasCatalogo(horas) {
   const texto = Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ",");
   return texto + (n === 1 ? " hora" : " horas");
 }
-

@@ -14,7 +14,10 @@
 // =====================================================================
 
 const NexusJuegos = (function () {
-  const NOMBRES = { numeros: "Busca los números", clasificar: "Clasifica", ordenar: "Ordena los pasos" };
+  const NOMBRES = {
+    numeros: "Busca los números", clasificar: "Clasifica", ordenar: "Ordena los pasos",
+    riesgos: "Caza de riesgos", escenarios: "¿Qué harías?"
+  };
 
   // ---------- utilidades ----------
   function crear(etiqueta, clase, texto) {
@@ -54,6 +57,8 @@ const NexusJuegos = (function () {
     if (juego.tipo === "numeros") return numeros(cuerpo, cfg);
     if (juego.tipo === "clasificar") return clasificar(cuerpo, cfg);
     if (juego.tipo === "ordenar") return ordenar(cuerpo, cfg);
+    if (juego.tipo === "riesgos") return riesgos(cuerpo, cfg);
+    if (juego.tipo === "escenarios") return escenarios(cuerpo, cfg);
     cuerpo.textContent = "Este tipo de juego no está disponible.";
   }
 
@@ -298,5 +303,166 @@ const NexusJuegos = (function () {
     empezar();
   }
 
-  return { montar: montar, NOMBRES: NOMBRES };
+  // ===================================================================
+  // 4. CAZA DE RIESGOS: tocar los peligros sobre una foto
+  //    peligros: [{ x, y, r, nombre, explicacion }]  (x, y, r en % del ancho/alto)
+  // ===================================================================
+  function urlImagen(ruta) {
+    if (!ruta) return "";
+    if (/^(https?:|blob:|data:)/.test(ruta)) return ruta;
+    if (typeof nexusDb !== "undefined") return nexusDb.storage.from("portadas").getPublicUrl(ruta).data.publicUrl;
+    return ruta;
+  }
+
+  function riesgos(cuerpo, cfg) {
+    const peligros = (cfg.peligros || []).filter(function (p) { return p && isFinite(p.x) && isFinite(p.y); });
+    if (!cfg.imagen || peligros.length === 0) { cuerpo.textContent = "Este juego todavía no tiene foto o peligros marcados."; return; }
+
+    function empezar() {
+      const hallados = new Set();
+      let fallos = 0, terminado = false;
+      cuerpo.innerHTML = "";
+      const progreso = crear("p", "juego-progreso");
+      const foto = crear("div", "foto-riesgos");
+      const img = crear("img");
+      img.src = urlImagen(cfg.imagen);
+      img.alt = "Foto para buscar los peligros";
+      img.draggable = false;
+      foto.appendChild(img);
+      const retro = crear("div", "retro-riesgo");
+      retro.hidden = true;
+      const rendirse = boton("Ver los que faltan", "enlace-simple", function () { revelar(); });
+      cuerpo.append(progreso, foto, retro, rendirse);
+      actualizar();
+
+      function actualizar() {
+        progreso.textContent = "Encontrados: " + hallados.size + " de " + peligros.length + " · Toques fallidos: " + fallos;
+      }
+
+      function marca(p, i, clase) {
+        const m = crear("span", "marca-riesgo " + clase, String(i + 1));
+        m.style.left = p.x + "%";
+        m.style.top = p.y + "%";
+        m.style.width = m.style.height = (2 * (p.r || 6)) + "cqw";
+        foto.appendChild(m);
+      }
+
+      foto.addEventListener("click", function (ev) {
+        if (terminado) return;
+        const caja = img.getBoundingClientRect();
+        const px = ev.clientX - caja.left, py = ev.clientY - caja.top;
+        if (px < 0 || py < 0 || px > caja.width || py > caja.height) return;
+        // El más cercano que aún no se encontró, si el toque cae dentro de su zona (con un poco de tolerancia)
+        let mejor = -1, distMejor = Infinity;
+        peligros.forEach(function (p, i) {
+          if (hallados.has(i)) return;
+          const d = Math.hypot(px - p.x / 100 * caja.width, py - p.y / 100 * caja.height);
+          const radio = (p.r || 6) / 100 * caja.width * 1.15;
+          if (d <= radio && d < distMejor) { mejor = i; distMejor = d; }
+        });
+        if (mejor === -1) {
+          fallos++;
+          const x = crear("span", "marca-fallo", "×");
+          x.style.left = (px / caja.width * 100) + "%";
+          x.style.top = (py / caja.height * 100) + "%";
+          foto.appendChild(x);
+          setTimeout(function () { x.remove(); }, 900);
+          actualizar();
+          return;
+        }
+        hallados.add(mejor);
+        const p = peligros[mejor];
+        marca(p, mejor, "encontrado");
+        retro.hidden = false;
+        retro.innerHTML = "";
+        retro.append(crear("strong", "", "¡Bien! " + (p.nombre || "Peligro encontrado")));
+        if (p.explicacion) retro.append(crear("p", "", p.explicacion));
+        actualizar();
+        if (hallados.size === peligros.length) final(false);
+      });
+
+      function revelar() {
+        peligros.forEach(function (p, i) { if (!hallados.has(i)) marca(p, i, "pendiente"); });
+        final(true);
+      }
+
+      function final(seRindio) {
+        terminado = true;
+        rendirse.remove();
+        retro.hidden = true;
+        const fin = crear("div", "juego-final");
+        const n = hallados.size;
+        fin.appendChild(crear("h4", "", n === peligros.length
+          ? "¡Encontraste los " + n + " peligros!" + (fallos ? " (" + fallos + (fallos === 1 ? " toque fallido)" : " toques fallidos)") : "")
+          : "Encontraste " + n + " de " + peligros.length + " peligros"));
+        if (seRindio) fin.appendChild(crear("p", "juego-nota", "En la foto quedan marcados en rojo los que faltaban."));
+        const lista = crear("ol", "lista-riesgos");
+        peligros.forEach(function (p, i) {
+          const li = crear("li", hallados.has(i) ? "bien" : "mal");
+          li.append(crear("strong", "", p.nombre || "Peligro " + (i + 1)));
+          if (p.explicacion) li.append(crear("span", "", " — " + p.explicacion));
+          lista.appendChild(li);
+        });
+        fin.append(lista, boton("Jugar de nuevo", "boton secundario", empezar));
+        cuerpo.appendChild(fin);
+      }
+    }
+
+    empezar();
+  }
+
+  // ===================================================================
+  // 5. ¿QUÉ HARÍAS? Situaciones con varias respuestas
+  //    escenarios: [{ situacion, opciones: [{ texto, correcta, explicacion }] }]
+  // ===================================================================
+  function escenarios(cuerpo, cfg) {
+    const lista = (cfg.escenarios || []).filter(function (e) {
+      return e && e.situacion && (e.opciones || []).length >= 2 && e.opciones.some(function (o) { return o.correcta; });
+    });
+    if (lista.length === 0) { cuerpo.textContent = "Este juego todavía no tiene situaciones."; return; }
+    let orden, i, aciertos;
+
+    function empezar() { orden = mezclar(lista); i = 0; aciertos = 0; mostrar(); }
+
+    function mostrar() {
+      cuerpo.innerHTML = "";
+      const e = orden[i];
+      const opciones = mezclar(e.opciones);
+      const botones = crear("div", "opciones-escenario");
+      opciones.forEach(function (o) {
+        const b = boton(o.texto, "opcion-juego opcion-escenario", function () {
+          botones.querySelectorAll("button").forEach(function (x) { x.disabled = true; });
+          const correcta = opciones.find(function (x) { return x.correcta; });
+          botones.children[opciones.indexOf(correcta)].classList.add("correcta");
+          if (!o.correcta) b.classList.add("incorrecta"); else aciertos++;
+          const fb = crear("div", "retro " + (o.correcta ? "bien" : "mal"));
+          fb.append(crear("strong", "", o.correcta ? "¡Buena decisión!" : "No es lo más seguro."));
+          if (o.explicacion) fb.append(crear("p", "", o.explicacion));
+          if (!o.correcta && correcta.explicacion) fb.append(crear("p", "", "Lo correcto: " + correcta.explicacion));
+          fb.append(boton(i < orden.length - 1 ? "Siguiente situación" : "Ver resultado", "boton boton-chico", function () {
+            i++;
+            if (i < orden.length) mostrar(); else final();
+          }));
+          cuerpo.appendChild(fb);
+        });
+        botones.appendChild(b);
+      });
+      cuerpo.append(crear("p", "juego-progreso", "Situación " + (i + 1) + " de " + orden.length + " · Aciertos: " + aciertos),
+        crear("div", "tarjeta-juego", e.situacion), crear("p", "juego-nota pregunta-escenario", "¿Qué harías?"), botones);
+    }
+
+    function final() {
+      cuerpo.innerHTML = "";
+      const pct = Math.round(aciertos * 100 / orden.length);
+      const fin = crear("div", "juego-final");
+      fin.append(crear("h4", "", "Tomaste " + aciertos + " de " + orden.length + " decisiones seguras (" + pct + " %)"),
+        crear("p", "", pct === 100 ? "¡Excelente criterio de seguridad!" : "Repasa las situaciones: en el trabajo, la decisión segura siempre va primero."),
+        boton("Jugar de nuevo", "boton secundario", empezar));
+      cuerpo.appendChild(fin);
+    }
+
+    empezar();
+  }
+
+  return { montar: montar, NOMBRES: NOMBRES, urlImagen: urlImagen };
 })();

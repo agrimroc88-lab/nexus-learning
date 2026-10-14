@@ -9,12 +9,20 @@
 // =====================================================================
 
 const $j = (id) => document.getElementById(id);
-const jg = { juegos: [], uso: {}, editando: null, tipo: null };
+const jg = {
+  juegos: [], uso: {}, editando: null, tipo: null,
+  foto: { ruta: null, archivo: null, url: null },   // Caza de riesgos
+  peligros: []
+};
+const TAMANOS = [[4, "Pequeño"], [6, "Mediano"], [9, "Grande"], [13, "Muy grande"]];
+const MAX_OPCIONES_ESC = 4;
 
 const AYUDA_TIPO = {
   numeros: "Busca los números (5S): demuestra cuánto tiempo se ahorra con orden y limpieza.",
   clasificar: "Clasifica: la persona decide entre dos opciones para cada tarjeta y ve la explicación.",
-  ordenar: "Ordena los pasos: la persona toca los pasos de un procedimiento en el orden correcto."
+  ordenar: "Ordena los pasos: la persona toca los pasos de un procedimiento en el orden correcto.",
+  riesgos: "Caza de riesgos: la persona busca y toca los peligros en una foto real del lugar de trabajo.",
+  escenarios: "¿Qué harías?: situaciones reales con varias respuestas; al elegir se explica cuál es la decisión segura."
 };
 
 (async function iniciar() {
@@ -104,6 +112,8 @@ function resumenConfig(j) {
   if (j.tipo === "numeros") return (c.cantidad || 30) + " números, " + (c.segundos || 60) + " s por ronda";
   if (j.tipo === "clasificar") return (c.tarjetas || []).length + " tarjetas";
   if (j.tipo === "ordenar") return (c.pasos || []).length + " pasos";
+  if (j.tipo === "riesgos") return (c.peligros || []).length + " peligros en la foto";
+  if (j.tipo === "escenarios") return (c.escenarios || []).length + " situaciones";
   return "";
 }
 
@@ -133,6 +143,17 @@ function abrirEditor(juego, tipo) {
   if (jg.tipo === "clasificar") {
     const tarjetas = c.tarjetas && c.tarjetas.length ? c.tarjetas : [{}, {}, {}];
     tarjetas.forEach(agregarTarjeta);
+  }
+  // Caza de riesgos
+  $j("j-foto").value = "";
+  jg.foto = { ruta: c.imagen || null, archivo: null, url: c.imagen ? NexusJuegos.urlImagen(c.imagen) : null };
+  jg.peligros = (c.peligros || []).map(function (p) { return Object.assign({}, p); });
+  pintarFotoEditor();
+  // ¿Qué harías?
+  $j("j-escenarios").innerHTML = "";
+  if (jg.tipo === "escenarios") {
+    const lista = c.escenarios && c.escenarios.length ? c.escenarios : [{}, {}];
+    lista.forEach(agregarEscenario);
   }
 
   $j("vista-juego").hidden = true;
@@ -193,6 +214,142 @@ $j("btn-agregar-tarjeta").addEventListener("click", function () {
   });
 });
 
+// ---------------------------------------------------------------------
+// Editor de "Caza de riesgos": foto + círculos sobre cada peligro
+// ---------------------------------------------------------------------
+$j("j-foto").addEventListener("change", function () {
+  const archivo = $j("j-foto").files[0];
+  if (!archivo) return;
+  if (!/^image\/(jpeg|png|webp)$/.test(archivo.type)) { $j("j-foto").value = ""; return avisar("La foto debe ser JPG, PNG o WEBP.", "error"); }
+  if (archivo.size > 2 * 1024 * 1024) { $j("j-foto").value = ""; return avisar("La foto pesa más de 2 MB. Redúcela e inténtalo de nuevo.", "error"); }
+  if (jg.foto.archivo && jg.foto.url) URL.revokeObjectURL(jg.foto.url);
+  jg.foto.archivo = archivo;
+  jg.foto.url = URL.createObjectURL(archivo);
+  pintarFotoEditor();
+});
+
+function pintarFotoEditor() {
+  const caja = $j("j-foto-caja");
+  caja.hidden = !jg.foto.url;
+  if (jg.foto.url && $j("j-foto-img").getAttribute("src") !== jg.foto.url) $j("j-foto-img").src = jg.foto.url;
+  caja.querySelectorAll(".marca-riesgo").forEach(function (m) { m.remove(); });
+  jg.peligros.forEach(function (p, i) {
+    const m = document.createElement("span");
+    m.className = "marca-riesgo";
+    m.textContent = i + 1;
+    m.style.left = p.x + "%";
+    m.style.top = p.y + "%";
+    m.style.width = m.style.height = (2 * p.r) + "cqw";
+    caja.appendChild(m);
+  });
+  pintarListaPeligros();
+}
+
+$j("j-foto-caja").addEventListener("click", function (ev) {
+  const r = $j("j-foto-img").getBoundingClientRect();
+  const x = (ev.clientX - r.left) / r.width * 100, y = (ev.clientY - r.top) / r.height * 100;
+  if (x < 0 || y < 0 || x > 100 || y > 100) return;
+  if (jg.peligros.length >= 15) return avisar("Máximo 15 peligros por foto.", "error");
+  jg.peligros.push({ x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r: 6, nombre: "", explicacion: "" });
+  pintarFotoEditor();
+  const nombres = $j("j-peligros").querySelectorAll(".p-nombre");
+  nombres[nombres.length - 1].focus();
+});
+
+function pintarListaPeligros() {
+  const ol = $j("j-peligros");
+  ol.innerHTML = "";
+  jg.peligros.forEach(function (p, i) {
+    const li = document.createElement("li");
+    li.className = "peligro-editor";
+    const num = document.createElement("span");
+    num.className = "item-num";
+    num.textContent = i + 1;
+    const campos = document.createElement("div");
+    campos.className = "campos";
+    const nombre = document.createElement("input");
+    nombre.className = "campo p-nombre";
+    nombre.maxLength = 80;
+    nombre.placeholder = "Nombre del peligro (ej.: Cables sueltos en el piso)";
+    nombre.value = p.nombre || "";
+    nombre.addEventListener("input", function () { p.nombre = nombre.value; });
+    const exp = document.createElement("input");
+    exp.className = "campo";
+    exp.maxLength = 250;
+    exp.placeholder = "Explicación (opcional): por qué es peligroso o cómo se controla";
+    exp.value = p.explicacion || "";
+    exp.addEventListener("input", function () { p.explicacion = exp.value; });
+    const fila = document.createElement("div");
+    fila.className = "peligro-fila";
+    const etiqueta = document.createElement("label");
+    etiqueta.textContent = "Tamaño del círculo: ";
+    const tam = document.createElement("select");
+    TAMANOS.forEach(function (t) {
+      const o = document.createElement("option");
+      o.value = t[0];
+      o.textContent = t[1];
+      tam.appendChild(o);
+    });
+    tam.value = String(TAMANOS.some(function (t) { return t[0] === p.r; }) ? p.r : 6);
+    tam.addEventListener("change", function () { p.r = Number(tam.value); pintarFotoEditor(); });
+    etiqueta.appendChild(tam);
+    fila.append(etiqueta, accion("Quitar", "rojo", function () { jg.peligros.splice(i, 1); pintarFotoEditor(); }));
+    campos.append(nombre, exp, fila);
+    li.append(num, campos);
+    ol.appendChild(li);
+  });
+}
+
+// ---------------------------------------------------------------------
+// Editor de "¿Qué harías?"
+// ---------------------------------------------------------------------
+let contadorEscenarios = 0;
+function agregarEscenario(e) {
+  e = e || {};
+  const grupo = "esc-" + (++contadorEscenarios);
+  const li = document.createElement("li");
+  li.className = "escenario-editor";
+  const sit = document.createElement("textarea");
+  sit.className = "campo area e-situacion";
+  sit.rows = 2;
+  sit.maxLength = 400;
+  sit.placeholder = "Situación (ej.: Ves a un compañero usando una escalera con un peldaño roto.)";
+  sit.value = e.situacion || "";
+  li.appendChild(sit);
+  const opciones = e.opciones || [];
+  for (let k = 0; k < MAX_OPCIONES_ESC; k++) {
+    const o = opciones[k] || {};
+    const fila = document.createElement("div");
+    fila.className = "opcion-escenario-editor";
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = grupo;
+    radio.className = "e-correcta";
+    radio.checked = !!o.correcta;
+    radio.setAttribute("aria-label", "Respuesta correcta");
+    const texto = document.createElement("input");
+    texto.className = "campo e-texto";
+    texto.maxLength = 250;
+    texto.placeholder = "Respuesta " + (k + 1) + (k >= 2 ? " (opcional)" : "");
+    texto.value = o.texto || "";
+    const exp = document.createElement("input");
+    exp.className = "campo t-exp e-exp";
+    exp.maxLength = 250;
+    exp.placeholder = "Por qué (se muestra al elegirla)";
+    exp.value = o.explicacion || "";
+    fila.append(radio, texto, exp);
+    li.appendChild(fila);
+  }
+  li.appendChild(accion("Quitar situación", "rojo", function () { li.remove(); }));
+  $j("j-escenarios").appendChild(li);
+}
+
+$j("btn-agregar-escenario").addEventListener("click", function () {
+  agregarEscenario({});
+  const s = $j("j-escenarios").querySelectorAll(".e-situacion");
+  s[s.length - 1].focus();
+});
+
 $j("btn-cancelar-juego").addEventListener("click", function () {
   $j("editor-juego").hidden = true;
   jg.editando = null;
@@ -228,6 +385,39 @@ function leerFormulario() {
   } else if (jg.tipo === "ordenar") {
     config.pasos = $j("j-pasos").value.split("\n").map(function (p) { return p.trim().replace(/^\d+\s*[.)-]\s*/, ""); }).filter(Boolean);
     if (config.pasos.length < 3 || config.pasos.length > 10) return { error: "Escribe de 3 a 10 pasos, uno por línea." };
+  } else if (jg.tipo === "riesgos") {
+    if (!jg.foto.url) return { error: "Elige la foto del juego." };
+    if (jg.peligros.length === 0) return { error: "Toca la foto para marcar al menos un peligro." };
+    if (jg.peligros.some(function (p) { return !String(p.nombre || "").trim(); })) return { error: "Escribe el nombre de cada peligro marcado." };
+    config.imagen = jg.foto.archivo ? jg.foto.url : jg.foto.ruta;   // al guardar se reemplaza por la ruta subida
+    config.peligros = jg.peligros.map(function (p) {
+      const x = { x: p.x, y: p.y, r: p.r, nombre: p.nombre.trim() };
+      if (String(p.explicacion || "").trim()) x.explicacion = p.explicacion.trim();
+      return x;
+    });
+  } else if (jg.tipo === "escenarios") {
+    config.escenarios = [];
+    let error = null;
+    $j("j-escenarios").querySelectorAll(".escenario-editor").forEach(function (li, n) {
+      if (error) return;
+      const situacion = li.querySelector(".e-situacion").value.trim();
+      const opciones = [];
+      li.querySelectorAll(".opcion-escenario-editor").forEach(function (f) {
+        const texto = f.querySelector(".e-texto").value.trim();
+        if (!texto) return;
+        const o = { texto: texto, correcta: f.querySelector(".e-correcta").checked };
+        const exp = f.querySelector(".e-exp").value.trim();
+        if (exp) o.explicacion = exp;
+        opciones.push(o);
+      });
+      if (!situacion && opciones.length === 0) return;   // bloque vacío: se ignora
+      if (!situacion) error = "Escribe el texto de la situación " + (n + 1) + ".";
+      else if (opciones.length < 2) error = "La situación " + (n + 1) + " necesita al menos 2 respuestas.";
+      else if (opciones.filter(function (o) { return o.correcta; }).length !== 1) error = "Marca la respuesta correcta de la situación " + (n + 1) + ".";
+      else config.escenarios.push({ situacion: situacion, opciones: opciones });
+    });
+    if (error) return { error: error };
+    if (config.escenarios.length < 2) return { error: "Agrega al menos 2 situaciones completas." };
   }
   return { juego: { tipo: jg.tipo, titulo: titulo, config: config } };
 }
@@ -247,14 +437,35 @@ $j("form-juego").addEventListener("submit", async function (ev) {
   if (r.error) return avisar(r.error, "error");
   const boton = $j("btn-guardar-juego");
   boton.disabled = true;
+
+  // Caza de riesgos: primero se sube la foto nueva (carpeta juegos/ del depósito "portadas")
+  let fotoNueva = null;
+  const fotoAnterior = jg.editando && jg.editando.tipo === "riesgos" ? (jg.editando.config || {}).imagen : null;
+  if (jg.tipo === "riesgos" && jg.foto.archivo) {
+    boton.textContent = "Subiendo foto…";
+    const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[jg.foto.archivo.type];
+    fotoNueva = "juegos/" + ((crypto.randomUUID && crypto.randomUUID()) || Date.now()) + "." + ext;
+    const subida = await nexusDb.storage.from("portadas").upload(fotoNueva, jg.foto.archivo, { contentType: jg.foto.archivo.type, upsert: false });
+    if (subida.error) {
+      boton.disabled = false;
+      boton.textContent = "Guardar juego";
+      console.error(subida.error);
+      return avisar("No se pudo subir la foto. Detalle: " + (subida.error.message || "error desconocido"), "error");
+    }
+    r.juego.config.imagen = fotoNueva;
+  }
+
   const res = jg.editando
     ? await nexusDb.from("cap_juegos").update({ titulo: r.juego.titulo, config: r.juego.config }).eq("id", jg.editando.id)
     : await nexusDb.from("cap_juegos").insert(r.juego);
   boton.disabled = false;
+  boton.textContent = "Guardar juego";
   if (res.error) {
     console.error(res.error);
+    if (fotoNueva) await nexusDb.storage.from("portadas").remove([fotoNueva]);   // no dejar fotos huérfanas
     return avisar("No se pudo guardar el juego. Detalle: " + (res.error.message || "error desconocido"), "error");
   }
+  if (fotoNueva && fotoAnterior) await borrarFotoSiNoSeUsa(fotoAnterior, jg.editando.id);
   avisar(jg.editando ? "Juego actualizado." : "Juego creado. Ya puedes agregarlo a una lección.");
   $j("editor-juego").hidden = true;
   jg.editando = null;
@@ -292,6 +503,16 @@ async function eliminar(j) {
       "No se pudo eliminar el juego. Detalle: " + error.message, "error");
   }
   if (jg.editando && jg.editando.id === j.id) $j("editor-juego").hidden = true;
+  if (j.tipo === "riesgos" && (j.config || {}).imagen) await borrarFotoSiNoSeUsa(j.config.imagen, j.id);
   avisar("Juego eliminado.");
   await cargar();
+}
+
+// Borra la foto de un juego, salvo que otro juego (por ejemplo, una copia) la siga usando
+async function borrarFotoSiNoSeUsa(ruta, idJuego) {
+  if (!ruta || /^(https?:|blob:|data:)/.test(ruta)) return;
+  const enUso = jg.juegos.some(function (x) { return x.id !== idJuego && x.config && x.config.imagen === ruta; });
+  if (enUso) return;
+  const { error } = await nexusDb.storage.from("portadas").remove([ruta]);
+  if (error) console.warn("No se pudo borrar la foto anterior", error);
 }

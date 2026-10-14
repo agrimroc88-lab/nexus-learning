@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administradores · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="admin.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Administración
+      </a>
+      <nav class="nav-admin">
+        <a href="admin.html">Cursos</a>
+        <a href="empresas.html">Empresas</a>
+        <a href="administradores.html" aria-current="page">Administradores</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <a data-nexus="" href="#" class="enlace-nexus">NEXUS</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <main id="panel" class="contenedor pagina-simple" hidden>
+    <section class="editor">
+      <h1>Administradores</h1>
+      <p class="ayuda">Personas de NEXUS que entran a Nexus Learning como administradores, sin otra contraseña. Para entrar deben cumplir dos condiciones: estar en esta lista y tener el rol <strong>admin</strong> en NEXUS. Si quitas a alguien, pierde el acceso la próxima vez que entre.</p>
+
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <ol id="lista-admins" class="lista-items"></ol>
+
+      <form id="form-admin" class="formulario-item" novalidate>
+        <h3>Agregar administrador</h3>
+        <div class="fila-dos">
+          <div>
+            <label class="etiqueta" for="a-nombres">Nombres y apellidos</label>
+            <input class="campo" id="a-nombres" maxlength="120">
+          </div>
+          <div>
+            <label class="etiqueta" for="a-cedula">Cédula</label>
+            <input class="campo" id="a-cedula" inputmode="numeric" maxlength="10">
+          </div>
+        </div>
+        <div class="acciones-form">
+          <button type="submit" class="boton" id="btn-agregar">Agregar administrador</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/administradores.js"></script>
+</body>
+</html>

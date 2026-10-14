@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/curso.css">
 </head>
-<body>
+<body class="fondo-zona">
 
   <!-- ===== Barra superior ===== -->
   <header class="barra">
@@ -64,9 +64,16 @@
     <!-- ===== Capacitación ===== -->
     <div id="curso" hidden>
       <div class="curso-cabecera">
-        <p class="empresa-etiqueta" id="curso-empresa"></p>
-        <h1 id="curso-titulo"></h1>
-        <p id="curso-datos"></p>
+        <div class="cabecera-portada" id="curso-portada" aria-hidden="true"></div>
+        <div class="cabecera-texto">
+          <p class="empresa-etiqueta" id="curso-empresa"></p>
+          <h1 id="curso-titulo"></h1>
+          <p id="curso-datos"></p>
+        </div>
+        <div class="cabecera-progreso" id="cabecera-progreso" hidden>
+          <span id="cabecera-progreso-texto"></span>
+          <div class="barra-progreso" aria-hidden="true"><span id="cabecera-progreso-barra"></span></div>
+        </div>
       </div>
 
       <!-- ----- Registro ----- -->

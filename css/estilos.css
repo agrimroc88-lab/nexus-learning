@@ -309,21 +309,29 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
 .banner.con-foto {
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 5;  /* franja fina: de una foto 1600 × 600 recorta un poco arriba y abajo */
-  background: var(--pino-noche) var(--foto-banner) center / cover no-repeat;
+  aspect-ratio: 10 / 3;  /* franja fina: de una foto 1600 × 600 se ve la parte de arriba y se recorta la de abajo */
+  background: var(--pino-noche) var(--foto-banner) center top / cover no-repeat;
 }
 .banner.con-foto::after { display: none; }
 
-/* Barra superior sobre un banner con foto (solo PC): se funde con la imagen.
-   Blanco a la izquierda (lado del logo del banner) que pasa poco a poco a azul,
-   y el menú se corre a la derecha para no quedar sobre el logo.
-   En pantallas más angostas no hay espacio: se queda la barra oscura. */
+/* Barra superior sobre un banner con foto (solo PC): la foto sube hasta arriba
+   y pasa por detrás de la barra. La barra es transparente en la izquierda (deja
+   ver el logo del banner) y se vuelve azul poco a poco hacia la derecha, donde
+   está el menú. En pantallas más angostas se queda la barra oscura. */
 @media (min-width: 1300px) {
-  body:has(.banner.con-foto) .barra {
-    background: linear-gradient(90deg, #F4F7FB 0%, #F4F7FB 10%, #6F86AC 26%, #1A3A72 38%, #0A2B5D 52%, #0A2B5D 100%);
+  body:has(.banner.con-foto) .barra { background: transparent; }
+  /* El fondo azul acompaña solo al menú: empieza transparente y se vuelve azul
+     justo antes de "Nexus Learning", sin importar el ancho de la pantalla */
+  body:has(.banner.con-foto) .barra .contenedor {
+    width: fit-content;
+    max-width: none;
+    margin: 0 0 0 auto;
+    padding-left: 170px;
+    gap: 24px;
+    background: linear-gradient(90deg, rgba(10, 43, 93, 0) 0, rgba(10, 43, 93, 0.85) 110px, #0A2B5D 160px, #0A2B5D 100%);
   }
-  body:has(.banner.con-foto) .barra .contenedor { max-width: none; justify-content: flex-end; gap: 28px; }
   body:has(.banner.con-foto) .pestanas-barra { margin: 0; }
+  body:has(.banner.con-foto) .banner { margin-top: -64px; }
 }
 
 /* ---------- Catálogo + ventana flotante de ingreso ---------- */

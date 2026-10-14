@@ -58,6 +58,8 @@
         <button type="button" class="boton secundario boton-chico" data-nuevo="numeros">Busca los números (5S)</button>
         <button type="button" class="boton secundario boton-chico" data-nuevo="clasificar">Clasifica (dos opciones)</button>
         <button type="button" class="boton secundario boton-chico" data-nuevo="ordenar">Ordena los pasos</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="riesgos">Caza de riesgos (foto)</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="escenarios">¿Qué harías?</button>
       </div>
     </section>
 
@@ -111,6 +113,24 @@
           <label class="etiqueta" for="j-pasos">Pasos en el orden correcto (uno por línea, de 3 a 10)</label>
           <textarea class="campo area" id="j-pasos" rows="7"></textarea>
           <p class="ayuda">El juego los muestra mezclados y la persona debe tocarlos en orden.</p>
+        </div>
+
+        <!-- Caza de riesgos -->
+        <div data-tipo="riesgos" class="editor-riesgos" hidden>
+          <label class="etiqueta" for="j-foto">Foto del lugar de trabajo (JPG, PNG o WEBP, máx. 2 MB)</label>
+          <input class="campo campo-archivo" id="j-foto" type="file" accept="image/jpeg,image/png,image/webp">
+          <p class="ayuda">Después de elegir la foto, <strong>toca sobre cada peligro</strong> para marcarlo. Ajusta el tamaño del círculo para que cubra todo el peligro.</p>
+          <div id="j-foto-caja" class="foto-riesgos" hidden><img id="j-foto-img" alt="Foto del juego"></div>
+          <ol id="j-peligros" class="lista-peligros"></ol>
+        </div>
+
+        <!-- ¿Qué harías? -->
+        <div data-tipo="escenarios" hidden>
+          <fieldset class="opciones-editor">
+            <legend>Situaciones (mínimo 2). Marca con el círculo la respuesta correcta.</legend>
+            <ol id="j-escenarios" class="tarjetas-editor"></ol>
+            <button type="button" class="enlace-boton" id="btn-agregar-escenario">+ Agregar situación</button>
+          </fieldset>
         </div>
 
         <div class="acciones-form">

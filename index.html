@@ -40,34 +40,36 @@
     </div>
   </header>
 
-  <!-- ===== Banner: ingreso con clave ===== -->
-  <section class="banner" id="banner">
-    <div class="contenedor">
-      <p class="banner-etiqueta" id="banner-etiqueta">Capacitación en Seguridad y Salud Ocupacional</p>
-      <h1 id="banner-titulo">Capacitación laboral que se puede comprobar</h1>
-      <p class="banner-texto" id="banner-texto">Escribe la clave de acceso que te dio tu empresa o escanea el código QR de la capacitación.</p>
-
-      <form id="form-acceso" class="acceso-form" novalidate>
-        <label for="codigo-acceso" class="etiqueta">Clave de acceso</label>
-        <div class="acceso-fila">
-          <input id="codigo-acceso" class="campo" placeholder="AGR48213" maxlength="14" autocomplete="off" spellcheck="false" autocapitalize="characters">
-          <button class="boton" type="submit" id="btn-acceso">Ingresar</button>
-        </div>
-        <p class="acceso-error" id="error-acceso" role="alert"></p>
-      </form>
-
-      <ol class="pasos-banner" aria-label="Cómo funciona">
-        <li><strong>Aprende</strong> presencial o virtual</li>
-        <li><strong>Evalúa</strong> cuando se requiera</li>
-        <li><strong>Certifica</strong> con código verificable</li>
-      </ol>
-    </div>
-  </section>
+  <!-- ===== Banner: solo la imagen (se cambia en Apariencia) ===== -->
+  <section class="banner" id="banner" aria-label="Nexus Learning"></section>
 
   <main>
   <!-- ===== Catálogo de programas ===== -->
   <section class="zona-cursos" id="cursos" aria-labelledby="cursos-titulo">
-    <div class="contenedor">
+    <div class="contenedor cursos-diseno">
+
+      <!-- Ventana flotante: ingreso con clave (acompaña al usuario al bajar) -->
+      <aside class="tarjeta-acceso" id="acceso" aria-labelledby="banner-titulo">
+        <p class="banner-etiqueta" id="banner-etiqueta">Capacitación en Seguridad y Salud Ocupacional</p>
+        <h1 id="banner-titulo">Capacitación laboral que se puede comprobar</h1>
+        <form id="form-acceso" class="acceso-form" novalidate>
+          <label for="codigo-acceso" class="etiqueta">Clave de acceso</label>
+          <div class="acceso-fila">
+            <input id="codigo-acceso" class="campo" placeholder="AGR48213" maxlength="14" autocomplete="off" spellcheck="false" autocapitalize="characters">
+            <button class="boton" type="submit" id="btn-acceso">Ingresar</button>
+          </div>
+          <p class="acceso-error" id="error-acceso" role="alert"></p>
+        </form>
+        <p class="banner-texto" id="banner-texto">Escribe la clave de acceso que te dio tu empresa o escanea el código QR de la capacitación.</p>
+
+        <ol class="pasos-banner" aria-label="Cómo funciona">
+          <li><strong>Aprende</strong> presencial o virtual</li>
+          <li><strong>Evalúa</strong> cuando se requiera</li>
+          <li><strong>Certifica</strong> con código verificable</li>
+        </ol>
+      </aside>
+
+      <div class="catalogo">
       <div class="cursos-cabecera">
         <div>
           <h2 id="cursos-titulo">Programas de capacitación</h2>
@@ -91,6 +93,7 @@
       <p class="aviso" id="cursos-estado" role="status">Cargando programas…</p>
       <ul class="lista-tarjetas" id="lista-cursos" hidden></ul>
       <p class="aviso" id="cursos-vacio" hidden>Ningún programa coincide con la búsqueda.</p>
+      </div>
     </div>
   </section>
 

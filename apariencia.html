@@ -56,13 +56,16 @@
           <span class="vp-logo"></span><strong>Nexus Learning</strong>
           <span class="vp-boton">Iniciar sesión</span>
         </div>
-        <div class="vp-banner" id="vp-banner">
-          <small id="vp-etiqueta"></small>
-          <b id="vp-titulo"></b>
-          <span id="vp-texto"></span>
-          <span class="vp-boton">Ingresar</span>
+        <div class="vp-banner" id="vp-banner"></div>
+        <div class="vp-zona">
+          <div class="vp-lista"><span></span><span></span><span></span></div>
+          <div class="vp-tarjeta">
+            <small id="vp-etiqueta"></small>
+            <b id="vp-titulo"></b>
+            <span id="vp-texto"></span>
+            <span class="vp-boton">Ingresar</span>
+          </div>
         </div>
-        <div class="vp-zona"><span></span><span></span></div>
       </div>
 
       <!-- Colores -->
@@ -91,7 +94,7 @@
 
       <!-- Banner -->
       <fieldset class="grupo-apariencia">
-        <legend>Banner de la página de inicio</legend>
+        <legend>Banner y ventana de ingreso</legend>
 
         <label class="etiqueta" for="b-imagen">Foto del banner (JPG, PNG o WEBP, máx. 2 MB)</label>
         <input class="campo campo-archivo" id="b-imagen" type="file" accept="image/jpeg,image/png,image/webp">
@@ -99,7 +102,7 @@
           <input type="checkbox" id="b-quitar">
           <span>Quitar la foto actual</span>
         </label>
-        <p class="ayuda">Recomendado: horizontal, 1600 × 600 px. El lado izquierdo se oscurece para que el texto se lea.</p>
+        <p class="ayuda">Recomendado: horizontal, 1600 × 600 px. La foto se muestra completa, sin textos encima. Los textos de abajo aparecen en la ventana de ingreso con clave, a la derecha del catálogo.</p>
 
         <label class="etiqueta" for="b-etiqueta">Etiqueta (texto pequeño de arriba)</label>
         <input class="campo" id="b-etiqueta" maxlength="80">

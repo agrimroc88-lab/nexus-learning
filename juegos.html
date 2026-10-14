@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Juegos · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/juegos.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="admin.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#F2C14E"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#F2C14E" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#F2C14E"/>
+        </svg>
+        Administración
+      </a>
+      <nav class="nav-admin">
+        <a href="resumen.html">Resumen</a>
+        <a href="admin.html">Cursos</a>
+        <a href="empresas.html">Empresas</a>
+        <a href="juegos.html" aria-current="page">Juegos</a>
+        <a href="administradores.html">Administradores</a>
+        <a href="apariencia.html">Apariencia</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <a data-nexus="" href="#" class="enlace-nexus">NEXUS</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <main id="panel" class="contenedor pagina-simple pagina-juegos" hidden>
+    <section class="editor">
+      <h1>Juegos</h1>
+      <p class="ayuda">Biblioteca de juegos de práctica. Crea un juego una vez y agrégalo a cualquier lección desde <strong>Cursos → Lecciones → Juego (opcional)</strong>. Los juegos no cambian la nota de la evaluación.</p>
+
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <ol id="lista-juegos" class="lista-items"></ol>
+
+      <div class="fila-botones" id="nuevo-juego">
+        <span class="etiqueta-nuevo">Nuevo juego:</span>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="numeros">Busca los números (5S)</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="clasificar">Clasifica (dos opciones)</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="ordenar">Ordena los pasos</button>
+      </div>
+    </section>
+
+    <!-- ===== Editor ===== -->
+    <section class="editor" id="editor-juego" hidden>
+      <form id="form-juego" class="formulario-item" novalidate>
+        <h3 id="j-form-titulo">Nuevo juego</h3>
+        <p class="ayuda" id="j-tipo-ayuda"></p>
+
+        <label class="etiqueta" for="j-titulo">Título del juego</label>
+        <input class="campo" id="j-titulo" maxlength="120">
+        <label class="etiqueta" for="j-instruccion">Instrucción para el participante</label>
+        <textarea class="campo area" id="j-instruccion" rows="2" maxlength="300"></textarea>
+
+        <!-- Busca los números -->
+        <div data-tipo="numeros" hidden>
+          <div class="fila-dos fila-iguales">
+            <div>
+              <label class="etiqueta" for="j-cantidad">Cantidad de números (10 a 60)</label>
+              <input class="campo" id="j-cantidad" type="number" min="10" max="60" step="1">
+            </div>
+            <div>
+              <label class="etiqueta" for="j-segundos">Tiempo por ronda, en segundos (20 a 300)</label>
+              <input class="campo" id="j-segundos" type="number" min="20" max="300" step="5">
+            </div>
+          </div>
+          <p class="ayuda">Tres rondas: desorden (con números que sobran), clasificado y ordenado. Al final se comparan los tiempos.</p>
+        </div>
+
+        <!-- Clasifica -->
+        <div data-tipo="clasificar" hidden>
+          <div class="fila-dos fila-iguales">
+            <div>
+              <label class="etiqueta" for="j-opcion-a">Opción A</label>
+              <input class="campo" id="j-opcion-a" maxlength="40" placeholder="Acto subestándar">
+            </div>
+            <div>
+              <label class="etiqueta" for="j-opcion-b">Opción B</label>
+              <input class="campo" id="j-opcion-b" maxlength="40" placeholder="Condición subestándar">
+            </div>
+          </div>
+          <fieldset class="opciones-editor">
+            <legend>Tarjetas (mínimo 3)</legend>
+            <ol id="j-tarjetas" class="tarjetas-editor"></ol>
+            <button type="button" class="enlace-boton" id="btn-agregar-tarjeta">+ Agregar tarjeta</button>
+          </fieldset>
+        </div>
+
+        <!-- Ordena los pasos -->
+        <div data-tipo="ordenar" hidden>
+          <label class="etiqueta" for="j-pasos">Pasos en el orden correcto (uno por línea, de 3 a 10)</label>
+          <textarea class="campo area" id="j-pasos" rows="7"></textarea>
+          <p class="ayuda">El juego los muestra mezclados y la persona debe tocarlos en orden.</p>
+        </div>
+
+        <div class="acciones-form">
+          <button type="button" class="boton secundario" id="btn-cancelar-juego">Cancelar</button>
+          <button type="button" class="boton secundario" id="btn-probar-juego">Probar</button>
+          <button type="submit" class="boton" id="btn-guardar-juego">Guardar juego</button>
+        </div>
+      </form>
+
+      <div id="vista-juego" hidden></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/juegos-motor.js"></script>
+  <script src="js/juegos.js"></script>
+</body>
+</html>

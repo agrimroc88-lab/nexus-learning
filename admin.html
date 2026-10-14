@@ -30,6 +30,7 @@
         <a href="resumen.html" data-solo-admin>Resumen</a>
         <a href="admin.html" aria-current="page">Cursos</a>
         <a href="empresas.html" data-solo-admin>Empresas</a>
+        <a href="juegos.html" data-solo-admin>Juegos</a>
         <a href="administradores.html" data-solo-admin>Administradores</a>
         <a href="apariencia.html" data-solo-admin>Apariencia</a>
         <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
@@ -160,6 +161,12 @@
                 <span>Quitar las diapositivas actuales</span>
               </label>
             </div>
+            <label class="etiqueta" for="l-juego">Juego (opcional)</label>
+            <select class="campo" id="l-juego">
+              <option value="">Sin juego</option>
+            </select>
+            <p class="ayuda">Aparece al final de la lección como práctica; no cuenta para la nota.<span data-solo-admin> Los juegos se crean en <a href="juegos.html">Juegos</a>.</span></p>
+
             <label class="etiqueta" for="l-contenido">Contenido</label>
             <textarea class="campo area" id="l-contenido" rows="10"></textarea>
             <p class="ayuda">Deja una línea en blanco entre párrafos. Para hacer una lista, empieza cada línea con un guion (-) o con un número (1.).</p>
@@ -300,6 +307,7 @@ Respuesta: c"></textarea>
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
+  <script src="js/juegos-motor.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/importar-preguntas.js"></script>

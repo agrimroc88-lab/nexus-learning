@@ -2,24 +2,26 @@
 // NEXUS LEARNING · PÁGINA DE INICIO
 // Carpeta: js/inicio.js
 // Valida el código de capacitación y lleva al participante a su curso.
-// Además: catálogo público de programas.
+// Además: ventana "Iniciar sesión" (docente / estudiante) y catálogo.
 // =====================================================================
-
-const formAcceso = document.getElementById("form-acceso");
-const campoAcceso = document.getElementById("codigo-acceso");
-const errorAcceso = document.getElementById("error-acceso");
 
 // Ordena lo que escribe la persona: mayúsculas, sin espacios y con guion
 function normalizarCodigo(texto) {
   return String(texto || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
 }
 
-campoAcceso.addEventListener("input", function () {
-  errorAcceso.textContent = "";
-});
+// Conecta un formulario de clave (portada o ventana) con la validación
+function conectarAcceso(idForm, idCampo, idError, idBoton) {
+  const campoAcceso = document.getElementById(idCampo);
+  const errorAcceso = document.getElementById(idError);
+  campoAcceso.addEventListener("input", function () { errorAcceso.textContent = ""; });
+  document.getElementById(idForm).addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    entrarConClave(campoAcceso, errorAcceso, document.getElementById(idBoton));
+  });
+}
 
-formAcceso.addEventListener("submit", async function (ev) {
-  ev.preventDefault();
+async function entrarConClave(campoAcceso, errorAcceso, boton) {
   const codigo = normalizarCodigo(campoAcceso.value);
   campoAcceso.value = codigo;
 
@@ -29,7 +31,6 @@ formAcceso.addEventListener("submit", async function (ev) {
     return;
   }
 
-  const boton = document.getElementById("btn-acceso");
   boton.disabled = true;
   boton.textContent = "Revisando…";
 
@@ -49,7 +50,32 @@ formAcceso.addEventListener("submit", async function (ev) {
   }
 
   location.href = "curso.html?codigo=" + encodeURIComponent(codigo);
+}
+
+conectarAcceso("form-acceso", "codigo-acceso", "error-acceso", "btn-acceso");
+conectarAcceso("paso-estudiante", "clave-ventana", "error-clave-ventana", "btn-clave-ventana");
+
+// =====================================================================
+// VENTANA "INICIAR SESIÓN": DOCENTE O ESTUDIANTE
+// =====================================================================
+const ventana = document.getElementById("ventana-sesion");
+
+function mostrarPaso(estudiante) {
+  document.getElementById("paso-elegir").hidden = estudiante;
+  document.getElementById("paso-estudiante").hidden = !estudiante;
+  document.getElementById("error-clave-ventana").textContent = "";
+  if (estudiante) document.getElementById("clave-ventana").focus();
+}
+
+document.getElementById("btn-sesion").addEventListener("click", function () {
+  mostrarPaso(false);
+  ventana.showModal();
 });
+document.getElementById("btn-estudiante").addEventListener("click", function () { mostrarPaso(true); });
+document.getElementById("btn-volver-sesion").addEventListener("click", function () { mostrarPaso(false); });
+document.getElementById("btn-cerrar-sesion").addEventListener("click", function () { ventana.close(); });
+// Clic fuera del cuadro: cerrar
+ventana.addEventListener("click", function (ev) { if (ev.target === ventana) ventana.close(); });
 
 // =====================================================================
 // CATÁLOGO PÚBLICO DE PROGRAMAS

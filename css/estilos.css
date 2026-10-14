@@ -545,6 +545,8 @@ h1, h2, h3 {
   .verificar-form { flex-direction: column; }
   .acceso-fila { flex-direction: column; }
   .barra .nav-extra { display: none; }
+  /* Páginas con un solo enlace en la barra (curso, programa, verificar): va en el pie */
+  .barra nav:not(.nav-admin):not(.nav-publica) { display: none; }
   .pestanas-barra { margin: 0; }
   .nav-publica { gap: 14px; }
   .marca { font-size: 18px; white-space: nowrap; }

@@ -1,7 +1,7 @@
 /* =====================================================================
    NEXUS LEARNING · ESTILOS DE ADMINISTRACIÓN
    Carpeta: css/admin.css
-   Lo usan login.html, entrar.html, admin.html y empresas.html.
+   Lo usan login.html, entrar.html, admin.html, empresas.html y administradores.html.
    Requiere cargar antes css/estilos.css.
    ===================================================================== */
 
@@ -95,6 +95,12 @@
 .estado { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
 .estado.publicado { background: #DDF0E5; color: var(--ok); }
 .estado.borrador { background: var(--niebla); color: var(--gris); }
+
+/* Página de una sola columna (administradores.html) */
+.pagina-simple { max-width: 820px; padding-top: 32px; }
+.pagina-simple .editor > .aviso { margin: 16px 0; }
+.pagina-simple .ayuda { margin-bottom: 20px; }
+.pagina-simple .etiqueta { margin-top: 14px; }
 
 /* ---------- Editor ---------- */
 .editor {

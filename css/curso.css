@@ -1,24 +1,43 @@
 /* =====================================================================
    NEXUS LEARNING · ESTILOS DE LA PÁGINA DEL CURSO
    Carpeta: css/curso.css
-   Solo los usa curso.html. Requiere cargar antes css/estilos.css.
+   La usan curso.html y programa.html. Requiere cargar antes css/estilos.css.
    ===================================================================== */
 
-.pagina-curso { padding-top: 40px; }
+.fondo-zona { background: var(--zona); }
+.pagina-curso { padding-top: 32px; }
+.pagina-curso > .aviso { margin-bottom: 24px; }
 
-.curso-cabecera { margin-bottom: 32px; }
+/* Encabezado del curso: franja oscura de lado a lado de la pantalla */
+.curso-cabecera {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  gap: 28px;
+  align-items: center;
+  margin: -32px 0 32px;
+  padding: 32px 0;
+  background: var(--pino);
+  box-shadow: 0 0 0 100vmax var(--pino);
+  clip-path: inset(0 -100vmax);
+  color: var(--blanco);
+}
+.cabecera-texto { min-width: 0; }
+.cabecera-portada { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
+.curso-cabecera h1 { font-size: clamp(28px, 3.6vw, 42px); max-width: 24ch; color: var(--blanco); margin-bottom: 8px; }
+.curso-cabecera p { margin: 0; color: #CFE0DA; font-weight: 600; }
+.curso-cabecera .empresa-etiqueta { margin-bottom: 10px; }
+.cabecera-progreso { min-width: 220px; font-size: 14px; font-weight: 600; color: #CFE0DA; }
+.cabecera-progreso .barra-progreso { margin: 8px 0 0; background: rgba(255, 255, 255, 0.15); }
 .empresa-etiqueta {
   display: inline-block;
   margin: 0 0 12px;
   padding: 4px 12px;
   border-radius: 99px;
-  background: var(--pino);
+  background: rgba(242, 193, 78, 0.16);
   color: var(--senal) !important;
   font-size: 14px;
   font-weight: 700;
 }
-.curso-cabecera h1 { font-size: clamp(30px, 4vw, 44px); max-width: 24ch; }
-.curso-cabecera p { margin: 0; color: var(--gris); font-weight: 600; }
 
 .curso-cuerpo {
   display: grid;
@@ -54,8 +73,8 @@
   top: 20px;
   padding: 22px;
   background: var(--blanco);
-  border: 2px solid var(--niebla);
-  border-radius: 14px;
+  border-radius: 12px;
+  box-shadow: var(--sombra);
 }
 .temario-progreso { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--gris); }
 .barra-progreso {
@@ -113,8 +132,8 @@
 /* ---------- Vistas ---------- */
 .vista {
   background: var(--blanco);
-  border: 2px solid var(--niebla);
-  border-radius: 14px;
+  border-radius: 12px;
+  box-shadow: var(--sombra);
   padding: 36px;
   min-width: 0;
 }
@@ -232,6 +251,9 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
 /* ---------- Celular ---------- */
 @media (max-width: 860px) {
   .curso-cuerpo { grid-template-columns: 1fr; gap: 24px; }
+  .curso-cabecera { grid-template-columns: 1fr; gap: 16px; padding: 20px 0 24px; }
+  .cabecera-portada { max-width: 320px; }
+  .cabecera-progreso { min-width: 0; }
   .temario { position: static; }
   .vista { padding: 22px; }
   .fila-campos { grid-template-columns: 1fr; }

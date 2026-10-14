@@ -129,3 +129,7 @@
 .temas-jornada li { margin-bottom: 2px; }
 .conv-jornada .ayuda { margin-top: 10px; font-size: 13px; }
 
+
+/* Informe PDF de la empresa */
+.empresa-botones { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
+.form-informe { margin: 12px 0 20px; }

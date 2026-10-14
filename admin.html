@@ -108,6 +108,10 @@
             </div>
           </div>
 
+          <label class="etiqueta" for="c-por-eval">Preguntas por evaluación</label>
+          <input class="campo campo-corto" id="c-por-eval" type="number" min="1" max="200" step="1" placeholder="Todas">
+          <p class="ayuda">Vacío = cada estudiante responde todas las preguntas. Si escribes un número (por ejemplo 10), cada estudiante recibe esa cantidad elegidas al azar del banco del programa, distintas en cada intento.</p>
+
           <label class="interruptor">
             <input type="checkbox" id="c-publicado">
             <span>Activo: disponible para crear nuevas capacitaciones</span>
@@ -212,6 +216,53 @@
 
         <!-- ----- Preguntas ----- -->
         <div class="hoja" data-hoja="preguntas" hidden>
+          <div class="banco-cabecera">
+            <p class="ayuda" id="banco-resumen"></p>
+            <button type="button" class="boton secundario boton-chico" id="btn-importar">Cargar varias preguntas</button>
+          </div>
+
+          <!-- Carga de varias preguntas: pegando texto o con un archivo Excel -->
+          <div id="bloque-importar" class="formulario-item bloque-importar" hidden>
+            <h3>Cargar varias preguntas</h3>
+            <div class="importar-columnas">
+              <div>
+                <label class="etiqueta" for="imp-texto">Pega aquí las preguntas</label>
+                <textarea class="campo area" id="imp-texto" rows="12" spellcheck="false" placeholder="1. ¿Qué es un peligro?
+a) Una sanción
+*b) Una fuente con potencial de causar daño
+c) Un accidente
+
+2. ¿Quién debe usar el EPP?
+a) Solo el supervisor
+b) Solo los visitantes
+c) Todo trabajador expuesto
+Respuesta: c"></textarea>
+              </div>
+              <div class="importar-ayuda">
+                <p><strong>Formato para pegar</strong></p>
+                <ul>
+                  <li>Cada pregunta en una línea; puede empezar con su número.</li>
+                  <li>Debajo, de 2 a 4 opciones que empiecen con <code>a)</code>, <code>b)</code>, <code>c)</code>, <code>d)</code>.</li>
+                  <li>Marca la correcta con un <code>*</code> al inicio, o escribe al final <code>Respuesta: c</code>.</li>
+                </ul>
+                <p><strong>O sube un Excel</strong></p>
+                <input class="campo campo-archivo" id="imp-archivo" type="file" accept=".xlsx,.xls,.csv">
+                <button type="button" class="enlace-boton" id="btn-plantilla">Descargar plantilla de Excel</button>
+              </div>
+            </div>
+            <div class="acciones-form">
+              <button type="button" class="boton secundario" id="btn-cancelar-importar">Cancelar</button>
+              <button type="button" class="boton" id="btn-revisar-importar">Revisar preguntas</button>
+            </div>
+            <div id="imp-revision" hidden>
+              <p class="aviso" id="imp-resumen"></p>
+              <ol class="lista-revision" id="imp-lista"></ol>
+              <div class="acciones-form">
+                <button type="button" class="boton" id="btn-guardar-importar">Agregar preguntas</button>
+              </div>
+            </div>
+          </div>
+
           <ol id="lista-preguntas" class="lista-items"></ol>
 
           <form id="form-pregunta" class="formulario-item" novalidate>
@@ -249,6 +300,8 @@
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

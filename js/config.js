@@ -48,9 +48,9 @@ function nexusUsuarioVisible(correo) {
 
 // Portada de un curso: la imagen subida o, si no hay, una portada de color
 // con las iniciales del título (siempre la misma para el mismo título).
-const NEXUS_TONOS = [
-  ["#0F3D3E", "#1C5C5D"], ["#14532D", "#2F7A4A"], ["#1E3A5F", "#2F5D8A"],
-  ["#5B3A1A", "#8A5A2B"], ["#3F2D56", "#62478A"], ["#7A2E1F", "#A64A33"]
+const NEXUS_TONOS = [   // tonos del logo: azules y dorados
+  ["#123A7A", "#1F55A8"], ["#0A2B5D", "#2A4F8F"], ["#1E3A5F", "#2F5D8A"],
+  ["#8A6416", "#B8892B"], ["#27306B", "#3F4BA0"], ["#16507A", "#2A7AB0"]
 ];
 function pintarPortada(caja, titulo, url) {
   caja.innerHTML = "";

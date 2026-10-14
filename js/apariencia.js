@@ -11,9 +11,9 @@ const $p = (id) => document.getElementById(id);
 
 // Valores originales del diseño (iguales a css/estilos.css e index.html)
 const ORIGINAL = {
-  color_principal: "#0F3D3E",
-  color_acento: "#F2C14E",
-  color_fondo: "#E8ECE9",
+  color_principal: "#123A7A",
+  color_acento: "#E3B341",
+  color_fondo: "#E8EEF7",
   banner_etiqueta: "Capacitación en Seguridad y Salud Ocupacional",
   banner_titulo: "Capacitación laboral que se puede comprobar",
   banner_texto: "Escribe la clave de acceso que te dio tu empresa o escanea el código QR de la capacitación."

@@ -22,6 +22,9 @@
   color: var(--blanco);
 }
 .cabecera-texto { min-width: 0; }
+.curso-cabecera.cabecera-simple { grid-template-columns: 1fr; }
+#resultado h2 { font-size: 26px; }
+#resultado .enlace-simple { margin-top: 18px; }
 .cabecera-portada { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
 .curso-cabecera h1 { font-size: clamp(28px, 3.6vw, 42px); max-width: 24ch; color: var(--blanco); margin-bottom: 8px; }
 .curso-cabecera p { margin: 0; color: #CFE0DA; font-weight: 600; }

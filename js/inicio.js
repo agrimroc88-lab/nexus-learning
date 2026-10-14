@@ -117,15 +117,8 @@ function pintarBanner(ap) {
     const url = nexusDb.storage.from("portadas").getPublicUrl(ap.banner_imagen).data.publicUrl;
     banner.style.setProperty("--foto-banner", "url(\"" + url + "\")");
     banner.classList.add("con-foto");
-    // El alto del banner sigue la proporción real de la foto (sin recortarla)
-    const img = new Image();
-    img.onload = function () {
-      if (img.naturalWidth && img.naturalHeight) banner.style.aspectRatio = img.naturalWidth + " / " + img.naturalHeight;
-    };
-    img.src = url;
   } else {
     banner.classList.remove("con-foto");
-    banner.style.aspectRatio = "";
   }
 }
 pintarBanner(aparienciaGuardada());

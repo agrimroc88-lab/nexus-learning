@@ -26,7 +26,7 @@ let urlFotoNueva = null;  // vista previa de una foto elegida y aún no guardada
 (async function iniciar() {
   const usuario = await exigirAdministrador();
   if (!usuario) return;
-  $p("usuario-correo").textContent = nexusUsuarioVisible(usuario.email);
+  mostrarUsuario(usuario, "admin");
 
   const { data, error } = await nexusDb.from("cap_apariencia").select("*").eq("id", 1).maybeSingle();
   $p("cargando").hidden = true;

@@ -14,7 +14,7 @@ let miCedula = "";
 (async function iniciar() {
   const usuario = await exigirAdministrador();
   if (!usuario) return;
-  $a("usuario-correo").textContent = nexusUsuarioVisible(usuario.email);
+  mostrarUsuario(usuario, "admin");
   const sufijo = "@" + NEXUS_CONFIG.dominioCedula;
   miCedula = usuario.email && usuario.email.endsWith(sufijo) ? usuario.email.slice(0, -sufijo.length) : "";
   $a("k-usuario").textContent = "Usuario para entrar: " + (miCedula ? "tu cédula " + miCedula : usuario.email) + ".";

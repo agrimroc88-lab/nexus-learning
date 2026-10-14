@@ -33,7 +33,7 @@ const NUM_OPCIONES = 4;
   adm.papel = acceso.papel;
   if (esDocente()) prepararModoDocente();
 
-  el("usuario-correo").textContent = nexusUsuarioVisible(acceso.usuario.email);
+  mostrarUsuario(acceso.usuario, acceso.papel);
   el("cargando").hidden = true;
   el("panel").hidden = false;
 

@@ -399,6 +399,28 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   .cursos-diseno .tarjeta-curso { grid-template-columns: 170px 1fr; }
   .cursos-diseno .tarjeta-lado { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
 }
+/* Celular: el cuadro de la clave queda fijo en la parte inferior de la pantalla.
+   El body reserva ese espacio para que no tape ningún texto (ver más abajo). */
+@media (max-width: 760px) {
+  body:has(.tarjeta-acceso) { padding-bottom: calc(124px + env(safe-area-inset-bottom)); }
+  .tarjeta-acceso .acceso-form {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--pino-noche);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.22);
+  }
+  .tarjeta-acceso .acceso-form .etiqueta { margin: 0 0 6px; font-size: 13px; }
+  .tarjeta-acceso .acceso-fila { flex-direction: row; gap: 8px; }
+  .tarjeta-acceso .acceso-fila .campo { min-height: 48px; font-size: 18px; }
+  .tarjeta-acceso .acceso-fila .boton { min-height: 48px; padding: 0 18px; }
+  .tarjeta-acceso .acceso-error { min-height: 0; margin: 0; font-size: 14px; }
+  .tarjeta-acceso .acceso-error:not(:empty) { margin-top: 6px; }
+}
+
 /* Tablet y celular: la ventana va arriba del catálogo y no flota */
 @media (max-width: 1000px) {
   .cursos-diseno { grid-template-columns: minmax(0, 1fr); grid-template-areas: "acceso" "catalogo"; gap: 24px; }

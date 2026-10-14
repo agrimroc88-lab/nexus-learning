@@ -278,3 +278,73 @@
   .comparacion-fila { grid-template-columns: 78px minmax(0, 1fr) auto; }
   .pagina-juegos .item .enlace-boton:first-of-type { margin-left: 46px; }
 }
+
+/* =====================================================================
+   JUEGOS PARA LA CHARLA (charla.html): lista y escenario para proyectar
+   ===================================================================== */
+.pagina-charla { max-width: 900px; }
+.buscador-juegos { margin: 4px 0 18px; background: var(--blanco); }
+.programa-charla { margin-bottom: 22px; }
+.programa-charla h2, .titulo-biblioteca { font-size: 20px; margin: 0 0 8px; color: var(--pino); }
+.titulo-biblioteca { margin-top: 28px; }
+.lista-juegos-charla { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.juego-charla {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--niebla);
+  border-radius: var(--radio);
+  background: var(--blanco);
+}
+.juego-charla .juego-tipo { justify-self: start; }
+
+/* Escenario a pantalla completa */
+body.con-escenario { overflow: hidden; }
+.escenario-juego {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+}
+.escenario-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--pino-noche);
+  color: var(--blanco);
+}
+.escenario-barra strong { font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.escenario-acciones { display: flex; gap: 8px; flex: none; }
+.escenario-barra .boton.secundario { background: transparent; color: var(--blanco); border-color: rgba(255, 255, 255, 0.6); }
+.escenario-cuerpo { flex: 1; overflow: auto; padding: 24px; }
+.escenario-cuerpo .juego { max-width: 1200px; margin: 0 auto; }
+
+/* Letra grande para que se lea desde el fondo de la sala */
+.escenario-juego .juego-titulo { font-size: clamp(26px, 3vw, 40px); }
+.escenario-juego .juego-instruccion, .escenario-juego .juego-intro p, .escenario-juego .juego-final > p { font-size: clamp(17px, 1.6vw, 22px); }
+.escenario-juego .juego h4 { font-size: clamp(22px, 2.4vw, 32px); }
+.escenario-juego .juego-progreso { font-size: 18px; }
+.escenario-juego .tarjeta-juego { font-size: clamp(24px, 2.8vw, 38px); padding: 40px 30px; }
+.escenario-juego .opcion-juego { min-height: 76px; font-size: clamp(18px, 1.8vw, 26px); }
+.escenario-juego .opcion-escenario { font-size: clamp(17px, 1.6vw, 23px); }
+.escenario-juego .retro { font-size: 19px; }
+.escenario-juego .paso-juego { min-height: 64px; font-size: clamp(17px, 1.6vw, 23px); }
+.escenario-juego .orden-elegido li, .escenario-juego .lista-riesgos li { font-size: 19px; }
+.escenario-juego .num { font-size: 24px; min-width: 44px; min-height: 44px; }
+.escenario-juego .tablero-numeros { max-height: 72vh; }
+.escenario-juego .juego-barra strong { font-size: 26px; }
+.escenario-juego .juego-reloj { font-size: 22px; padding: 6px 14px; }
+.escenario-juego .foto-riesgos { max-width: min(100%, 120vh); margin: 0 auto; }
+.escenario-juego .boton { min-height: 52px; font-size: 18px; }
+
+@media (max-width: 600px) {
+  .juego-charla { grid-template-columns: minmax(0, 1fr) auto; }
+  .juego-charla .juego-tipo { grid-column: 1 / -1; }
+  .escenario-cuerpo { padding: 12px; }
+}

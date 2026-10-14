@@ -343,6 +343,7 @@
 
 /* Modo docente: oculta lo exclusivo del administrador */
 .modo-docente [data-solo-admin] { display: none !important; }
+body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .modo-docente #form-curso .campo { background: var(--papel); }
 
 /* ---------- Celular y tablet ---------- */

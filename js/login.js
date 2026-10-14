@@ -11,6 +11,13 @@ function mostrarMensaje(texto, tipo) {
   mensajeLogin.hidden = false;
 }
 
+// Si llega desde "Iniciar sesión > Docente" en la página de inicio
+if (new URLSearchParams(location.search).get("papel") === "docente") {
+  document.title = "Ingreso de docentes · Nexus Learning";
+  document.getElementById("login-titulo").textContent = "Ingreso de docentes";
+  document.getElementById("login-intro").textContent = "Entra con tu cédula y la contraseña que te dio el administrador. Si trabajas en NEXUS, entra desde allí sin otra contraseña.";
+}
+
 // Mensaje si viene de una página protegida sin permiso
 if (new URLSearchParams(location.search).get("motivo") === "sin-permiso") {
   mostrarMensaje("Tu cuenta no tiene permiso de administrador ni de docente vigente. Pide acceso al administrador de la plataforma.");

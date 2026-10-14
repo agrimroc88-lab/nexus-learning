@@ -55,7 +55,8 @@ async function exigirPersonal() {
   return { usuario: sesion.user, papel: papel };
 }
 
+// Al cerrar sesión se vuelve a la página de inicio pública
 async function cerrarSesion() {
   await nexusDb.auth.signOut();
-  location.replace("login.html");
+  location.replace("index.html");
 }

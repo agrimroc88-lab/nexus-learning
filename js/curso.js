@@ -66,6 +66,15 @@ function pintarCabecera() {
   if (a.tipo === "virtual" && a.lecciones > 0) partes.push(a.lecciones + (a.lecciones === 1 ? " lección" : " lecciones"));
   partes.push(a.requiere_evaluacion ? "Con evaluación" : "Sin evaluación");
   $("curso-datos").textContent = partes.join(" · ");
+  pintarPortadaCurso($("curso-portada"), a.curso_id, a.curso);
+}
+
+// Portada del curso: primero la de color; si el curso tiene imagen, se cambia
+async function pintarPortadaCurso(caja, cursoId, titulo) {
+  pintarPortada(caja, titulo, null);
+  if (!cursoId) return;
+  const { data } = await nexusDb.rpc("cap_portada", { p_curso: cursoId });
+  if (data) pintarPortada(caja, titulo, nexusDb.storage.from("portadas").getPublicUrl(data).data.publicUrl);
 }
 
 // ---------------------------------------------------------------------
@@ -268,6 +277,12 @@ function actualizarTemario(activa) {
   $("btn-temario-evaluacion").title = listas ? "" : "Revisa todas las lecciones para habilitar la evaluación";
   $("progreso-texto").textContent = "Progreso: " + st.vistas.size + " de " + total + " lecciones";
   $("progreso-barra").style.width = Math.round((st.vistas.size / total) * 100) + "%";
+
+  // Avance también en el encabezado del curso
+  const porcentaje = Math.min(100, Math.round((st.vistas.size / total) * 100));
+  $("cabecera-progreso").hidden = false;
+  $("cabecera-progreso-texto").textContent = (porcentaje >= 100 ? "Lecciones completas" : "En progreso") + " (" + porcentaje + "% visto)";
+  $("cabecera-progreso-barra").style.width = porcentaje + "%";
 }
 
 function mostrarVista(nombre) {

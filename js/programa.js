@@ -31,6 +31,12 @@ const $ = (id) => document.getElementById(id);
   $("p-datos").textContent = partes.join(" · ");
   $("p-descripcion").textContent = data.descripcion || "";
 
+  // Portada: la de color de inmediato; la imagen, si el programa tiene
+  pintarPortada($("p-portada"), data.titulo, null);
+  nexusDb.rpc("cap_portada", { p_curso: idPrograma }).then(function (r) {
+    if (r.data) pintarPortada($("p-portada"), data.titulo, nexusDb.storage.from("portadas").getPublicUrl(r.data).data.publicUrl);
+  });
+
   $("estado").hidden = true;
   $("programa").hidden = false;
   $("clave").focus();

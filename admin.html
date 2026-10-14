@@ -77,6 +77,19 @@
           <label class="etiqueta" for="c-descripcion">Descripción (aparece en la página de inicio)</label>
           <textarea class="campo area" id="c-descripcion" rows="4" maxlength="600"></textarea>
 
+          <label class="etiqueta" for="c-imagen">Imagen de portada (JPG, PNG o WEBP, máx. 2 MB)</label>
+          <div class="bloque-portada" data-solo-admin>
+            <div class="portada-vista" id="c-imagen-vista" aria-hidden="true"></div>
+            <div class="portada-campos">
+              <input class="campo campo-archivo" id="c-imagen" type="file" accept="image/jpeg,image/png,image/webp">
+              <label class="interruptor" id="c-imagen-quitar-caja" hidden>
+                <input type="checkbox" id="c-imagen-quitar">
+                <span>Quitar la imagen actual</span>
+              </label>
+              <p class="ayuda">Aparece en el catálogo de la página de inicio. Recomendado: horizontal, 1200 × 700 px. Sin imagen se usa una portada de color.</p>
+            </div>
+          </div>
+
           <label class="etiqueta" for="c-subtemas">Subtemas (uno por línea; aparecen en el registro de asistencia)</label>
           <textarea class="campo area" id="c-subtemas" rows="4" placeholder="Derechos sexuales&#10;Métodos anticonceptivos&#10;Lactancia materna"></textarea>
           <p class="ayuda">Si lo dejas vacío, el registro de asistencia usará los títulos de las lecciones.</p>

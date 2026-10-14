@@ -27,58 +27,69 @@
         </svg>
         Nexus Learning
       </a>
-      <nav class="nav-publica" aria-label="Principal">
+      <nav class="nav-publica pestanas-barra" aria-label="Principal">
+        <a href="index.html" class="nav-extra" aria-current="page">Inicio</a>
         <a href="#cursos" class="nav-extra">Cursos</a>
         <a href="verificar.html" class="nav-extra">Verificar certificado</a>
+      </nav>
+      <div class="barra-acciones">
         <a data-nexus="" href="#" class="enlace-nexus nav-extra" title="Gestión de Seguridad y Salud Ocupacional">NEXUS SST</a>
         <button type="button" class="boton boton-sesion" id="btn-sesion">Iniciar sesión</button>
-      </nav>
+      </div>
     </div>
   </header>
 
-  <!-- ===== Portada: ingreso con código ===== -->
-  <section class="portada">
+  <!-- ===== Banner: ingreso con clave ===== -->
+  <section class="banner" id="banner">
     <div class="contenedor">
-      <div>
-        <h1>Capacitación laboral que se puede comprobar</h1>
-        <p>Escribe la clave de acceso que te dio tu empresa o escanea el código QR de la capacitación.</p>
+      <p class="banner-etiqueta">Capacitación en Seguridad y Salud Ocupacional</p>
+      <h1>Capacitación laboral que se puede comprobar</h1>
+      <p class="banner-texto">Escribe la clave de acceso que te dio tu empresa o escanea el código QR de la capacitación.</p>
 
-        <form id="form-acceso" class="acceso-form" novalidate>
-          <label for="codigo-acceso" class="etiqueta">Clave de acceso</label>
-          <div class="acceso-fila">
-            <input id="codigo-acceso" class="campo" placeholder="AGR48213" maxlength="14" autocomplete="off" spellcheck="false" autocapitalize="characters">
-            <button class="boton" type="submit" id="btn-acceso">Ingresar</button>
-          </div>
-          <p class="acceso-error" id="error-acceso" role="alert"></p>
-        </form>
-      </div>
+      <form id="form-acceso" class="acceso-form" novalidate>
+        <label for="codigo-acceso" class="etiqueta">Clave de acceso</label>
+        <div class="acceso-fila">
+          <input id="codigo-acceso" class="campo" placeholder="AGR48213" maxlength="14" autocomplete="off" spellcheck="false" autocapitalize="characters">
+          <button class="boton" type="submit" id="btn-acceso">Ingresar</button>
+        </div>
+        <p class="acceso-error" id="error-acceso" role="alert"></p>
+      </form>
 
-      <svg class="ruta" viewBox="0 0 420 310" role="img" aria-labelledby="ruta-titulo">
-        <title id="ruta-titulo">Tres pasos: aprende, evalúa y certifica</title>
-        <path d="M50 240 C 120 240, 100 150, 170 150 S 230 60, 290 60" fill="none" stroke="#F2C14E" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
-        <circle cx="50" cy="240" r="22" fill="#1C5C5D" stroke="#F2C14E" stroke-width="3"/>
-        <circle cx="170" cy="150" r="22" fill="#1C5C5D" stroke="#F2C14E" stroke-width="3"/>
-        <circle cx="290" cy="60" r="26" fill="#F2C14E"/>
-        <path d="M279 60 l8 8 l15 -16" fill="none" stroke="#0F3D3E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="84" y="270" font-size="20">Aprende</text>
-        <text x="84" y="290" font-size="14" class="sub">Presencial o virtual</text>
-        <text x="204" y="180" font-size="20">Evalúa</text>
-        <text x="204" y="200" font-size="14" class="sub">Cuando se requiera</text>
-        <text x="326" y="58" font-size="20">Certifica</text>
-        <text x="326" y="78" font-size="14" class="sub">Con código</text>
-        <text x="326" y="96" font-size="14" class="sub">verificable</text>
-      </svg>
+      <ol class="pasos-banner" aria-label="Cómo funciona">
+        <li><strong>Aprende</strong> presencial o virtual</li>
+        <li><strong>Evalúa</strong> cuando se requiera</li>
+        <li><strong>Certifica</strong> con código verificable</li>
+      </ol>
     </div>
   </section>
 
   <main>
   <!-- ===== Catálogo de programas ===== -->
-  <section class="seccion" id="cursos" aria-labelledby="cursos-titulo">
+  <section class="zona-cursos" id="cursos" aria-labelledby="cursos-titulo">
     <div class="contenedor">
-      <h2 id="cursos-titulo">Programas de capacitación</h2>
-      <p class="intro">Cada programa se dicta para una empresa en modalidad presencial, virtual o mixta. Al terminar, cada participante recibe un certificado con código verificable.</p>
+      <div class="cursos-cabecera">
+        <div>
+          <h2 id="cursos-titulo">Programas de capacitación</h2>
+          <p class="intro">Se dictan para cada empresa en modalidad presencial, virtual o mixta, con certificado verificable.</p>
+        </div>
+      </div>
+
+      <div class="barra-filtros">
+        <div class="filtros" role="tablist" aria-label="Filtrar programas">
+          <button type="button" class="filtro activo" data-filtro="todos" role="tab" aria-selected="true">Todos <span></span></button>
+          <button type="button" class="filtro" data-filtro="linea" role="tab" aria-selected="false">En línea <span></span></button>
+          <button type="button" class="filtro" data-filtro="evaluacion" role="tab" aria-selected="false">Con evaluación <span></span></button>
+        </div>
+        <label class="buscador-cursos">
+          <span class="sr-only">Buscar programa</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="search" id="buscar-curso" placeholder="Buscar…" autocomplete="off">
+        </label>
+      </div>
+
       <p class="aviso" id="cursos-estado" role="status">Cargando programas…</p>
-      <ul class="cursos" id="lista-cursos" hidden></ul>
+      <ul class="lista-tarjetas" id="lista-cursos" hidden></ul>
+      <p class="aviso" id="cursos-vacio" hidden>Ningún programa coincide con la búsqueda.</p>
     </div>
   </section>
 

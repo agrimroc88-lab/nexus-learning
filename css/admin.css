@@ -161,9 +161,9 @@
 /* Lista de lecciones / preguntas */
 .lista-items { list-style: none; margin: 0 0 28px; padding: 0; }
 .item {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   align-items: center;
   padding: 14px 0;
   border-bottom: 1px solid var(--niebla);
@@ -179,7 +179,7 @@
   font-weight: 700;
   font-size: 14px;
 }
-.item-info { min-width: 0; }
+.item-info { min-width: 0; flex: 1 1 260px; }
 .item-info strong { display: block; }
 .item-info small { color: var(--gris); font-size: 14px; }
 
@@ -194,6 +194,11 @@
 .opciones-editor legend { font-weight: 600; font-size: 15px; margin-bottom: 8px; padding: 0; }
 .fila-opcion { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
 .fila-opcion input[type="radio"] { width: 22px; height: 22px; flex: none; accent-color: var(--ok); }
+
+/* Portada del curso */
+.bloque-portada { display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: start; }
+.portada-campos { display: grid; gap: 8px; }
+.portada-campos .ayuda, .portada-campos .interruptor { margin: 0; }
 
 /* Diapositivas PDF de la lección */
 .bloque-pdf { display: grid; gap: 8px; }
@@ -211,8 +216,9 @@
   .lista-cursos { position: static; }
   .editor { padding: 20px; }
   .fila-dos, .fila-tres, #form-curso .fila-dos { grid-template-columns: 1fr; }
-  .item { grid-template-columns: auto 1fr; }
-  .item .enlace-boton { grid-column: 2; justify-self: start; }
+  .bloque-portada { grid-template-columns: 1fr; }
+  .item-info { flex-basis: calc(100% - 50px); }
+  .item .enlace-boton:first-of-type { margin-left: 46px; }
   .nav-admin .usuario { display: none; }
 }
 @media (max-width: 760px) {

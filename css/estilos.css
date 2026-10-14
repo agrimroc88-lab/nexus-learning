@@ -15,6 +15,9 @@
   --niebla: #DCE5E0;      /* bordes y fondos suaves */
   --ok: #1F7A4D;
   --error: #B3402A;
+  --pino-noche: #0B2C2D;  /* barra superior */
+  --zona: #E8ECE9;        /* fondo del área de cursos */
+  --sombra: 0 1px 2px rgba(15, 61, 62, 0.06), 0 4px 14px rgba(15, 61, 62, 0.06);
 
   --fuente-titulo: "Bricolage Grotesque", "Segoe UI", Arial, sans-serif;
   --fuente-texto: "Instrument Sans", "Segoe UI", Arial, sans-serif;
@@ -58,8 +61,10 @@ h1, h2, h3 {
 
 /* ---------- Barra superior ---------- */
 .barra {
-  background: var(--pino);
+  background: var(--pino-noche);
   color: var(--blanco);
+  position: relative;
+  z-index: 5;
 }
 .barra .contenedor {
   display: flex;
@@ -87,6 +92,21 @@ h1, h2, h3 {
 }
 .barra nav a:hover { opacity: 1; text-decoration: underline; }
 .nav-publica { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+
+/* Pestañas de la barra (página de inicio) */
+.pestanas-barra { align-self: stretch; margin: 0 auto 0 40px; gap: 4px; }
+.pestanas-barra a {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 14px;
+  border-bottom: 3px solid transparent;
+  opacity: 0.75;
+}
+.barra .pestanas-barra a:hover { opacity: 1; text-decoration: none; }
+.pestanas-barra a[aria-current="page"] { opacity: 1; font-weight: 600; border-bottom-color: var(--senal); }
+.barra-acciones { display: flex; align-items: center; gap: 14px; }
+.barra-acciones .enlace-nexus { font-size: 14px; text-decoration: none; }
 
 /* Enlace al ecosistema NEXUS (barra de todas las páginas) */
 .barra .enlace-nexus {
@@ -151,7 +171,7 @@ h1, h2, h3 {
 }
 
 /* ---------- Ventana "Iniciar sesión" ---------- */
-.barra .boton-sesion { min-height: 38px; padding: 0 18px; font-size: 15px; }
+.barra .boton-sesion { min-height: 38px; padding: 0 18px; font-size: 15px; white-space: nowrap; }
 .ventana {
   width: min(640px, calc(100% - 32px));
   max-height: calc(100% - 32px);
@@ -247,46 +267,55 @@ h1, h2, h3 {
 /* =====================================================================
    PÁGINA DE INICIO (index.html)
    ===================================================================== */
-.portada {
-  background: var(--pino);
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* Banner: foto opcional (config.js) sobre el color de la marca */
+.banner {
+  position: relative;
+  padding: 64px 0 56px;
   color: var(--blanco);
-  padding: 56px 0 72px;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(242, 193, 78, 0.18) 0, transparent 38%),
+    radial-gradient(circle at 70% 110%, rgba(28, 92, 93, 0.9) 0, transparent 55%),
+    linear-gradient(120deg, var(--pino) 0%, #134849 55%, #1C5C5D 100%);
   overflow: hidden;
 }
-.portada .contenedor {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  align-items: center;
-  gap: 40px;
+.banner::after {
+  /* Anillos del logotipo como marca de agua */
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  width: 420px;
+  height: 420px;
+  transform: translateY(-50%);
+  border: 42px solid rgba(242, 193, 78, 0.07);
+  border-radius: 50%;
+  box-shadow: -230px 0 0 -42px rgba(242, 193, 78, 0.05);
+  pointer-events: none;
 }
-.portada h1 {
+.banner.con-foto {
+  background:
+    linear-gradient(90deg, rgba(11, 44, 45, 0.92) 0%, rgba(11, 44, 45, 0.7) 50%, rgba(11, 44, 45, 0.25) 100%),
+    var(--foto-banner) center / cover no-repeat;
+}
+.banner.con-foto::after { display: none; }
+.banner .contenedor { position: relative; z-index: 1; }
+.banner-etiqueta { margin: 0 0 10px; color: var(--senal); font-weight: 700; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+.banner h1 {
   color: var(--blanco);
-  font-size: clamp(36px, 5.2vw, 60px);
+  font-size: clamp(34px, 4.6vw, 54px);
   letter-spacing: -0.02em;
-  max-width: 14ch;
+  max-width: 16ch;
+  margin-bottom: 14px;
 }
-.portada p {
-  color: #CFE0DA;
-  font-size: 19px;
-  max-width: 46ch;
-  margin: 0 0 28px;
-}
+.banner-texto { margin: 0 0 24px; color: #CFE0DA; font-size: 18px; max-width: 50ch; }
 
-/* La ruta: aprende, evalúa, certifica */
-.ruta { width: 100%; height: auto; }
-.ruta text {
-  font-family: var(--fuente-titulo);
-  font-weight: 700;
-  fill: var(--blanco);
-}
-.ruta .sub {
-  font-family: var(--fuente-texto);
-  font-weight: 400;
-  fill: #A9C6BD;
-}
-
-/* Ingreso con código */
-.acceso-form { max-width: 460px; }
+/* Ingreso con clave */
+.acceso-form { max-width: 480px; }
 .acceso-form .etiqueta { color: var(--blanco); }
 .acceso-fila { display: flex; gap: 10px; }
 .acceso-fila .campo {
@@ -300,38 +329,161 @@ h1, h2, h3 {
 .acceso-fila .boton { min-height: 54px; padding: 0 26px; }
 .acceso-error { min-height: 1.4em; margin: 10px 0 0; color: #FFB9AA; font-weight: 600; font-size: 15px; }
 
-/* Lista de cursos */
+.pasos-banner { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; counter-reset: paso; }
+.pasos-banner li {
+  counter-increment: paso;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #CFE0DA;
+  font-size: 14px;
+}
+.pasos-banner li::before {
+  content: counter(paso);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--senal);
+  color: var(--pino);
+  font-weight: 700;
+  font-size: 13px;
+}
+.pasos-banner strong { color: var(--blanco); }
+
+/* Secciones generales */
 .seccion { padding-top: 64px; }
 .seccion > .contenedor > h2 { font-size: 32px; }
-.seccion > .contenedor > p.intro { color: var(--gris); max-width: 60ch; margin-top: 0; }
 
-.cursos {
-  list-style: none;
-  margin: 28px 0 0;
-  padding: 0;
-  border-top: 2px solid var(--pino);
-}
-.curso {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px 32px;
-  align-items: center;
-  padding: 26px 0;
-  border-bottom: 1px solid var(--niebla);
-}
-.curso h3 { font-size: 24px; margin-bottom: 6px; }
-.curso p { margin: 0; color: var(--gris); max-width: 70ch; }
-.curso .datos {
+/* ---------- Área de cursos ---------- */
+.zona-cursos { padding: 40px 0 56px; background: var(--zona); }
+.cursos-cabecera h2 { font-size: 30px; margin-bottom: 4px; }
+.cursos-cabecera .intro { margin: 0 0 20px; color: var(--gris); }
+
+.barra-filtros {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  background: var(--blanco);
+  box-shadow: var(--sombra);
+}
+.filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+.filtro {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--gris);
+  font-family: var(--fuente-texto);
   font-size: 15px;
   font-weight: 600;
-  color: var(--pino-claro);
+  cursor: pointer;
+}
+.filtro:hover { color: var(--pino); }
+.filtro.activo { background: var(--zona); color: var(--tinta); }
+.buscador-cursos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 240px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--niebla);
+  border-radius: 6px;
+  color: var(--gris);
+}
+.buscador-cursos:focus-within { border-color: var(--pino-claro); }
+.buscador-cursos input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--tinta);
+  font-family: var(--fuente-texto);
+  font-size: 15px;
 }
 
-.curso .subtemas { margin-top: 10px; font-size: 14px; color: var(--gris); }
+/* Tarjeta de curso */
+.lista-tarjetas { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.tarjeta-curso {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  gap: 24px;
+  align-items: start;
+  padding: 18px;
+  border-radius: 10px;
+  background: var(--blanco);
+  box-shadow: var(--sombra);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.tarjeta-curso:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(15, 61, 62, 0.08), 0 10px 24px rgba(15, 61, 62, 0.1); }
+.tarjeta-cuerpo { min-width: 0; padding-top: 4px; }
+.tarjeta-cuerpo h3 { font-size: 22px; margin: 0 0 6px; color: var(--tinta); }
+.tarjeta-meta { margin: 0 0 8px; color: var(--gris); font-size: 14px; }
+.tarjeta-descripcion {
+  margin: 0;
+  color: #3A4844;
+  font-size: 15px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tarjeta-subtemas { margin: 8px 0 0; color: var(--gris); font-size: 13px; }
+.tarjeta-lado { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding-top: 4px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--niebla);
+  border-radius: 6px;
+  color: var(--gris);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip-destacado { border-color: #CDE5D6; background: #EEF7F1; color: var(--ok); }
+
+/* Portada del curso (catálogo y panel) */
+.portada {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--pino);
+}
+.portada img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.portada span {
+  font-family: var(--fuente-titulo);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.92);
+}
+.portada:not(:has(img))::before,
+.portada:not(:has(img))::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 10px solid rgba(242, 193, 78, 0.22);
+}
+.portada:not(:has(img))::before { width: 140px; height: 140px; right: -40px; bottom: -50px; }
+.portada:not(:has(img))::after { width: 70px; height: 70px; left: -20px; top: -24px; border-width: 8px; }
 
 /* Ecosistema NEXUS */
 .ecosistema {
@@ -378,22 +530,35 @@ h1, h2, h3 {
 /* ---------- Celular ---------- */
 @media (max-width: 760px) {
   body { font-size: 16px; }
-  .portada { padding: 36px 0 48px; }
-  .portada .contenedor { grid-template-columns: 1fr; }
-  .curso { grid-template-columns: 1fr; }
-  .curso .boton { justify-self: start; }
+  .banner { padding: 40px 0 36px; }
+  .banner::after { width: 260px; height: 260px; right: -120px; border-width: 28px; }
+  .banner-texto { font-size: 16px; }
+  .zona-cursos { padding: 28px 0 40px; }
+  .buscador-cursos { min-width: 0; flex: 1 1 100%; }
+  .filtro { min-height: 36px; padding: 0 12px; font-size: 14px; }
+  .filtros { gap: 2px; }
+  .tarjeta-curso { grid-template-columns: 1fr; gap: 14px; padding: 14px; }
+  .tarjeta-lado { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
   .ecosistema { grid-template-columns: 1fr; }
   .ecosistema { padding: 26px; }
   .verificar-caja { grid-template-columns: 1fr; padding: 24px; }
   .verificar-form { flex-direction: column; }
   .acceso-fila { flex-direction: column; }
-  .barra nav .nav-extra { display: none; }
+  .barra .nav-extra { display: none; }
+  .pestanas-barra { margin: 0; }
   .nav-publica { gap: 14px; }
   .marca { font-size: 18px; white-space: nowrap; }
   .barra .boton-sesion { min-height: 36px; padding: 0 14px; font-size: 14px; }
   .ventana { padding: 28px 20px 22px; }
   .opciones-sesion { grid-template-columns: 1fr; }
   .opcion-sesion { padding: 20px 16px; }
+}
+
+@media (min-width: 761px) and (max-width: 1000px) {
+  .tarjeta-curso { grid-template-columns: 180px 1fr; }
+  .tarjeta-lado { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+  .pestanas-barra { margin-left: 16px; }
+  .pestanas-barra a { padding: 0 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

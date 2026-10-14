@@ -87,7 +87,7 @@
   touch-action: manipulation;
   user-select: none;
 }
-.tablero-numeros.ordenado { background: #EEF4F1; }
+.tablero-numeros.ordenado { background: #EEF3FB; }
 .num {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -103,7 +103,7 @@
   cursor: pointer;
 }
 .num:hover { background: rgba(255, 255, 255, 0.7); }
-.num.tenue { color: #8A948F; }
+.num.tenue { color: #8A93A6; }
 .tablero-numeros.ordenado .num {
   min-width: 40px;
   background: var(--blanco);

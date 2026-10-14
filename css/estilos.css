@@ -5,21 +5,21 @@
    ===================================================================== */
 
 :root {
-  --pino: #0F3D3E;        /* color principal */
-  --pino-claro: #1C5C5D;
-  --senal: #F2C14E;       /* acento: amarillo de señalización */
-  --papel: #F6F7F4;       /* fondo general */
+  --pino: #123A7A;        /* color principal: azul del logo */
+  --pino-claro: #1F55A8;
+  --senal: #E3B341;       /* acento: dorado del logo */
+  --papel: #F5F7FB;       /* fondo general */
   --blanco: #FFFFFF;
-  --tinta: #172220;       /* texto principal */
-  --gris: #56655F;        /* texto secundario */
-  --niebla: #DCE5E0;      /* bordes y fondos suaves */
+  --tinta: #14203A;       /* texto principal */
+  --gris: #55627A;        /* texto secundario */
+  --niebla: #DAE2EE;      /* bordes y fondos suaves */
   --ok: #1F7A4D;
   --error: #B3402A;
-  --pino-noche: #0B2C2D;  /* barra superior */
-  --zona: #E8ECE9;        /* fondo del área de cursos */
+  --pino-noche: #0A2B5D;  /* barra superior */
+  --zona: #E8EEF7;        /* fondo del área de cursos */
   /* Estos colores los puede cambiar el administrador en "Apariencia"
      (se guardan en Supabase y js/config.js los aplica al cargar). */
-  --sombra: 0 1px 2px rgba(15, 61, 62, 0.06), 0 4px 14px rgba(15, 61, 62, 0.06);
+  --sombra: 0 1px 2px rgba(10, 43, 93, 0.06), 0 4px 14px rgba(10, 43, 93, 0.06);
 
   --fuente-titulo: "Bricolage Grotesque", "Segoe UI", Arial, sans-serif;
   --fuente-texto: "Instrument Sans", "Segoe UI", Arial, sans-serif;
@@ -87,8 +87,8 @@ h1, h2, h3 {
 }
 .marca svg { flex: none; }
 /* Logotipo e íconos: toman el color de acento elegido en "Apariencia" */
-svg [fill="#F2C14E"] { fill: var(--senal); }
-svg [stroke="#F2C14E"] { stroke: var(--senal); }
+svg [fill="#E3B341"] { fill: var(--senal); }
+svg [stroke="#E3B341"] { stroke: var(--senal); }
 .barra nav a {
   color: var(--blanco);
   text-decoration: none;
@@ -186,9 +186,9 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   border-radius: 18px;
   background: var(--papel);
   color: var(--tinta);
-  box-shadow: 0 24px 60px rgba(15, 61, 62, 0.35);
+  box-shadow: 0 24px 60px rgba(10, 43, 93, 0.35);
 }
-.ventana::backdrop { background: rgba(15, 61, 62, 0.72); }
+.ventana::backdrop { background: rgba(10, 43, 93, 0.72); }
 .ventana h2 { font-size: 28px; margin-bottom: 4px; }
 .ventana-intro { margin: 0 0 24px; color: var(--gris); }
 .ventana-cerrar {
@@ -356,7 +356,7 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   background:
     radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--senal) 16%, transparent) 0, transparent 45%),
     linear-gradient(150deg, var(--pino) 0%, var(--pino-claro) 100%);
-  box-shadow: 0 2px 6px rgba(15, 61, 62, 0.12), 0 18px 40px rgba(15, 61, 62, 0.22);
+  box-shadow: 0 2px 6px rgba(10, 43, 93, 0.12), 0 18px 40px rgba(10, 43, 93, 0.22);
 }
 .banner-etiqueta { margin: 0 0 8px; color: var(--senal); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
 .tarjeta-acceso h1 {
@@ -366,7 +366,7 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   letter-spacing: -0.01em;
   margin-bottom: 14px;
 }
-.banner-texto { margin: 0 0 14px; color: #CFE0DA; font-size: 14px; }
+.banner-texto { margin: 0 0 14px; color: #CFDBEF; font-size: 14px; }
 
 /* Ingreso con clave */
 .acceso-form .etiqueta { color: var(--blanco); }
@@ -394,7 +394,7 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   padding: 6px 14px 6px 6px;
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.08);
-  color: #CFE0DA;
+  color: #CFDBEF;
   font-size: 14px;
 }
 .pasos-banner li::before {
@@ -518,13 +518,13 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   box-shadow: var(--sombra);
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
-.tarjeta-curso:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(15, 61, 62, 0.08), 0 10px 24px rgba(15, 61, 62, 0.1); }
+.tarjeta-curso:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(10, 43, 93, 0.08), 0 10px 24px rgba(10, 43, 93, 0.1); }
 .tarjeta-cuerpo { min-width: 0; padding-top: 4px; }
 .tarjeta-cuerpo h3 { font-size: 22px; margin: 0 0 6px; color: var(--tinta); }
 .tarjeta-meta { margin: 0 0 8px; color: var(--gris); font-size: 14px; }
 .tarjeta-descripcion {
   margin: 0;
-  color: #3A4844;
+  color: #3A465E;
   font-size: 15px;
   line-height: 1.55;
   display: -webkit-box;
@@ -584,7 +584,7 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
   padding: 40px;
   border-radius: 18px;
   background: var(--pino);
-  color: #CFE0DA;
+  color: #CFDBEF;
 }
 .ecosistema h2 { color: var(--blanco); font-size: clamp(26px, 3.2vw, 34px); }
 .ecosistema p { margin: 0 0 24px; max-width: 56ch; }

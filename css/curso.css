@@ -27,9 +27,9 @@
 #resultado .enlace-simple { margin-top: 18px; }
 .cabecera-portada { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
 .curso-cabecera h1 { font-size: clamp(28px, 3.6vw, 42px); max-width: 24ch; color: var(--blanco); margin-bottom: 8px; }
-.curso-cabecera p { margin: 0; color: #CFE0DA; font-weight: 600; }
+.curso-cabecera p { margin: 0; color: #CFDBEF; font-weight: 600; }
 .curso-cabecera .empresa-etiqueta { margin-bottom: 10px; }
-.cabecera-progreso { min-width: 220px; font-size: 14px; font-weight: 600; color: #CFE0DA; }
+.cabecera-progreso { min-width: 220px; font-size: 14px; font-weight: 600; color: #CFDBEF; }
 .cabecera-progreso .barra-progreso { margin: 8px 0 0; background: rgba(255, 255, 255, 0.15); }
 .empresa-etiqueta {
   display: inline-block;
@@ -204,7 +204,7 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
   font-weight: 700; cursor: pointer;
 }
 .opcion-sexo input { accent-color: var(--pino); }
-.opcion-sexo:has(input:checked) { border-color: var(--pino); background: #EEF4F1; }
+.opcion-sexo:has(input:checked) { border-color: var(--pino); background: #EEF3FB; }
 
 .error-campo { min-height: 1.3em; margin: 4px 0 6px; font-size: 14px; color: var(--error); }
 
@@ -224,7 +224,7 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
 }
 .opcion:hover { border-color: var(--pino-claro); }
 .opcion input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--pino); }
-.opcion:has(input:checked) { border-color: var(--pino); background: #EEF4F1; }
+.opcion:has(input:checked) { border-color: var(--pino); background: #EEF3FB; }
 .pregunta.sin-responder .opcion { border-color: #E9B8AD; }
 
 /* ---------- Jornada (varias capacitaciones con una sola clave) ---------- */

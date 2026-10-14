@@ -28,9 +28,10 @@
         Nexus Learning
       </a>
       <nav class="nav-publica" aria-label="Principal">
-        <a href="#cursos">Cursos</a>
+        <a href="#cursos" class="nav-extra">Cursos</a>
         <a href="verificar.html" class="nav-extra">Verificar certificado</a>
-        <a data-nexus="" href="#" class="enlace-nexus" title="Gestión de Seguridad y Salud Ocupacional">NEXUS SST</a>
+        <a data-nexus="" href="#" class="enlace-nexus nav-extra" title="Gestión de Seguridad y Salud Ocupacional">NEXUS SST</a>
+        <button type="button" class="boton boton-sesion" id="btn-sesion">Iniciar sesión</button>
       </nav>
     </div>
   </header>
@@ -138,6 +139,50 @@
       </span>
     </div>
   </footer>
+
+  <!-- ===== Ventana: elegir cómo iniciar sesión ===== -->
+  <dialog class="ventana" id="ventana-sesion" aria-labelledby="ventana-titulo">
+    <button type="button" class="ventana-cerrar" id="btn-cerrar-sesion" aria-label="Cerrar">×</button>
+
+    <!-- Paso 1: elegir -->
+    <div id="paso-elegir">
+      <h2 id="ventana-titulo">Iniciar sesión</h2>
+      <p class="ventana-intro">¿Cómo vas a ingresar?</p>
+      <div class="opciones-sesion">
+        <a class="opcion-sesion" href="login.html">
+          <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+            <rect x="6" y="8" width="32" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M14 36h16M22 28v8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M13 20l6-5 5 4 7-6" fill="none" stroke="#F2C14E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <strong>Docente</strong>
+          <span>Prepara lecciones, diapositivas y evaluaciones de tus programas.</span>
+        </a>
+        <button type="button" class="opcion-sesion" id="btn-estudiante">
+          <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+            <path d="M4 17l18-8 18 8-18 8z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M11 21v9c0 3 5 5 11 5s11-2 11-5v-9" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M40 17v10" stroke="#F2C14E" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <strong>Estudiante</strong>
+          <span>Ingresa a tu capacitación con la clave que te dio tu empresa.</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2: estudiante escribe su clave -->
+    <form id="paso-estudiante" class="paso-estudiante" novalidate hidden>
+      <button type="button" class="enlace-volver" id="btn-volver-sesion">← Volver</button>
+      <h2>Ingreso de estudiantes</h2>
+      <p class="ventana-intro">Escribe la clave de acceso que te dio tu empresa. No necesitas contraseña.</p>
+      <label for="clave-ventana" class="etiqueta">Clave de acceso</label>
+      <div class="acceso-fila">
+        <input id="clave-ventana" class="campo campo-clave-ventana" placeholder="AGR48213" maxlength="14" autocomplete="off" spellcheck="false" autocapitalize="characters">
+        <button class="boton" type="submit" id="btn-clave-ventana">Ingresar</button>
+      </div>
+      <p class="error-ventana" id="error-clave-ventana" role="alert"></p>
+    </form>
+  </dialog>
 
   <!-- Scripts: el orden importa -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

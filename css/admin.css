@@ -1,7 +1,7 @@
 /* =====================================================================
    NEXUS LEARNING · ESTILOS DE ADMINISTRACIÓN
    Carpeta: css/admin.css
-   Lo usan login.html, admin.html y resultados.html.
+   Lo usan login.html, entrar.html, admin.html y empresas.html.
    Requiere cargar antes css/estilos.css.
    ===================================================================== */
 
@@ -127,8 +127,8 @@
 .pestana:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .hoja .etiqueta { margin-top: 18px; }
-.area { min-height: 110px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
 .fila-dos { display: grid; grid-template-columns: 2fr 1fr; gap: 0 18px; }
+.fila-tres { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 18px; }
 #form-curso .fila-dos { grid-template-columns: 1fr 1fr; }
 .ayuda { margin: 6px 0 0; font-size: 14px; color: var(--gris); }
 
@@ -195,12 +195,22 @@
 .fila-opcion { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
 .fila-opcion input[type="radio"] { width: 22px; height: 22px; flex: none; accent-color: var(--ok); }
 
+/* Diapositivas PDF de la lección */
+.bloque-pdf { display: grid; gap: 8px; }
+.bloque-pdf .ayuda { margin: 0; }
+.bloque-pdf .interruptor { margin-top: 4px; }
+.campo-archivo { padding: 10px 14px; min-height: 0; }
+
+/* Modo docente: oculta lo exclusivo del administrador */
+.modo-docente [data-solo-admin] { display: none !important; }
+.modo-docente #form-curso .campo { background: var(--papel); }
+
 /* ---------- Celular y tablet ---------- */
 @media (max-width: 900px) {
   .panel { grid-template-columns: 1fr; }
   .lista-cursos { position: static; }
   .editor { padding: 20px; }
-  .fila-dos, #form-curso .fila-dos { grid-template-columns: 1fr; }
+  .fila-dos, .fila-tres, #form-curso .fila-dos { grid-template-columns: 1fr; }
   .item { grid-template-columns: auto 1fr; }
   .item .enlace-boton { grid-column: 2; justify-self: start; }
   .nav-admin .usuario { display: none; }

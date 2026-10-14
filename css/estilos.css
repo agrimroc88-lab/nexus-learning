@@ -86,6 +86,16 @@ h1, h2, h3 {
   opacity: 0.85;
 }
 .barra nav a:hover { opacity: 1; text-decoration: underline; }
+.nav-publica { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+
+/* Enlace al ecosistema NEXUS (barra de todas las páginas) */
+.barra .enlace-nexus {
+  padding: 4px 12px;
+  border: 1px solid rgba(242, 193, 78, 0.6);
+  border-radius: 99px;
+  color: var(--senal);
+  opacity: 1;
+}
 
 /* ---------- Botones y campos ---------- */
 .boton {
@@ -125,6 +135,11 @@ h1, h2, h3 {
   font-size: 16px;
 }
 .campo:focus { outline: none; border-color: var(--pino-claro); }
+.area { min-height: 110px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+
+/* Casilla de autorización de datos (registro del participante) */
+.consentimiento { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; font-size: 14px; color: var(--gris); cursor: pointer; }
+.consentimiento input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--pino); }
 
 :focus-visible { outline: 3px solid var(--senal); outline-offset: 2px; }
 
@@ -160,6 +175,7 @@ h1, h2, h3 {
   justify-content: space-between;
   gap: 12px;
 }
+.pie-enlaces { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 
 /* =====================================================================
    PÁGINA DE INICIO (index.html)
@@ -248,6 +264,33 @@ h1, h2, h3 {
   color: var(--pino-claro);
 }
 
+.curso .subtemas { margin-top: 10px; font-size: 14px; color: var(--gris); }
+
+/* Ecosistema NEXUS */
+.ecosistema {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 36px;
+  padding: 40px;
+  border-radius: 18px;
+  background: var(--pino);
+  color: #CFE0DA;
+}
+.ecosistema h2 { color: var(--blanco); font-size: clamp(26px, 3.2vw, 34px); }
+.ecosistema p { margin: 0 0 24px; max-width: 56ch; }
+.eco-etiqueta { margin: 0 0 10px !important; color: var(--senal); font-weight: 700; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+.eco-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; align-content: center; }
+.eco-lista li {
+  display: grid;
+  gap: 2px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-left: 4px solid var(--senal);
+}
+.eco-lista strong { color: var(--blanco); font-family: var(--fuente-titulo); font-size: 18px; }
+.eco-lista span { font-size: 15px; }
+
 /* Verificación */
 .verificar-caja {
   margin-top: 0;
@@ -272,10 +315,14 @@ h1, h2, h3 {
   .portada .contenedor { grid-template-columns: 1fr; }
   .curso { grid-template-columns: 1fr; }
   .curso .boton { justify-self: start; }
+  .ecosistema { grid-template-columns: 1fr; }
+  .ecosistema { padding: 26px; }
   .verificar-caja { grid-template-columns: 1fr; padding: 24px; }
   .verificar-form { flex-direction: column; }
   .acceso-fila { flex-direction: column; }
-  .barra nav { display: none; }
+  .barra nav .nav-extra { display: none; }
+  .nav-publica { gap: 14px; }
+  .marca { font-size: 18px; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

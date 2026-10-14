@@ -14,7 +14,6 @@
 .empresa-resumen { margin: 0 0 20px; color: var(--gris); font-size: 15px; }
 #form-empresa { margin-bottom: 28px; }
 
-.fila-tres { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 18px; }
 .celda-interruptor { display: flex; align-items: flex-end; padding-bottom: 10px; }
 
 .seccion-cabecera {
@@ -104,7 +103,6 @@
 .tabla td:nth-child(2), .tabla td:nth-child(6) { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 @media (max-width: 900px) {
-  .fila-tres { grid-template-columns: 1fr; }
   .grupo-modalidad { grid-template-columns: 1fr; }
   .empresa-cabecera { flex-direction: column; }
   .nomina-herramientas { flex-direction: column; }

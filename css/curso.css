@@ -131,6 +131,19 @@
 }
 .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
+/* Diapositivas PDF */
+.diapositivas { display: grid; gap: 12px; justify-items: start; margin-bottom: 28px; }
+.diapositivas iframe {
+  width: 100%;
+  height: min(70vh, 620px);
+  border: 2px solid var(--niebla);
+  border-radius: 14px;
+  background: var(--blanco);
+}
+@media (max-width: 760px) {
+  .diapositivas iframe { display: none; }
+}
+
 .leccion-texto { max-width: 68ch; }
 .leccion-texto p { margin: 0 0 1em; white-space: pre-line; }
 .leccion-texto ul, .leccion-texto ol { margin: 0 0 1em; padding-left: 1.3em; }
@@ -170,8 +183,6 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
 }
 .opcion-sexo input { accent-color: var(--pino); }
 .opcion-sexo:has(input:checked) { border-color: var(--pino); background: #EEF4F1; }
-.consentimiento { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; font-size: 14px; color: var(--gris); cursor: pointer; }
-.consentimiento input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--pino); }
 
 .error-campo { min-height: 1.3em; margin: 4px 0 6px; font-size: 14px; color: var(--error); }
 

@@ -226,6 +226,9 @@ svg [stroke="#F2C14E"] { stroke: var(--senal); }
 .opcion-sesion:hover { border-color: var(--pino); transform: translateY(-2px); }
 .opcion-sesion strong { font-family: var(--fuente-titulo); font-size: 22px; }
 .opcion-sesion span { color: var(--gris); line-height: 1.45; }
+.enlace-admin { margin: 18px 0 0; text-align: center; font-size: 14px; }
+.enlace-admin a { color: var(--gris); font-weight: 600; }
+.enlace-admin a:hover { color: var(--pino); }
 .enlace-volver {
   margin: 0 0 14px;
   padding: 0;

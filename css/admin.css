@@ -104,6 +104,9 @@
 .pagina-simple .editor > .aviso { margin: 16px 0; }
 .pagina-simple .ayuda { margin-bottom: 20px; }
 .pagina-simple .etiqueta { margin-top: 14px; }
+.pagina-simple .editor + .editor { margin-top: 24px; }
+.bloque-clave h2 { font-size: 24px; }
+.fila-iguales { grid-template-columns: 1fr 1fr; }
 
 /* ---------- Apariencia (apariencia.html) ---------- */
 .pagina-apariencia { max-width: 900px; padding-top: 32px; }

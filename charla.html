@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Juegos para la charla · Nexus Learning</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/juegos.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="admin.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#E3B341"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#E3B341" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#E3B341"/>
+        </svg>
+        <span id="marca-texto">Administración</span>
+      </a>
+      <nav class="nav-admin">
+        <a href="resumen.html" data-solo-admin>Resumen</a>
+        <a href="admin.html" id="nav-cursos">Cursos</a>
+        <a href="empresas.html" data-solo-admin>Empresas</a>
+        <a href="juegos.html" data-solo-admin>Juegos</a>
+        <a href="charla.html" data-solo-docente aria-current="page">Juegos</a>
+        <a href="administradores.html" data-solo-admin>Administradores</a>
+        <a href="apariencia.html" data-solo-admin>Apariencia</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <a data-nexus="" href="#" class="enlace-nexus">NEXUS</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <main id="panel" class="contenedor pagina-simple pagina-charla" hidden>
+    <section class="editor">
+      <h1>Juegos para la charla</h1>
+      <p class="ayuda">Abre un juego y proyéctalo en pantalla completa para jugarlo con el grupo. Los estudiantes no ven los juegos en la plataforma: solo el docente los abre durante la charla.</p>
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <label class="buscador-cursos buscador-juegos">
+        <span class="sr-only">Buscar juego</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="buscar-juego" placeholder="Buscar por programa o juego…" autocomplete="off">
+      </label>
+
+      <div id="por-programa"></div>
+
+      <h2 class="titulo-biblioteca">Todos los juegos</h2>
+      <ul id="biblioteca" class="lista-juegos-charla"></ul>
+    </section>
+  </main>
+
+  <!-- Escenario: el juego en grande para proyectar -->
+  <div id="escenario" class="escenario-juego" hidden>
+    <div class="escenario-barra">
+      <strong id="escenario-titulo"></strong>
+      <span class="escenario-acciones">
+        <button type="button" class="boton secundario boton-chico" id="btn-pantalla">Pantalla completa</button>
+        <button type="button" class="boton boton-chico" id="btn-cerrar-escenario">Cerrar</button>
+      </span>
+    </div>
+    <div class="escenario-cuerpo"><div id="escenario-juego"></div></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/juegos-motor.js"></script>
+  <script src="js/charla.js"></script>
+</body>
+</html>

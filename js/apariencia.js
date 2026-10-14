@@ -124,9 +124,8 @@ function actualizarVista() {
   else if (actual && actual.banner_imagen && !$p("b-quitar").checked) {
     foto = nexusDb.storage.from("portadas").getPublicUrl(actual.banner_imagen).data.publicUrl;
   }
-  $p("vp-banner").style.backgroundImage = foto
-    ? "linear-gradient(90deg, color-mix(in srgb, var(--vp-noche) 92%, transparent), color-mix(in srgb, var(--vp-noche) 25%, transparent)), url(\"" + foto + "\")"
-    : "";
+  $p("vp-banner").style.backgroundImage = foto ? "url(\"" + foto + "\")" : "";
+  $p("vp-banner").classList.toggle("con-foto", !!foto);
 
   aplicarApariencia(ap);
   revisarContraste(principal, acento, fondo);

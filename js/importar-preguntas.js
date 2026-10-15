@@ -71,10 +71,22 @@ function leerTexto(texto) {
 // ---------------------------------------------------------------------
 // 2. Archivo Excel o CSV
 // ---------------------------------------------------------------------
+// Lector/generador de Excel: se descarga solo cuando se usa (ahorra ~900 KB al abrir la página)
+function cargarXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise(function (ok, falla) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = ok;
+    s.onerror = function () { s.remove(); falla(new Error("xlsx")); };
+    document.head.appendChild(s);
+  });
+}
+
 el("imp-archivo").addEventListener("change", async function () {
   const archivo = el("imp-archivo").files[0];
   if (!archivo) return;
-  if (!window.XLSX) return avisar("No se pudo cargar el lector de Excel. Recarga la página.", "error");
+  try { await cargarXLSX(); } catch (e) { return avisar("No se pudo cargar el lector de Excel. Revisa tu conexión.", "error"); }
   try {
     const libro = XLSX.read(await archivo.arrayBuffer(), { type: "array" });
     const hoja = libro.Sheets[libro.SheetNames[0]];
@@ -101,8 +113,8 @@ function leerFilas(filas) {
   return lista;
 }
 
-el("btn-plantilla").addEventListener("click", function () {
-  if (!window.XLSX) return avisar("No se pudo cargar el generador de Excel. Recarga la página.", "error");
+el("btn-plantilla").addEventListener("click", async function () {
+  try { await cargarXLSX(); } catch (e) { return avisar("No se pudo cargar el generador de Excel. Revisa tu conexión.", "error"); }
   const hoja = XLSX.utils.aoa_to_sheet([
     ["Pregunta", "Opción A", "Opción B", "Opción C", "Opción D", "Correcta (A, B, C o D)"],
     ["¿Qué es un peligro?", "Una sanción", "Una fuente con potencial de causar daño", "Un accidente", "", "B"],

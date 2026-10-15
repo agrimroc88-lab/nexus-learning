@@ -10,24 +10,41 @@ const campoCodigo = document.getElementById("codigo");
 const errorCodigo = document.getElementById("error-codigo");
 const resultadoVerificar = document.getElementById("resultado");
 
+// Ordena el código como VW-2026-A1B2C3D4 aunque se escriba sin guiones,
+// con espacios o en minúsculas (2 letras - 4 cifras del año - 8 caracteres)
+function formatoCodigo(valor) {
+  const s = String(valor || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 14);
+  let r = s.slice(0, 2);
+  if (s.length > 2) r += "-" + s.slice(2, 6);
+  if (s.length > 6) r += "-" + s.slice(6);
+  return r;
+}
+
 // Si la página se abrió desde el QR o desde el inicio, el código viene en la dirección
 (function codigoDesdeEnlace() {
   const codigo = new URLSearchParams(location.search).get("codigo");
   if (codigo) {
-    campoCodigo.value = codigo.toUpperCase();
-    verificar(codigo);
+    campoCodigo.value = formatoCodigo(codigo);
+    verificar(campoCodigo.value);
   } else {
     campoCodigo.focus();
   }
 })();
 
-campoCodigo.addEventListener("input", function () { errorCodigo.textContent = ""; });
+campoCodigo.addEventListener("input", function () {
+  errorCodigo.textContent = "";
+  // Solo se reordena si se escribe al final, para no mover el cursor al corregir
+  if (campoCodigo.selectionStart === campoCodigo.value.length) {
+    campoCodigo.value = formatoCodigo(campoCodigo.value);
+  }
+});
 
 formVerificar.addEventListener("submit", function (ev) {
   ev.preventDefault();
-  const codigo = campoCodigo.value.trim();
-  if (codigo.length < 6) {
-    errorCodigo.textContent = "Escribe el código completo, por ejemplo VW-2026-A1B2C3D4.";
+  const codigo = formatoCodigo(campoCodigo.value);
+  campoCodigo.value = codigo;
+  if (codigo.length < 16) {
+    errorCodigo.textContent = "El código tiene 14 letras y números, por ejemplo VW-2026-A1B2C3D4.";
     campoCodigo.focus();
     return;
   }
@@ -88,7 +105,7 @@ const ICONO_OK = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="t
 const ICONO_NO = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#B3402A" stroke-width="3" stroke-linecap="round"/></svg>';
 
 function fichaValida(c) {
-  const ficha = cabecera("valida", "Certificado válido", "Emitido por Nexus Learning, de VitalWork S.A.S.", ICONO_OK);
+  const ficha = cabecera("valida", "Certificado válido", "Emitido por Nexus Academy, de VitalWork S.A.S.", ICONO_OK);
 
   const dl = document.createElement("dl");
   dl.className = "ficha-datos";

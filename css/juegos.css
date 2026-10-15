@@ -237,9 +237,36 @@
 .lista-riesgos li.bien strong { color: var(--ok); }
 .lista-riesgos li.mal strong { color: var(--error); }
 
+/* Marcador de la Caza de riesgos */
+.marcador-riesgos { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 0 0 12px; }
+.casilla-marcador {
+  display: grid;
+  justify-items: center;
+  padding: 8px 6px;
+  border-radius: var(--radio);
+  background: var(--papel);
+  border: 2px solid var(--niebla);
+  line-height: 1.15;
+}
+.casilla-marcador strong { font-size: 26px; font-variant-numeric: tabular-nums; }
+.casilla-marcador span { font-size: 13px; font-weight: 700; color: var(--gris); }
+.casilla-marcador.bien { background: #E4F2EA; border-color: var(--ok); }
+.casilla-marcador.bien strong { color: var(--ok); }
+.casilla-marcador.mal { background: #F8E1DB; border-color: var(--error); }
+.casilla-marcador.mal strong { color: var(--error); }
+.casilla-marcador.hallados strong { color: var(--pino); }
+.casilla-marcador.fallos strong { color: var(--gris); }
+.casilla-marcador.cambio { animation: casilla-cambio 0.5s ease-out; }
+@keyframes casilla-cambio { 0% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.escenario-juego .casilla-marcador strong { font-size: 36px; }
+.escenario-juego .casilla-marcador span { font-size: 16px; }
+
 /* Detective de riesgos: ¿acto o condición? */
 .marca-riesgo.pendiente-clasificar { border-color: var(--senal); background: color-mix(in srgb, var(--senal) 30%, transparent); animation: none; }
-.marca-riesgo.equivocado { border-color: #D98A1E; background: color-mix(in srgb, #D98A1E 25%, transparent); }
+/* Bien clasificado: verde · mal clasificado: rojo · los que faltaban (al final): gris */
+.marca-riesgo.encontrado { background: color-mix(in srgb, var(--ok) 45%, transparent); font-size: 20px; }
+.marca-riesgo.equivocado { border-color: var(--error); background: color-mix(in srgb, var(--error) 45%, transparent); font-size: 20px; }
+.marca-riesgo.pendiente { border-color: #6B7280; background: color-mix(in srgb, #6B7280 30%, transparent); }
 .pregunta-riesgo {
   position: fixed;
   inset: 0;
@@ -268,8 +295,9 @@
   background-repeat: no-repeat;
 }
 .pregunta-riesgo .opciones-juego { margin-top: 12px; }
-.retro-riesgo.mal { background: #FDF0DD; border-left-color: #D98A1E; }
-.lista-riesgos li.regular strong { color: #B66E0C; }
+.retro-riesgo.mal { background: #F8E1DB; border-left-color: var(--error); }
+.lista-riesgos li.regular strong { color: var(--error); }
+.lista-riesgos li.mal strong { color: #6B7280; }
 .etiqueta-clase {
   display: inline-block;
   margin: 0 6px;

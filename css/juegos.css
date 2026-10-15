@@ -237,6 +237,60 @@
 .lista-riesgos li.bien strong { color: var(--ok); }
 .lista-riesgos li.mal strong { color: var(--error); }
 
+/* Detective de riesgos: ¿acto o condición? */
+.marca-riesgo.pendiente-clasificar { border-color: var(--senal); background: color-mix(in srgb, var(--senal) 30%, transparent); animation: none; }
+.marca-riesgo.equivocado { border-color: #D98A1E; background: color-mix(in srgb, #D98A1E 25%, transparent); }
+.pregunta-riesgo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(10, 25, 50, 0.45);
+  line-height: 1.4;
+  cursor: default;
+}
+.pregunta-riesgo-caja {
+  width: min(440px, 100%);
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--blanco);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+.pregunta-riesgo-titulo { display: block; margin-bottom: 10px; font-size: 18px; color: var(--pino); }
+.zoom-riesgo {
+  height: 150px;
+  border-radius: 10px;
+  border: 3px solid var(--senal);
+  background-size: 320%;
+  background-repeat: no-repeat;
+}
+.pregunta-riesgo .opciones-juego { margin-top: 12px; }
+.retro-riesgo.mal { background: #FDF0DD; border-left-color: #D98A1E; }
+.lista-riesgos li.regular strong { color: #B66E0C; }
+.etiqueta-clase {
+  display: inline-block;
+  margin: 0 6px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+.etiqueta-clase.acto { background: #FBE3DD; color: var(--error); }
+.etiqueta-clase.condicion { background: #DDE8F8; color: var(--pino); }
+.escenario-juego .pregunta-riesgo-caja { width: min(560px, 100%); }
+.escenario-juego .pregunta-riesgo-titulo { font-size: 24px; }
+.escenario-juego .zoom-riesgo { height: 220px; }
+
+@media (max-width: 600px) {
+  .zoom-riesgo { height: 110px; }
+  .pregunta-riesgo .opciones-juego { grid-template-columns: 1fr 1fr; }
+  .pregunta-riesgo .opcion-juego { min-height: 48px; font-size: 14px; }
+}
+
 /* ---------- 5. ¿Qué harías? ---------- */
 .pregunta-escenario { margin: 12px 0 8px; }
 .opciones-escenario { display: grid; gap: 10px; }
@@ -340,7 +394,6 @@ body.con-escenario { overflow: hidden; }
 .escenario-juego .tablero-numeros { max-height: 72vh; }
 .escenario-juego .juego-barra strong { font-size: 26px; }
 .escenario-juego .juego-reloj { font-size: 22px; padding: 6px 14px; }
-.escenario-juego .foto-riesgos { max-width: min(100%, 120vh); margin: 0 auto; }
 .escenario-juego .boton { min-height: 52px; font-size: 18px; }
 
 @media (max-width: 600px) {

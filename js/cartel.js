@@ -6,11 +6,11 @@
 // =====================================================================
 
 const NexusCartel = (function () {
-  const PINO = [15, 61, 62];
-  const PINO_CLARO = [28, 92, 93];
-  const SENAL = [242, 193, 78];
-  const TINTA = [23, 34, 32];
-  const GRIS = [86, 101, 95];
+  const PINO = [18, 58, 122];
+  const PINO_CLARO = [31, 85, 168];
+  const SENAL = [227, 179, 65];
+  const TINTA = [20, 32, 58];
+  const GRIS = [85, 98, 122];
 
   function color(doc, c, tipo) {
     if (tipo === "texto") doc.setTextColor(c[0], c[1], c[2]);

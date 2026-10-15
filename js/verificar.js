@@ -84,7 +84,7 @@ function cabecera(clase, titulo, subtitulo, icono) {
   return ficha;
 }
 
-const ICONO_OK = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#0F3D3E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICONO_OK = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#123A7A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ICONO_NO = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#B3402A" stroke-width="3" stroke-linecap="round"/></svg>';
 
 function fichaValida(c) {

@@ -342,6 +342,17 @@ const NexusJuegos = (function () {
           foto.style.marginInline = "auto";
         }
       });
+      // Si la imagen no existe, se avisa en vez de mostrar un juego vacío
+      img.addEventListener("error", function () {
+        cuerpo.innerHTML = "";
+        const aviso = crear("div", "juego-intro");
+        aviso.append(crear("h4", "", "No se encontró la imagen del juego"),
+          crear("p", "", "Ruta buscada: " + cfg.imagen),
+          crear("p", "juego-nota", /^img\//.test(cfg.imagen)
+            ? "Sube la imagen a GitHub (Nexus Learning) en esa misma carpeta y con ese mismo nombre, respetando mayúsculas y minúsculas. GitHub Pages tarda 1 o 2 minutos en publicarla."
+            : "Vuelve a subir la foto desde Juegos → Editar."));
+        cuerpo.appendChild(aviso);
+      });
       foto.appendChild(img);
       const retro = crear("div", "retro-riesgo");
       retro.hidden = true;

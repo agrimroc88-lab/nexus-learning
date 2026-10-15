@@ -11,6 +11,8 @@
   <meta name="description" content="Comprueba si un certificado de Nexus Learning es auténtico.">
 
   <!-- Fuentes -->
+  <link rel="preconnect" href="https://yfmefiytswvxsqmnmrvg.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -45,7 +47,7 @@
     <form id="form-verificar" class="buscador" novalidate>
       <label for="codigo" class="etiqueta">Código del certificado</label>
       <div class="buscador-fila">
-        <input id="codigo" name="codigo" class="campo" placeholder="VW-2026-A1B2C3D4" maxlength="30" autocomplete="off" spellcheck="false">
+        <input id="codigo" name="codigo" class="campo" placeholder="VW-2026-A1B2C3D4" maxlength="20" autocapitalize="characters" autocomplete="off" spellcheck="false">
         <button class="boton" type="submit" id="btn-verificar">Verificar</button>
       </div>
       <p class="error-campo" id="error-codigo" role="alert"></p>
@@ -62,8 +64,8 @@
   </footer>
 
   <!-- Scripts: el orden importa -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/verificar.js"></script>
+  <script src="js/verificar.js?v=2"></script>
 </body>
 </html>

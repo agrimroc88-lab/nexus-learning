@@ -304,12 +304,18 @@ const NexusJuegos = (function () {
   }
 
   // ===================================================================
-  // 4. CAZA DE RIESGOS: tocar los peligros sobre una foto
-  //    peligros: [{ x, y, r, nombre, explicacion }]  (x, y, r en % del ancho/alto)
+  // 4. CAZA DE RIESGOS: tocar los peligros sobre una foto o ilustración
+  //    peligros: [{ x, y, r, nombre, explicacion, clase }]
+  //      x, y, r en % del ancho/alto · clase: "acto" | "condicion" (opcional)
+  //    Si el peligro tiene clase, al encontrarlo se pregunta si es un
+  //    ACTO o una CONDICIÓN subestándar (modo "Detective de riesgos").
   // ===================================================================
+  const CLASES = { acto: "Acto subestándar", condicion: "Condición subestándar" };
+
   function urlImagen(ruta) {
     if (!ruta) return "";
     if (/^(https?:|blob:|data:)/.test(ruta)) return ruta;
+    if (/^img\//.test(ruta)) return ruta;                 // imágenes que vienen con el sitio
     if (typeof nexusDb !== "undefined") return nexusDb.storage.from("portadas").getPublicUrl(ruta).data.publicUrl;
     return ruta;
   }
@@ -317,26 +323,41 @@ const NexusJuegos = (function () {
   function riesgos(cuerpo, cfg) {
     const peligros = (cfg.peligros || []).filter(function (p) { return p && isFinite(p.x) && isFinite(p.y); });
     if (!cfg.imagen || peligros.length === 0) { cuerpo.textContent = "Este juego todavía no tiene foto o peligros marcados."; return; }
+    const clasifica = peligros.some(function (p) { return CLASES[p.clase]; });
 
     function empezar() {
-      const hallados = new Set();
-      let fallos = 0, terminado = false;
+      const hallados = new Map();    // índice → true (bien clasificado) | false (mal) | null (sin clase)
+      let fallos = 0, terminado = false, preguntando = false;
       cuerpo.innerHTML = "";
       const progreso = crear("p", "juego-progreso");
       const foto = crear("div", "foto-riesgos");
       const img = crear("img");
       img.src = urlImagen(cfg.imagen);
-      img.alt = "Foto para buscar los peligros";
+      img.alt = "Imagen para buscar los peligros";
       img.draggable = false;
+      // Que la imagen completa quepa en la pantalla (útil al proyectar)
+      img.addEventListener("load", function () {
+        if (img.naturalWidth && img.naturalHeight) {
+          foto.style.maxWidth = "min(100%, calc((100vh - 140px) * " + (img.naturalWidth / img.naturalHeight).toFixed(3) + "))";
+          foto.style.marginInline = "auto";
+        }
+      });
       foto.appendChild(img);
       const retro = crear("div", "retro-riesgo");
       retro.hidden = true;
-      const rendirse = boton("Ver los que faltan", "enlace-simple", function () { revelar(); });
+      const rendirse = boton("Ver los que faltan", "enlace-simple", function () { if (!preguntando) revelar(); });
       cuerpo.append(progreso, foto, retro, rendirse);
       actualizar();
 
+      function bienClasificados() {
+        let n = 0;
+        hallados.forEach(function (v) { if (v === true) n++; });
+        return n;
+      }
+
       function actualizar() {
-        progreso.textContent = "Encontrados: " + hallados.size + " de " + peligros.length + " · Toques fallidos: " + fallos;
+        progreso.textContent = "Encontrados: " + hallados.size + " de " + peligros.length +
+          (clasifica ? " · Bien clasificados: " + bienClasificados() : "") + " · Toques fallidos: " + fallos;
       }
 
       function marca(p, i, clase) {
@@ -345,10 +366,11 @@ const NexusJuegos = (function () {
         m.style.top = p.y + "%";
         m.style.width = m.style.height = (2 * (p.r || 6)) + "cqw";
         foto.appendChild(m);
+        return m;
       }
 
       foto.addEventListener("click", function (ev) {
-        if (terminado) return;
+        if (terminado || preguntando) return;
         const caja = img.getBoundingClientRect();
         const px = ev.clientX - caja.left, py = ev.clientY - caja.top;
         if (px < 0 || py < 0 || px > caja.width || py > caja.height) return;
@@ -370,16 +392,52 @@ const NexusJuegos = (function () {
           actualizar();
           return;
         }
-        hallados.add(mejor);
         const p = peligros[mejor];
-        marca(p, mejor, "encontrado");
+        if (CLASES[p.clase]) preguntar(p, mejor);
+        else registrar(p, mejor, null);
+      });
+
+      // Ventana sobre la imagen: ¿acto o condición?
+      function preguntar(p, i) {
+        preguntando = true;
+        const pendiente = marca(p, i, "pendiente-clasificar");
+        const capa = crear("div", "pregunta-riesgo");
+        capa.addEventListener("click", function (ev) { ev.stopPropagation(); });   // no cuenta como toque en la imagen
+        const tarjeta = crear("div", "pregunta-riesgo-caja");
+        const zoom = crear("div", "zoom-riesgo");
+        zoom.style.backgroundImage = "url(\"" + img.src + "\")";
+        zoom.style.backgroundPosition = p.x + "% " + p.y + "%";
+        const opciones = crear("div", "opciones-juego");
+        ["acto", "condicion"].forEach(function (k) {
+          const b = boton(CLASES[k], "opcion-juego", function () {
+            capa.remove();
+            pendiente.remove();
+            preguntando = false;
+            registrar(p, i, k === p.clase);
+          });
+          b.dataset.op = k;
+          opciones.appendChild(b);
+        });
+        tarjeta.append(crear("strong", "pregunta-riesgo-titulo", "¡Encontraste un peligro! ¿Qué es?"), zoom, opciones);
+        capa.appendChild(tarjeta);
+        (cuerpo.closest(".juego") || cuerpo).appendChild(capa);   // ventana sobre toda la pantalla
+      }
+
+      function registrar(p, i, acierto) {
+        hallados.set(i, acierto);
+        marca(p, i, acierto === false ? "equivocado" : "encontrado");
         retro.hidden = false;
+        retro.className = "retro-riesgo" + (acierto === false ? " mal" : "");
         retro.innerHTML = "";
-        retro.append(crear("strong", "", "¡Bien! " + (p.nombre || "Peligro encontrado")));
+        let titulo;
+        if (acierto === null) titulo = "¡Bien! " + (p.nombre || "Peligro encontrado");
+        else if (acierto) titulo = "¡Correcto! Es un" + (p.clase === "condicion" ? "a " : " ") + CLASES[p.clase].toLowerCase() + ": " + (p.nombre || "");
+        else titulo = "Casi: es un" + (p.clase === "condicion" ? "a " : " ") + CLASES[p.clase].toLowerCase() + ". " + (p.nombre || "");
+        retro.append(crear("strong", "", titulo));
         if (p.explicacion) retro.append(crear("p", "", p.explicacion));
         actualizar();
         if (hallados.size === peligros.length) final(false);
-      });
+      }
 
       function revelar() {
         peligros.forEach(function (p, i) { if (!hallados.has(i)) marca(p, i, "pendiente"); });
@@ -392,15 +450,18 @@ const NexusJuegos = (function () {
         retro.hidden = true;
         const fin = crear("div", "juego-final");
         const n = hallados.size;
-        fin.appendChild(crear("h4", "", n === peligros.length
-          ? "¡Encontraste los " + n + " peligros!" + (fallos ? " (" + fallos + (fallos === 1 ? " toque fallido)" : " toques fallidos)") : "")
-          : "Encontraste " + n + " de " + peligros.length + " peligros"));
-        if (seRindio) fin.appendChild(crear("p", "juego-nota", "En la foto quedan marcados en rojo los que faltaban."));
+        let titulo = n === peligros.length ? "¡Encontraste los " + n + " peligros!" : "Encontraste " + n + " de " + peligros.length + " peligros";
+        if (clasifica) titulo += " · " + bienClasificados() + " bien clasificados";
+        fin.appendChild(crear("h4", "", titulo));
+        if (fallos) fin.appendChild(crear("p", "juego-nota", fallos + (fallos === 1 ? " toque fallido." : " toques fallidos.")));
+        if (seRindio) fin.appendChild(crear("p", "juego-nota", "En la imagen quedan marcados en rojo los que faltaban."));
         const lista = crear("ol", "lista-riesgos");
         peligros.forEach(function (p, i) {
-          const li = crear("li", hallados.has(i) ? "bien" : "mal");
+          const estado = hallados.has(i) ? (hallados.get(i) === false ? "regular" : "bien") : "mal";
+          const li = crear("li", estado);
           li.append(crear("strong", "", p.nombre || "Peligro " + (i + 1)));
-          if (p.explicacion) li.append(crear("span", "", " — " + p.explicacion));
+          if (CLASES[p.clase]) li.append(crear("span", "etiqueta-clase " + p.clase, CLASES[p.clase]));
+          if (p.explicacion) li.append(crear("span", "", " " + p.explicacion));
           lista.appendChild(li);
         });
         fin.append(lista, boton("Jugar de nuevo", "boton secundario", empezar));

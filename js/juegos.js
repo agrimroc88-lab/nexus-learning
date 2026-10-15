@@ -21,7 +21,7 @@ const AYUDA_TIPO = {
   numeros: "Busca los números (5S): demuestra cuánto tiempo se ahorra con orden y limpieza.",
   clasificar: "Clasifica: la persona decide entre dos opciones para cada tarjeta y ve la explicación.",
   ordenar: "Ordena los pasos: la persona toca los pasos de un procedimiento en el orden correcto.",
-  riesgos: "Caza de riesgos: la persona busca y toca los peligros en una foto real del lugar de trabajo.",
+  riesgos: "Caza de riesgos: el grupo busca y toca los peligros en una foto o ilustración. Si marcas cada peligro como acto o condición subestándar, al encontrarlo se pregunta cuál es (modo Detective de riesgos).",
   escenarios: "¿Qué harías?: situaciones reales con varias respuestas; al elegir se explica cuál es la decisión segura."
 };
 
@@ -113,7 +113,8 @@ function resumenConfig(j) {
   if (j.tipo === "numeros") return (c.cantidad || 30) + " números, " + (c.segundos || 60) + " s por ronda";
   if (j.tipo === "clasificar") return (c.tarjetas || []).length + " tarjetas";
   if (j.tipo === "ordenar") return (c.pasos || []).length + " pasos";
-  if (j.tipo === "riesgos") return (c.peligros || []).length + " peligros en la foto";
+  if (j.tipo === "riesgos") return (c.peligros || []).length + " peligros en la imagen" +
+    ((c.peligros || []).some(function (p) { return p.clase; }) ? " · acto o condición" : "");
   if (j.tipo === "escenarios") return (c.escenarios || []).length + " situaciones";
   return "";
 }
@@ -250,7 +251,7 @@ $j("j-foto-caja").addEventListener("click", function (ev) {
   const r = $j("j-foto-img").getBoundingClientRect();
   const x = (ev.clientX - r.left) / r.width * 100, y = (ev.clientY - r.top) / r.height * 100;
   if (x < 0 || y < 0 || x > 100 || y > 100) return;
-  if (jg.peligros.length >= 15) return avisar("Máximo 15 peligros por foto.", "error");
+  if (jg.peligros.length >= 25) return avisar("Máximo 25 peligros por imagen.", "error");
   jg.peligros.push({ x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r: 6, nombre: "", explicacion: "" });
   pintarFotoEditor();
   const nombres = $j("j-peligros").querySelectorAll(".p-nombre");
@@ -294,7 +295,19 @@ function pintarListaPeligros() {
     tam.value = String(TAMANOS.some(function (t) { return t[0] === p.r; }) ? p.r : 6);
     tam.addEventListener("change", function () { p.r = Number(tam.value); pintarFotoEditor(); });
     etiqueta.appendChild(tam);
-    fila.append(etiqueta, accion("Quitar", "rojo", function () { jg.peligros.splice(i, 1); pintarFotoEditor(); }));
+    const etClase = document.createElement("label");
+    etClase.textContent = "Tipo: ";
+    const clase = document.createElement("select");
+    [["", "Sin clasificar"], ["acto", "Acto subestándar"], ["condicion", "Condición subestándar"]].forEach(function (t) {
+      const o = document.createElement("option");
+      o.value = t[0];
+      o.textContent = t[1];
+      clase.appendChild(o);
+    });
+    clase.value = p.clase || "";
+    clase.addEventListener("change", function () { p.clase = clase.value; });
+    etClase.appendChild(clase);
+    fila.append(etiqueta, etClase, accion("Quitar", "rojo", function () { jg.peligros.splice(i, 1); pintarFotoEditor(); }));
     campos.append(nombre, exp, fila);
     li.append(num, campos);
     ol.appendChild(li);
@@ -394,6 +407,7 @@ function leerFormulario() {
     config.peligros = jg.peligros.map(function (p) {
       const x = { x: p.x, y: p.y, r: p.r, nombre: p.nombre.trim() };
       if (String(p.explicacion || "").trim()) x.explicacion = p.explicacion.trim();
+      if (p.clase === "acto" || p.clase === "condicion") x.clase = p.clase;
       return x;
     });
   } else if (jg.tipo === "escenarios") {
@@ -511,7 +525,7 @@ async function eliminar(j) {
 
 // Borra la foto de un juego, salvo que otro juego (por ejemplo, una copia) la siga usando
 async function borrarFotoSiNoSeUsa(ruta, idJuego) {
-  if (!ruta || /^(https?:|blob:|data:)/.test(ruta)) return;
+  if (!ruta || /^(https?:|blob:|data:|img\/)/.test(ruta)) return;   // las de img/ vienen con el sitio
   const enUso = jg.juegos.some(function (x) { return x.id !== idJuego && x.config && x.config.imagen === ruta; });
   if (enUso) return;
   const { error } = await nexusDb.storage.from("portadas").remove([ruta]);

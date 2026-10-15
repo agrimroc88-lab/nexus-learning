@@ -329,7 +329,17 @@ const NexusJuegos = (function () {
       const hallados = new Map();    // índice → true (bien clasificado) | false (mal) | null (sin clase)
       let fallos = 0, terminado = false, preguntando = false;
       cuerpo.innerHTML = "";
-      const progreso = crear("p", "juego-progreso");
+      // Marcador: se actualiza en cada toque
+      const progreso = crear("div", "marcador-riesgos");
+      const casillas = {};
+      [["bien", "✓ Bien"], ["mal", "✗ Mal"], ["hallados", "Encontrados"], ["fallos", "Toques fallidos"]].forEach(function (c) {
+        if (!clasifica && (c[0] === "bien" || c[0] === "mal")) return;
+        const caja = crear("div", "casilla-marcador " + c[0]);
+        const n = crear("strong", "", "0");
+        caja.append(n, crear("span", "", c[1]));
+        progreso.appendChild(caja);
+        casillas[c[0]] = { caja: caja, n: n };
+      });
       const foto = crear("div", "foto-riesgos");
       const img = crear("img");
       img.src = urlImagen(cfg.imagen);
@@ -366,13 +376,28 @@ const NexusJuegos = (function () {
         return n;
       }
 
+      function fijar(clave, valor) {
+        const c = casillas[clave];
+        if (!c || c.n.textContent === String(valor)) return;
+        c.n.textContent = valor;
+        c.caja.classList.remove("cambio");
+        void c.caja.offsetWidth;            // reinicia la animación
+        c.caja.classList.add("cambio");
+      }
+
       function actualizar() {
-        progreso.textContent = "Encontrados: " + hallados.size + " de " + peligros.length +
-          (clasifica ? " · Bien clasificados: " + bienClasificados() : "") + " · Toques fallidos: " + fallos;
+        const bien = bienClasificados();
+        let mal = 0;
+        hallados.forEach(function (v) { if (v === false) mal++; });
+        fijar("bien", bien);
+        fijar("mal", mal);
+        fijar("hallados", hallados.size + " / " + peligros.length);
+        fijar("fallos", fallos);
       }
 
       function marca(p, i, clase) {
-        const m = crear("span", "marca-riesgo " + clase, String(i + 1));
+        const signo = clase === "encontrado" ? "✓" : clase === "equivocado" ? "✗" : String(i + 1);
+        const m = crear("span", "marca-riesgo " + clase, signo);
         m.style.left = p.x + "%";
         m.style.top = p.y + "%";
         m.style.width = m.style.height = (2 * (p.r || 6)) + "cqw";
@@ -442,8 +467,8 @@ const NexusJuegos = (function () {
         retro.innerHTML = "";
         let titulo;
         if (acierto === null) titulo = "¡Bien! " + (p.nombre || "Peligro encontrado");
-        else if (acierto) titulo = "¡Correcto! Es un" + (p.clase === "condicion" ? "a " : " ") + CLASES[p.clase].toLowerCase() + ": " + (p.nombre || "");
-        else titulo = "Casi: es un" + (p.clase === "condicion" ? "a " : " ") + CLASES[p.clase].toLowerCase() + ". " + (p.nombre || "");
+        else if (acierto) titulo = "✓ ¡Correcto! Es un" + (p.clase === "condicion" ? "a " : " ") + CLASES[p.clase].toLowerCase() + ": " + (p.nombre || "");
+        else titulo = "✗ Incorrecto: es un" + (p.clase === "condicion" ? "a " : " ") + CLASES[p.clase].toLowerCase() + ". " + (p.nombre || "");
         retro.append(crear("strong", "", titulo));
         if (p.explicacion) retro.append(crear("p", "", p.explicacion));
         actualizar();
@@ -465,7 +490,7 @@ const NexusJuegos = (function () {
         if (clasifica) titulo += " · " + bienClasificados() + " bien clasificados";
         fin.appendChild(crear("h4", "", titulo));
         if (fallos) fin.appendChild(crear("p", "juego-nota", fallos + (fallos === 1 ? " toque fallido." : " toques fallidos.")));
-        if (seRindio) fin.appendChild(crear("p", "juego-nota", "En la imagen quedan marcados en rojo los que faltaban."));
+        if (seRindio) fin.appendChild(crear("p", "juego-nota", "En la imagen quedan marcados en gris los que faltaban."));
         const lista = crear("ol", "lista-riesgos");
         peligros.forEach(function (p, i) {
           const estado = hallados.has(i) ? (hallados.get(i) === false ? "regular" : "bien") : "mal";

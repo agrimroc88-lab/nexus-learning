@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · PÁGINA DE INICIO
+// NEXUS ACADEMY · PÁGINA DE INICIO
 // Carpeta: js/inicio.js
 // Valida el código de capacitación y lleva al participante a su curso.
 // Además: ventana "Iniciar sesión" (docente / estudiante) y catálogo.

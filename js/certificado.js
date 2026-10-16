@@ -1,9 +1,9 @@
 // =====================================================================
-// NEXUS ACADEMY (NEXUS LEARNING) · CERTIFICADO EN PDF
+// NEXUS ACADEMY (NEXUS ACADEMY) · CERTIFICADO EN PDF
 // Carpeta: js/certificado.js
 // Dibuja el certificado (A4 horizontal) con código QR de verificación.
 // Para cambiar el diseño del certificado, solo se edita este archivo.
-// Requiere: jsPDF y qrcode-generator (se cargan en curso.html).
+// jsPDF y qrcode-generator se cargan solos cuando hacen falta.
 // =====================================================================
 
 const NexusCertificado = (function () {
@@ -123,20 +123,22 @@ const NexusCertificado = (function () {
     });
   }
 
-  // Logo de Nexus Academy (img/logo-certificado.png), precargado como imagen
-  let logo = null;
-  (function () {
+  // Imágenes del certificado, precargadas: logo y firma del director
+  function precargar(src, listo) {
     const im = new Image();
     im.onload = function () {
       try {
         const c = document.createElement("canvas");
         c.width = im.naturalWidth; c.height = im.naturalHeight;
         c.getContext("2d").drawImage(im, 0, 0);
-        logo = { datos: c.toDataURL("image/png"), prop: im.naturalWidth / im.naturalHeight };
-      } catch (e) { logo = null; }
+        listo({ datos: c.toDataURL("image/png"), prop: im.naturalWidth / im.naturalHeight });
+      } catch (e) { /* sin imagen: se usa el respaldo */ }
     };
-    im.src = "img/logo-certificado.png";
-  })();
+    im.src = src;
+  }
+  let logo = null, firma = null;
+  precargar("img/logo-certificado.png", function (i) { logo = i; });
+  precargar("img/firma-director.png", function (i) { firma = i; });
 
   // Dibuja el logo con alto "h" desde (x, y); devuelve su ancho
   function marca(doc, x, y, h) {
@@ -164,7 +166,7 @@ const NexusCertificado = (function () {
     doc.setFillColor(PINO_CLARO[0], PINO_CLARO[1], PINO_CLARO[2]);
     doc.triangle(W - 40, 0, W, 0, W, 26, "F");
     doc.triangle(0, H - 26, 0, H, 40, H, "F");
-    const base = { cx: W / 2, dy: 2, curso: 220, desc: 225, linea: 85, firma: 72, fecha: W / 2, qr: 238, limite: 165, col: 84 };
+    const base = { cx: W / 2, dy: 2, curso: 220, desc: 225, linea: 85, firma: 78, fecha: W / 2 + 4, qr: 238, limite: 151, col: 84 };
     const h = 28, w = logo ? h * logo.prop : 28, tw = 66, x0 = W / 2 - (w + 4 + tw) / 2;
     marca(doc, x0, 9, h);
     texto(doc, "NEXUS ACADEMY", x0 + w + 4, 22, { tam: 17, estilo: "bold", color: PINO, alinear: "left" });
@@ -174,7 +176,7 @@ const NexusCertificado = (function () {
     return Object.assign(base, { dy: 5 });
   }
 
-  function generar(d) {
+  function dibujar(d) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const W = 297, H = 210;
@@ -216,12 +218,16 @@ const NexusCertificado = (function () {
     const subtemas = (Array.isArray(d.subtemas) ? d.subtemas : []).map(function (t) { return String(t).trim(); }).filter(Boolean);
     if (subtemas.length) contenidos(doc, subtemas, CX, y + 3, L.limite + Y, L.col, L.curso - 10);
 
-    // --- Firma (izquierda) ---
+    // --- Firma del director (izquierda) ---
+    if (firma) {
+      const fh = 29, fw = fh * firma.prop;
+      doc.addImage(firma.datos, "PNG", L.firma - fw / 2 + 4, 174 + Y - fh + 3, fw, fh, "firma", "FAST");
+    }
     doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]);
     doc.setLineWidth(0.3);
     doc.line(L.firma - 35, 174 + Y, L.firma + 35, 174 + Y);
-    texto(doc, "Responsable de capacitación", L.firma, 179 + Y, { tam: 10, estilo: "bold" });
-    texto(doc, "VitalWork S.A.S.", L.firma, 184 + Y, { tam: 10, color: GRIS });
+    texto(doc, "Dr. Leonardo Arias E.", L.firma, 180 + Y, { tam: 10, estilo: "bold" });
+    texto(doc, "Director de Nexus Academy", L.firma, 185 + Y, { tam: 9.5, color: GRIS });
 
     // --- Fecha (centro) ---
     texto(doc, "Fecha de emisión", L.fecha, 174 + Y, { tam: 10, color: GRIS });
@@ -236,6 +242,32 @@ const NexusCertificado = (function () {
 
     doc.save("Certificado_" + d.codigo + ".pdf");
   }
+
+  // jsPDF y el lector de QR se descargan solo al pedir el certificado
+  function cargar(url) {
+    return new Promise(function (ok, falla) {
+      const s = document.createElement("script");
+      s.src = url;
+      s.onload = ok;
+      s.onerror = function () { s.remove(); falla(new Error(url)); };
+      document.head.appendChild(s);
+    });
+  }
+  function librerias() {
+    const pendientes = [];
+    if (!window.jspdf) pendientes.push(cargar("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"));
+    if (typeof qrcode === "undefined") pendientes.push(cargar("https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"));
+    return Promise.all(pendientes);
+  }
+  function generar(d) {
+    return librerias().then(function () { dibujar(d); }).catch(function (e) {
+      console.error(e);
+      alert("No se pudo generar el certificado. Revisa tu conexión e inténtalo de nuevo.");
+    });
+  }
+  // Se adelanta la descarga cuando el navegador está libre
+  if ("requestIdleCallback" in window) requestIdleCallback(function () { librerias().catch(function () {}); });
+  else setTimeout(function () { librerias().catch(function () {}); }, 3000);
 
   return { generar: generar };
 })();

@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · CAPACITACIÓN (acceso con código)
+// NEXUS ACADEMY · CAPACITACIÓN (acceso con código)
 // Carpeta: js/curso.js
 //
 // Flujo: código → registro → (lecciones) → (evaluación) → certificado
@@ -67,7 +67,7 @@ const CLAVE_SESION = "nexus_" + st.codigo;
 
 function pintarCabecera() {
   const a = st.acceso;
-  document.title = a.curso + " · Nexus Learning";
+  document.title = a.curso + " · Nexus Academy";
   $("curso-empresa").textContent = a.empresa;
   $("curso-titulo").textContent = a.curso;
 
@@ -677,7 +677,7 @@ const CLAVE_VOLVER_JORNADA = "nexus_jornada_volver";
 
 function iniciarJornada(j) {
   st.jornada = j;
-  document.title = j.nombre + " · Nexus Learning";
+  document.title = j.nombre + " · Nexus Academy";
   $("curso-empresa").textContent = j.empresa;
   $("curso-titulo").textContent = j.nombre;
   const n = j.capacitaciones.length;

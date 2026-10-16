@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · PÁGINA DEL PROGRAMA (QR permanente)
+// NEXUS ACADEMY · PÁGINA DEL PROGRAMA (QR permanente)
 // Carpeta: js/programa.js
 //
 // El QR impreso de cada programa abre:  programa.html?p=<id del programa>
@@ -22,7 +22,7 @@ const $ = (id) => document.getElementById(id);
   }
   if (!data) return falla("Este programa no está disponible en este momento.");
 
-  document.title = data.titulo + " · Nexus Learning";
+  document.title = data.titulo + " · Nexus Academy";
   $("p-titulo").textContent = data.titulo;
   const horas = Number(data.horas);
   const partes = [horas === 1 ? "1 hora" : horas.toLocaleString("es-EC") + " horas"];

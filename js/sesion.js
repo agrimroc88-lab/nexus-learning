@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · CONTROL DE SESIÓN (páginas de administración)
+// NEXUS ACADEMY · CONTROL DE SESIÓN (páginas de administración)
 // Carpeta: js/sesion.js
 //
 // exigirAdministrador(): solo administradores (empresas).

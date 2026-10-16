@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · RESUMEN (solo administradores)
+// NEXUS ACADEMY · RESUMEN (solo administradores)
 // Carpeta: js/resumen.js
 // Muestra las cifras de cap_resumen(): certificados del mes, personas
 // capacitadas, certificados por mes, avance por empresa y programas.

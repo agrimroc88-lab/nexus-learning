@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · CARGAR VARIAS PREGUNTAS A LA VEZ
+// NEXUS ACADEMY · CARGAR VARIAS PREGUNTAS A LA VEZ
 // Carpeta: js/importar-preguntas.js
 //
 // Dos formas, con revisión antes de guardar:

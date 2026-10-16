@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · MOTOR DE JUEGOS
+// NEXUS ACADEMY · MOTOR DE JUEGOS
 // Carpeta: js/juegos-motor.js
 //
 // NexusJuegos.montar(caja, juego) dibuja un juego dentro de "caja".
@@ -359,7 +359,7 @@ const NexusJuegos = (function () {
         aviso.append(crear("h4", "", "No se encontró la imagen del juego"),
           crear("p", "", "Ruta buscada: " + cfg.imagen),
           crear("p", "juego-nota", /^img\//.test(cfg.imagen)
-            ? "Sube la imagen a GitHub (Nexus Learning) en esa misma carpeta y con ese mismo nombre, respetando mayúsculas y minúsculas. GitHub Pages tarda 1 o 2 minutos en publicarla."
+            ? "Sube la imagen a GitHub (Nexus Academy) en esa misma carpeta y con ese mismo nombre, respetando mayúsculas y minúsculas. GitHub Pages tarda 1 o 2 minutos en publicarla."
             : "Vuelve a subir la foto desde Juegos → Editar."));
         cuerpo.appendChild(aviso);
       });

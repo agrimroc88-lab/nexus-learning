@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · ADMINISTRADORES QUE ENTRAN DESDE NEXUS
+// NEXUS ACADEMY · ADMINISTRADORES QUE ENTRAN DESDE NEXUS
 // Carpeta: js/administradores.js
 //
 // Edita la lista cap_admin_cedulas. El puente con NEXUS la consulta en

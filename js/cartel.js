@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · CARTEL QR (A4 vertical, para imprimir o proyectar)
+// NEXUS ACADEMY · CARTEL QR (A4 vertical, para imprimir o proyectar)
 // Carpeta: js/cartel.js
 // Para cambiar el diseño del cartel, solo se edita este archivo.
 // Requiere: jsPDF y qrcode-generator (se cargan en empresas.html).
@@ -63,7 +63,7 @@ const NexusCartel = (function () {
     doc.setLineWidth(1.1);
     doc.circle(CX - 18, 16, 2.6, "S");
     doc.line(CX - 21.4, 16, CX - 20.6, 16);
-    texto(doc, "Nexus Learning", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
+    texto(doc, "Nexus Academy", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
 
     texto(doc, String(d.empresa || "").toUpperCase(), CX, 33, { tam: 13, estilo: "bold", color: SENAL });
 
@@ -134,7 +134,7 @@ const NexusCartel = (function () {
     doc.setLineWidth(1.1);
     doc.circle(CX - 18, 16, 2.6, "S");
     doc.line(CX - 21.4, 16, CX - 20.6, 16);
-    texto(doc, "Nexus Learning", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
+    texto(doc, "Nexus Academy", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
     texto(doc, "PROGRAMA DE CAPACITACIÓN", CX, 32, { tam: 12, estilo: "bold", color: SENAL });
 
     doc.setFont("helvetica", "bold");
@@ -209,7 +209,7 @@ const NexusCartel = (function () {
     doc.setLineWidth(1.1);
     doc.circle(CX - 18, 16, 2.6, "S");
     doc.line(CX - 21.4, 16, CX - 20.6, 16);
-    texto(doc, "Nexus Learning", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
+    texto(doc, "Nexus Academy", CX - 13, 17.4, { tam: 12, estilo: "bold", color: [255, 255, 255], alinear: "left" });
     texto(doc, String(d.empresa || "").toUpperCase(), CX, 31, { tam: 13, estilo: "bold", color: SENAL });
     texto(doc, d.nombre || "Jornada de capacitación", CX, 44, { tam: 22, estilo: "bold", color: [255, 255, 255] });
     const p = String(d.fecha || "").split("-");

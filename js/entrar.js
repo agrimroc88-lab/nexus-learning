@@ -1,10 +1,10 @@
 // =====================================================================
-// NEXUS LEARNING · ENTRADA DESDE NEXUS
+// NEXUS ACADEMY · ENTRADA DESDE NEXUS
 // Carpeta: js/entrar.js
 //
 // NEXUS envía aquí a la persona con un pase de UN SOLO USO en la
 // dirección (después de #, que nunca viaja a ningún servidor).
-// Esta página lo canjea por una sesión de Nexus Learning y lleva a la
+// Esta página lo canjea por una sesión de Nexus Academy y lleva a la
 // persona a su espacio: administración o docente.
 // =====================================================================
 

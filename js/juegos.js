@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · BIBLIOTECA DE JUEGOS (solo administradores)
+// NEXUS ACADEMY · BIBLIOTECA DE JUEGOS (solo administradores)
 // Carpeta: js/juegos.js
 //
 // Crea, edita, prueba y elimina juegos de cap_juegos. Cada juego se

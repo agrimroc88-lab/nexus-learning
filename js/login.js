@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · INICIO DE SESIÓN
+// NEXUS ACADEMY · INICIO DE SESIÓN
 // Carpeta: js/login.js
 // =====================================================================
 
@@ -14,12 +14,12 @@ function mostrarMensaje(texto, tipo) {
 // Título según desde dónde llega (ventana "Iniciar sesión" de la página de inicio)
 const papelLogin = new URLSearchParams(location.search).get("papel");
 if (papelLogin === "admin") {
-  document.title = "Ingreso de administradores · Nexus Learning";
+  document.title = "Ingreso de administradores · Nexus Academy";
   document.getElementById("login-titulo").textContent = "Ingreso de administradores";
-  document.getElementById("login-intro").textContent = "Entra con tu cédula y tu contraseña de NEXUS. También puedes usar el correo de una cuenta de Nexus Learning.";
+  document.getElementById("login-intro").textContent = "Entra con tu cédula y tu contraseña de NEXUS. También puedes usar el correo de una cuenta de Nexus Academy.";
 }
 if (papelLogin === "docente") {
-  document.title = "Ingreso de docentes · Nexus Learning";
+  document.title = "Ingreso de docentes · Nexus Academy";
   document.getElementById("login-titulo").textContent = "Ingreso de docentes";
   document.getElementById("login-intro").textContent = "Entra con tu cédula y la contraseña que te dio el administrador. Si trabajas en NEXUS, usa tu cédula y tu contraseña de NEXUS.";
 }
@@ -52,7 +52,7 @@ document.getElementById("form-login").addEventListener("submit", async function 
   boton.disabled = true;
   boton.textContent = "Ingresando…";
 
-  // 1. Cuenta propia de Nexus Learning (correo, o cédula con contraseña creada aquí)
+  // 1. Cuenta propia de Nexus Academy (correo, o cédula con contraseña creada aquí)
   const { error } = await nexusDb.auth.signInWithPassword({ email: correo, password: clave });
   if (!error) return location.replace("admin.html");
 
@@ -84,10 +84,10 @@ function terminar(boton) {
 // Ingreso con el usuario de NEXUS
 //  a) NEXUS valida cédula y contraseña (su propia función iniciar_sesion,
 //     con su bloqueo por intentos fallidos) y entrega un pase de sesión.
-//  b) El puente de Nexus Learning recibe ese pase, revisa el papel de la
+//  b) El puente de Nexus Academy recibe ese pase, revisa el papel de la
 //     persona (administrador o docente) y entrega un pase de un solo uso.
 //  c) El pase de NEXUS se anula enseguida: no queda una sesión abierta allá.
-// La contraseña nunca se guarda en Nexus Learning.
+// La contraseña nunca se guarda en Nexus Academy.
 // ---------------------------------------------------------------------
 async function entrarConNexus(cedula, clave) {
   const base = NEXUS_CONFIG.nexusSupabaseUrl + "/rest/v1/rpc/";
@@ -120,17 +120,17 @@ async function entrarConNexus(cedula, clave) {
       body: JSON.stringify({ accion: "entrar" })
     });
     pase = await r.json().catch(function () { return {}; });
-    if (!r.ok) pase = { error: pase.error || "No fue posible entrar a Nexus Learning." };
+    if (!r.ok) pase = { error: pase.error || "No fue posible entrar a Nexus Academy." };
   } catch (e) {
     console.error(e);
-    pase = { error: "No fue posible conectar con Nexus Learning. Revisa tu conexión a internet." };
+    pase = { error: "No fue posible conectar con Nexus Academy. Revisa tu conexión a internet." };
   } finally {
     // Anular el pase de NEXUS (no se necesita más)
     fetch(base + "cerrar_sesion_app", {
       method: "POST", headers: Object.assign({ "x-sesion": nexus.token }, cabeceras), body: "{}"
     }).catch(function () { /* si falla, vence solo en 12 horas */ });
   }
-  if (pase.error || !pase.token_hash) return { ok: false, mensaje: pase.error || "No fue posible entrar a Nexus Learning." };
+  if (pase.error || !pase.token_hash) return { ok: false, mensaje: pase.error || "No fue posible entrar a Nexus Academy." };
 
   let v = await nexusDb.auth.verifyOtp({ token_hash: pase.token_hash, type: "email" });
   if (v.error) v = await nexusDb.auth.verifyOtp({ token_hash: pase.token_hash, type: "magiclink" });

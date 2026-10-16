@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · PANEL DE ADMINISTRACIÓN DE CURSOS
+// NEXUS ACADEMY · PANEL DE ADMINISTRACIÓN DE CURSOS
 // Carpeta: js/admin.js
 // Crear y editar cursos, lecciones (con diapositivas PDF), preguntas y
 // docentes. La misma página sirve a dos papeles:
@@ -50,7 +50,7 @@ function esDocente() { return adm.papel === "docente"; }
 // El docente ve sus programas en solo lectura y edita lecciones y preguntas
 function prepararModoDocente() {
   document.body.classList.add("modo-docente");
-  document.title = "Mis programas · Nexus Learning";
+  document.title = "Mis programas · Nexus Academy";
   el("marca-texto").textContent = "Mis programas";
   ["btn-nuevo-curso", "btn-eliminar-curso", "bloque-qr", "btn-guardar-curso"].forEach(function (id) {
     el(id).setAttribute("data-solo-admin", "");

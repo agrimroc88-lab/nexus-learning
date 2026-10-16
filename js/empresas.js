@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · EMPRESAS, CAPACITACIONES Y NÓMINAS
+// NEXUS ACADEMY · EMPRESAS, CAPACITACIONES Y NÓMINAS
 // Carpeta: js/empresas.js
 // =====================================================================
 
@@ -1155,7 +1155,20 @@ el("btn-volver").addEventListener("click", async function () {
 });
 
 // Exportar a Excel (.xlsx) con dos hojas: Nómina y Resumen
-el("btn-excel").addEventListener("click", function () {
+// Lector/generador de Excel: se descarga solo cuando se usa (ahorra ~900 KB al abrir la página)
+function cargarXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise(function (ok, falla) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = ok;
+    s.onerror = function () { s.remove(); falla(new Error("xlsx")); };
+    document.head.appendChild(s);
+  });
+}
+
+el("btn-excel").addEventListener("click", async function () {
+  try { await cargarXLSX(); } catch (e) { return avisar("No se pudo cargar el generador de Excel. Revisa tu conexión.", "error"); }
   if (!emp.nomina) return;
   const c = emp.nomina.conv;
   const filas = emp.nomina.filas.map(function (f) {

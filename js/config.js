@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · CONFIGURACIÓN Y CONEXIÓN A SUPABASE
+// NEXUS ACADEMY · CONFIGURACIÓN Y CONEXIÓN A SUPABASE
 // Carpeta: js/config.js
 //
 // Estos dos datos son PÚBLICOS por diseño: la seguridad real la dan las
@@ -10,7 +10,7 @@
 const NEXUS_CONFIG = {
   supabaseUrl: "https://yfmefiytswvxsqmnmrvg.supabase.co",
   supabaseKey: "sb_publishable_F3cIyhfFGoPurU4D0sNVWQ_jLugMPCO",
-  nombrePlataforma: "Nexus Learning",
+  nombrePlataforma: "Nexus Academy",
   empresa: "VitalWork S.A.S.",
   // Los administradores pueden ingresar con su cédula. Por dentro, su
   // cuenta en Supabase es "CEDULA@" + este dominio (no recibe correos).
@@ -78,7 +78,7 @@ function pintarPortada(caja, titulo, url) {
 // Crea la conexión que usarán todas las páginas.
 // Requiere que el HTML cargue antes la librería de Supabase.
 if (!window.supabase) {
-  console.error("Nexus Learning: falta cargar la librería de Supabase antes de config.js");
+  console.error("Nexus Academy: falta cargar la librería de Supabase antes de config.js");
 }
 const nexusDb = window.supabase.createClient(NEXUS_CONFIG.supabaseUrl, NEXUS_CONFIG.supabaseKey);
 

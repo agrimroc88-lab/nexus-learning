@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · APARIENCIA DEL SITIO (solo administradores)
+// NEXUS ACADEMY · APARIENCIA DEL SITIO (solo administradores)
 // Carpeta: js/apariencia.js
 //
 // Edita la fila única de cap_apariencia: colores, foto y textos del

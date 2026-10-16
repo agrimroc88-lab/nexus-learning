@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · MIS CERTIFICADOS (estudiantes)
+// NEXUS ACADEMY · MIS CERTIFICADOS (estudiantes)
 // Carpeta: js/mis-certificados.js
 //
 // La persona escribe su cédula y su fecha de nacimiento (la que registró

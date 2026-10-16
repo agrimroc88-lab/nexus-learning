@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · INFORME DE CAPACITACIÓN POR EMPRESA (PDF)
+// NEXUS ACADEMY · INFORME DE CAPACITACIÓN POR EMPRESA (PDF)
 // Carpeta: js/reporte-empresa.js
 //
 // NexusReporte.generar(empresa, { desde, hasta }) arma un PDF A4 con:
@@ -252,7 +252,7 @@ const NexusReporte = (function () {
     ctx.color(DORADO, "linea");
     doc.setLineWidth(1.1);
     doc.circle(M + 9.4, 13, 2.6, "S");
-    ctx.texto("Nexus Learning", M + 15, 14.5, { tam: 13, estilo: "bold", color: [255, 255, 255] });
+    ctx.texto("Nexus Academy", M + 15, 14.5, { tam: 13, estilo: "bold", color: [255, 255, 255] });
     ctx.texto("Plataforma de capacitación · VitalWork S.A.S.", M + 15, 20, { tam: 8, color: [207, 219, 239] });
     ctx.texto("INFORME DE CAPACITACIÓN", W - M, 14.5, { tam: 11, estilo: "bold", color: DORADO, alinear: "right" });
     ctx.texto("Emitido el " + new Date().toLocaleDateString("es-EC", { day: "numeric", month: "long", year: "numeric" }), W - M, 20, { tam: 8, color: [207, 219, 239], alinear: "right" });

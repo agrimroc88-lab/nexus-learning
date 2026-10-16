@@ -1,5 +1,5 @@
 // =====================================================================
-// NEXUS LEARNING · JUEGOS PARA LA CHARLA (docentes y administradores)
+// NEXUS ACADEMY · JUEGOS PARA LA CHARLA (docentes y administradores)
 // Carpeta: js/charla.js
 //
 // Lista los juegos de cada programa (los asignados a sus lecciones) y la

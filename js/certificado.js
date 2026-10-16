@@ -166,7 +166,7 @@ const NexusCertificado = (function () {
     doc.setFillColor(PINO_CLARO[0], PINO_CLARO[1], PINO_CLARO[2]);
     doc.triangle(W - 40, 0, W, 0, W, 26, "F");
     doc.triangle(0, H - 26, 0, H, 40, H, "F");
-    const base = { cx: W / 2, dy: 2, curso: 220, desc: 225, linea: 85, firma: 78, fecha: W / 2 + 4, qr: 238, limite: 151, col: 84 };
+    const base = { cx: W / 2, dy: 2, curso: 220, desc: 225, linea: 85, firma: 78, fecha: W / 2 + 4, qr: 238, limite: 147, col: 84 };
     const h = 28, w = logo ? h * logo.prop : 28, tw = 66, x0 = W / 2 - (w + 4 + tw) / 2;
     marca(doc, x0, 9, h);
     texto(doc, "NEXUS ACADEMY", x0 + w + 4, 22, { tam: 17, estilo: "bold", color: PINO, alinear: "left" });
@@ -174,6 +174,62 @@ const NexusCertificado = (function () {
     doc.rect(x0 + w + 4, 25.5, 26, 1.3, "F");
     texto(doc, "Capacitación y Desarrollo Profesional", x0 + w + 4, 32, { tam: 9, color: GRIS, alinear: "left" });
     return Object.assign(base, { dy: 5 });
+  }
+
+  // ---------------- Sello dorado de la Dirección Académica ----------------
+  // Posición elegida por el director: centro 111 × 168,5 mm · diámetro 35,5 mm · giro −20°
+  const SELLO = { x: 111, y: 168.5, escala: 35.5 / 34.4, giro: -20, color: [176, 128, 20] };
+
+  // Texto en el arco de arriba (giro en grados, a favor del reloj)
+  function textoArriba(doc, txt, cx, cy, r, tam, color, giro) {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(tam);
+    doc.setTextColor(color[0], color[1], color[2]);
+    let t = (-90 + giro) * Math.PI / 180 - (doc.getTextWidth(txt) / 2) / r;
+    for (const ch of txt) {
+      const w = doc.getTextWidth(ch), tm = t + (w / 2) / r;
+      const x = cx + r * Math.cos(tm) - (w / 2) * Math.cos(tm + Math.PI / 2);
+      const y = cy + r * Math.sin(tm) - (w / 2) * Math.sin(tm + Math.PI / 2);
+      doc.text(ch, x, y, { angle: -(tm * 180 / Math.PI + 90) });
+      t += w / r;
+    }
+  }
+  // Texto en el arco de abajo, legible de izquierda a derecha
+  function textoAbajo(doc, txt, cx, cy, r, tam, color, giro) {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(tam);
+    doc.setTextColor(color[0], color[1], color[2]);
+    let t = (90 + giro) * Math.PI / 180 + (doc.getTextWidth(txt) / 2) / r;
+    for (const ch of txt) {
+      const w = doc.getTextWidth(ch), tm = t - (w / 2) / r;
+      const x = cx + r * Math.cos(tm) - (w / 2) * Math.cos(tm - Math.PI / 2);
+      const y = cy + r * Math.sin(tm) - (w / 2) * Math.sin(tm - Math.PI / 2);
+      doc.text(ch, x, y, { angle: -(tm * 180 / Math.PI - 90) });
+      t -= w / r;
+    }
+  }
+
+  function sello(doc) {
+    const c = SELLO.color, k = SELLO.escala, cx = SELLO.x, cy = SELLO.y, g = SELLO.giro;
+    doc.saveGraphicsState();
+    doc.setGState(new doc.GState({ opacity: 0.85 }));
+    doc.setDrawColor(c[0], c[1], c[2]);
+    // Borde dentado
+    doc.setLineWidth(0.6);
+    const n = 40, pts = [];
+    for (let i = 0; i <= n * 2; i++) {
+      const a = i * Math.PI / n + g * Math.PI / 180, r = (i % 2 ? 15.6 : 16.6) * k;
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    doc.lines(pts.slice(1).map(function (p, i) { return [p[0] - pts[i][0], p[1] - pts[i][1]]; }), pts[0][0], pts[0][1], [1, 1], "S", true);
+    doc.setLineWidth(0.35);
+    doc.circle(cx, cy, 14.4 * k, "S");
+    doc.circle(cx, cy, 8.8 * k, "S");
+    textoArriba(doc, "NEXUS ACADEMY", cx, cy, 10.8 * k, 6.4 * k, c, g);
+    textoAbajo(doc, "DIRECCIÓN ACADÉMICA", cx, cy, 12.6 * k, 4.8 * k, c, g);
+    // "VW" al centro, girado con el sello
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11 * k); doc.setTextColor(c[0], c[1], c[2]);
+    const w = doc.getTextWidth("VW"), a = g * Math.PI / 180, dx = -w / 2, dy = 1.6 * k;
+    doc.text("VW", cx + dx * Math.cos(a) - dy * Math.sin(a), cy + dx * Math.sin(a) + dy * Math.cos(a), { angle: -g });
+    doc.restoreGraphicsState();
   }
 
   function dibujar(d) {
@@ -220,8 +276,9 @@ const NexusCertificado = (function () {
 
     // --- Firma del director (izquierda) ---
     if (firma) {
-      const fh = 29, fw = fh * firma.prop;
-      doc.addImage(firma.datos, "PNG", L.firma - fw / 2 + 4, 174 + Y - fh + 3, fw, fh, "firma", "FAST");
+      // Posición elegida por el director: centro 80,7 mm · base 203,6 mm · alto 50 mm · giro 2°
+      const fh = 51.4, fw = fh * firma.prop;
+      doc.addImage(firma.datos, "PNG", 80.7 - fw / 2, 152.9, fw, fh, "firma", "FAST");
     }
     doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]);
     doc.setLineWidth(0.3);
@@ -239,6 +296,9 @@ const NexusCertificado = (function () {
     texto(doc, "Código: " + d.codigo, L.qr - 6, 170 + Y, { tam: 10, estilo: "bold", color: PINO_CLARO, alinear: "right" });
     texto(doc, "Escanea el código QR o verifica", L.qr - 6, 176 + Y, { tam: 8.5, color: GRIS, alinear: "right" });
     texto(doc, "en la página de Nexus Academy", L.qr - 6, 180.5 + Y, { tam: 8.5, color: GRIS, alinear: "right" });
+
+    // --- Sello dorado ---
+    sello(doc);
 
     doc.save("Certificado_" + d.codigo + ".pdf");
   }

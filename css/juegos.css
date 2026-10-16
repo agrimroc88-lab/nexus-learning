@@ -1,5 +1,5 @@
 /* =====================================================================
-   NEXUS LEARNING · ESTILOS DE LOS JUEGOS
+   NEXUS ACADEMY · ESTILOS DE LOS JUEGOS
    Carpeta: css/juegos.css
    La usan curso.html (estudiantes) y juegos.html (vista previa del admin).
    Requiere cargar antes css/estilos.css.
@@ -428,4 +428,112 @@ body.con-escenario { overflow: hidden; }
   .juego-charla { grid-template-columns: minmax(0, 1fr) auto; }
   .juego-charla .juego-tipo { grid-column: 1 / -1; }
   .escenario-cuerpo { padding: 12px; }
+}
+/* ---------- Marcador por equipos (ruleta, memoria, contra reloj) ---------- */
+.marcador-equipos { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 0 0 14px; }
+.ficha-equipo {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 8px; border: 2px solid var(--zona); border-radius: var(--radio); background: var(--papel);
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.ficha-equipo span { font-size: 13px; font-weight: 700; color: var(--gris); text-align: center; }
+.ficha-equipo strong { font-size: 28px; color: var(--pino); font-variant-numeric: tabular-nums; }
+.ficha-equipo.activa { border-color: var(--senal); box-shadow: 0 0 0 3px color-mix(in srgb, var(--senal) 30%, transparent); transform: translateY(-2px); }
+.ficha-equipo.activa span { color: var(--pino); }
+.ficha-equipo.cambio { animation: casilla-cambio .5s ease-out; }
+.podio { list-style: none; margin: 12px auto 6px; padding: 0; max-width: 360px; display: grid; gap: 6px; counter-reset: puesto; }
+.podio li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: var(--radio); background: var(--blanco); counter-increment: puesto; }
+.podio li::before { content: counter(puesto) "."; font-weight: 800; color: var(--gris); }
+.podio li span { flex: 1; text-align: left; font-weight: 700; }
+.podio li.primero { background: color-mix(in srgb, var(--senal) 28%, var(--blanco)); }
+.podio li.primero strong { color: var(--pino); }
+.boton-grande { font-size: 18px; padding: 14px 26px; }
+.boton.boton-bien { background: var(--ok); border-color: var(--ok); }
+.boton.boton-mal { background: var(--error); border-color: var(--error); }
+
+/* ---------- 6. Ruleta ---------- */
+.ruleta-escenario { display: grid; grid-template-columns: minmax(220px, 380px) 1fr; gap: 24px; align-items: center; }
+.ruleta-marco { position: relative; width: 100%; max-width: 380px; aspect-ratio: 1; margin: 0 auto; }
+.ruleta-rueda {
+  position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+  border: 6px solid var(--pino-noche); box-shadow: 0 8px 24px rgba(10, 43, 93, .25), inset 0 0 0 3px var(--senal);
+  will-change: transform;
+}
+/* cada número ocupa toda la rueda girada; el texto queda junto al borde */
+.ruleta-num {
+  position: absolute; inset: 0; padding-top: 7%; text-align: center; pointer-events: none;
+  font-weight: 800; font-size: clamp(14px, 2.6vw, 22px);
+}
+.ruleta-num.usada { opacity: .25; text-decoration: line-through; }
+.ruleta-centro {
+  position: absolute; left: 50%; top: 50%; width: 16%; height: 16%; transform: translate(-50%, -50%);
+  border-radius: 50%; background: var(--blanco); border: 4px solid var(--senal); box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.ruleta-puntero {
+  position: absolute; left: 50%; top: -10px; z-index: 2; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid var(--senal);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.3));
+}
+.ruleta-zona { display: grid; gap: 12px; justify-items: start; }
+.ruleta-pregunta { width: 100%; }
+.ruleta-pregunta .juego-nota { color: color-mix(in srgb, var(--blanco) 75%, transparent); }
+.ruleta-pregunta p { margin: 8px 0 0; font-size: clamp(19px, 2.2vw, 26px); font-weight: 700; color: var(--blanco); }
+.ruleta-pregunta .ruleta-respuesta { padding: 10px 14px; border-radius: var(--radio); background: #E4F2EA; color: var(--ok); font-size: 18px; }
+.acciones-ruleta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- 7. Memoria ---------- */
+.memoria-tablero { display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 10px; margin-top: 12px; }
+.carta-memoria { aspect-ratio: 4 / 3; padding: 0; border: 0; background: none; cursor: pointer; perspective: 800px; font: inherit; }
+.carta-dentro { position: relative; display: block; width: 100%; height: 100%; transition: transform .45s; transform-style: preserve-3d; }
+.carta-memoria.abierta .carta-dentro, .carta-memoria.hecha .carta-dentro { transform: rotateY(180deg); }
+.carta-dorso, .carta-cara {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8px;
+  border-radius: 12px; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-align: center;
+}
+.carta-dorso {
+  background: linear-gradient(135deg, var(--pino) 0%, var(--pino-claro) 100%); color: var(--senal);
+  font-size: 34px; font-weight: 800; border: 3px solid var(--senal);
+}
+.carta-cara {
+  transform: rotateY(180deg); background: var(--blanco); color: var(--tinta); border: 3px solid var(--pino-claro);
+  font-size: clamp(12px, 1.6vw, 17px); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere;
+}
+.carta-cara.b { background: var(--papel); }
+.carta-memoria.hecha .carta-cara { border-color: var(--ok); background: #E4F2EA; }
+.carta-memoria.fallo .carta-cara { border-color: var(--error); background: #F8E1DB; }
+.carta-memoria:focus-visible { outline: 3px solid var(--senal); outline-offset: 2px; border-radius: 12px; }
+
+/* ---------- 8. Contra reloj ---------- */
+.reloj-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.reloj-cuenta {
+  min-width: 2.2em; padding: 4px 10px; border-radius: 10px; background: var(--pino); color: var(--blanco);
+  font-size: 30px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.reloj-cuenta.urgente { background: var(--error); animation: casilla-cambio .5s ease-out infinite; }
+.reloj-barra { height: 10px; margin: 10px 0 14px; border-radius: 99px; background: var(--zona); overflow: hidden; }
+.reloj-barra span { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--senal), var(--pino-claro)); }
+.reloj-afirmacion { font-size: clamp(19px, 2.4vw, 28px); font-weight: 700; text-align: center; padding: 26px 20px; }
+.reloj-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.reloj-opcion {
+  padding: 18px 10px; border: 3px solid; border-radius: 14px; font: inherit; font-size: clamp(18px, 2.4vw, 26px);
+  font-weight: 800; letter-spacing: .04em; cursor: pointer; transition: transform .12s;
+}
+.reloj-opcion:hover:not(:disabled) { transform: translateY(-2px); }
+.reloj-opcion.verdadero { background: #E4F2EA; border-color: var(--ok); color: var(--ok); }
+.reloj-opcion.falso { background: #F8E1DB; border-color: var(--error); color: var(--error); }
+.reloj-opcion:disabled { cursor: default; opacity: .55; }
+.reloj-opcion.correcta { opacity: 1; box-shadow: 0 0 0 4px var(--ok); }
+.reloj-opcion.incorrecta { opacity: 1; box-shadow: 0 0 0 4px var(--error); }
+.reloj-repaso { margin: 14px auto 6px; max-width: 640px; text-align: left; }
+.reloj-repaso ul { margin: 6px 0 0; padding-left: 20px; }
+.reloj-repaso li { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+  .ruleta-escenario { grid-template-columns: 1fr; }
+  .ruleta-zona { justify-items: stretch; }
+  .memoria-tablero { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carta-dentro, .ruleta-rueda, .ficha-equipo { transition: none !important; }
+  .reloj-cuenta.urgente { animation: none; }
 }

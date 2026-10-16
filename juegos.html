@@ -18,7 +18,7 @@
 
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css">
-  <link rel="stylesheet" href="css/juegos.css">
+  <link rel="stylesheet" href="css/juegos.css?v=2">
 </head>
 <body>
 
@@ -67,6 +67,9 @@
         <button type="button" class="boton secundario boton-chico" data-nuevo="ordenar">Ordena los pasos</button>
         <button type="button" class="boton secundario boton-chico" data-nuevo="riesgos">Caza de riesgos (foto)</button>
         <button type="button" class="boton secundario boton-chico" data-nuevo="escenarios">¿Qué harías?</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="ruleta">Ruleta de preguntas</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="memoria">Memoria de parejas</button>
+        <button type="button" class="boton secundario boton-chico" data-nuevo="reloj">Contra reloj (V o F)</button>
       </div>
     </section>
 
@@ -140,6 +143,35 @@
           </fieldset>
         </div>
 
+        <!-- Equipos (ruleta, memoria y contra reloj) -->
+        <div data-tipo="ruleta memoria reloj" hidden>
+          <label class="etiqueta" for="j-equipos">Equipos (separados por coma)</label>
+          <input class="campo" id="j-equipos" maxlength="200" placeholder="Equipo Azul, Equipo Dorado">
+          <p class="ayuda">De 2 a 6 equipos que juegan por turnos con marcador. En Memoria y Contra reloj puedes dejarlo vacío para jugar sin equipos.</p>
+        </div>
+
+        <!-- Ruleta de preguntas -->
+        <div data-tipo="ruleta" hidden>
+          <label class="etiqueta" for="j-preguntas">Preguntas, una por línea: <strong>Pregunta | Respuesta</strong> (de 4 a 16)</label>
+          <textarea class="campo area" id="j-preguntas" rows="8" placeholder="¿Qué significa el color rojo en la señalización? | Prohibición o equipo contra incendios"></textarea>
+          <p class="ayuda">La ruleta cae en una pregunta al azar; el docente muestra la respuesta y marca si el equipo acertó.</p>
+        </div>
+
+        <!-- Memoria de parejas -->
+        <div data-tipo="memoria" hidden>
+          <label class="etiqueta" for="j-pares">Parejas, una por línea: <strong>Carta 1 | Carta 2</strong> (de 3 a 12)</label>
+          <textarea class="campo area" id="j-pares" rows="8" placeholder="Ruido | Protector auditivo"></textarea>
+          <p class="ayuda">Por ejemplo peligro y medida de control, o señal y su significado. Las cartas se mezclan boca abajo.</p>
+        </div>
+
+        <!-- Contra reloj -->
+        <div data-tipo="reloj" hidden>
+          <label class="etiqueta" for="j-reloj-seg">Segundos para cada afirmación</label>
+          <input class="campo campo-corto" id="j-reloj-seg" type="number" min="5" max="60" value="10">
+          <label class="etiqueta" for="j-afirmaciones">Afirmaciones, una por línea: <strong>V o F | Afirmación | Explicación (opcional)</strong> (de 4 a 30)</label>
+          <textarea class="campo area" id="j-afirmaciones" rows="8" placeholder="F | El casco se puede usar con la visera hacia atrás | El arnés interno pierde su protección"></textarea>
+        </div>
+
         <div class="acciones-form">
           <button type="button" class="boton secundario" id="btn-cancelar-juego">Cancelar</button>
           <button type="button" class="boton secundario" id="btn-probar-juego">Probar</button>
@@ -154,7 +186,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
-  <script src="js/juegos-motor.js"></script>
-  <script src="js/juegos.js"></script>
+  <script src="js/juegos-motor.js?v=2"></script>
+  <script src="js/juegos.js?v=2"></script>
 </body>
 </html>

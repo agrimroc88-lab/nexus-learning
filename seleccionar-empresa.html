@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elegir empresa · NEXUS</title>
+  <link rel="icon" href="nexus-favicon.png">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/seleccionar-empresa.css?v=3">
+</head>
+<body class="pantalla-acceso">
+
+  <div class="acceso-escena">
+    <video id="video-fondo" class="acceso-video-fondo" autoplay muted loop playsinline aria-hidden="true"></video>
+    <div class="acceso-video-capa" aria-hidden="true"></div>
+  </div>
+
+  <button type="button" id="btn-cerrar-sesion" class="btn-cerrar-sesion-flotante">Cerrar sesión</button>
+
+  <main class="acceso-tarjeta acceso-tarjeta-ancha" id="tarjeta">
+
+    <header class="acceso-encabezado">
+      <h1 class="acceso-marca">NEXUS</h1>
+      <p class="acceso-lema">¿Con qué empresa vas a trabajar?</p>
+    </header>
+
+    <p class="acceso-mensaje" id="mensaje" role="alert" hidden></p>
+
+    <div class="sel-emp-columnas" id="sel-emp-columnas">
+
+      <!-- Nexus Academy: solo para administradores y docentes (lo decide el puente) -->
+      <section class="sel-learning" id="sel-learning" hidden>
+        <button type="button" class="sel-learning-boton" id="btn-learning">
+          <img class="sel-learning-portada" src="img/nexus-learning-portada.jpg" alt="" onload="this.closest('button').classList.add('con-portada')" onerror="this.nextElementSibling.style.display='';this.remove()">
+          <svg class="sel-learning-logo" style="display:none" width="56" height="56" viewBox="0 0 30 30" aria-hidden="true">
+            <circle cx="8" cy="15" r="6" fill="#E3B341"/>
+            <circle cx="22" cy="15" r="6" fill="none" stroke="#E3B341" stroke-width="3"/>
+            <rect x="12" y="13.5" width="6" height="3" fill="#E3B341"/>
+          </svg>
+          <span class="sel-learning-nombre">Nexus Academy</span>
+          <span class="sel-learning-papel" id="sel-learning-papel"></span>
+          <span class="sel-learning-entrar" id="sel-learning-entrar">Entrar →</span>
+        </button>
+      </section>
+
+      <div class="sel-emp-columna">
+        <p class="sel-emp-titulo" id="sel-emp-titulo" hidden>Empresas en NEXUS</p>
+        <div class="sel-emp-lista" id="sel-emp-lista">
+          <!-- Tarjetas de empresa insertadas por JS -->
+        </div>
+      </div>
+    </div>
+
+    <footer class="acceso-pie">
+      <span>Puedes cambiar de empresa luego con el botón "Salir de empresa"</span>
+    </footer>
+
+  </main>
+
+  <script type="module" src="js/seleccionar-empresa.js?v=2"></script>
+</body>
+</html>

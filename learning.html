@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Academy · NEXUS</title>
+  <link rel="icon" href="favicon.png">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/empresas.css">
+  <link rel="stylesheet" href="css/learning.css?v=5">
+</head>
+<body class="app">
+
+  <aside class="barra-lateral" id="barra-lateral">
+    <div class="lateral-marca">NEXUS</div>
+    <nav class="lateral-nav" id="lateral-nav"></nav>
+    <button class="lateral-salir" id="btn-salir" type="button">Cerrar sesión</button>
+  </aside>
+
+  <div class="contenedor">
+
+    <header class="cabecera">
+      <button class="cabecera-menu" id="btn-menu" type="button" aria-label="Menú">☰</button>
+      <h1 class="cabecera-titulo">Nexus Academy</h1>
+      <div class="cabecera-usuario">
+        <span class="usuario-nombre" id="usuario-nombre">—</span>
+        <span class="usuario-rol" id="usuario-rol">—</span>
+      </div>
+    </header>
+
+    <main class="contenido">
+
+      <section class="selector-empresa">
+        <span class="etiqueta">Empresa</span>
+        <strong class="empresa-activa-nombre" id="empresa-activa-nombre">—</strong>
+      </section>
+
+      <p class="alerta" id="alerta-global" role="alert" hidden></p>
+      <p class="nota lrn-ok" id="aviso-ok" role="status" hidden></p>
+
+      <!-- ===== Conexión con Nexus Academy (automática, por el puente) ===== -->
+      <section class="panel lrn-conexion" id="panel-conexion" hidden>
+        <h2 class="lrn-titulo" id="conexion-titulo">Conectando con Nexus Academy…</h2>
+        <p class="nota" id="conexion-texto">Usamos su sesión de NEXUS; no necesita otra contraseña.</p>
+        <div class="lrn-acciones">
+          <button class="boton-primario" id="btn-reintentar" type="button" hidden>Reintentar</button>
+        </div>
+      </section>
+
+      <div id="area-trabajo" hidden>
+
+        <section class="lrn-barra">
+          <span class="lrn-conectado" id="lrn-conectado">—</span>
+          <div class="lrn-barra-botones">
+            <button class="boton-secundario" id="btn-abrir-learning" type="button">Abrir panel de Nexus Academy</button>
+          </div>
+        </section>
+
+        <!-- Empresa no registrada en Learning -->
+        <section class="panel lrn-registro" id="panel-sin-empresa" hidden>
+          <h2 class="lrn-titulo">Esta empresa todavía no está en Nexus Academy</h2>
+          <p class="nota" id="texto-sin-empresa"></p>
+          <div class="lrn-acciones">
+            <button class="boton-primario" id="btn-registrar-empresa" type="button">Registrar en Nexus Academy</button>
+          </div>
+        </section>
+
+        <!-- Empresa registrada -->
+        <div id="bloque-empresa" hidden>
+          <section class="resumen">
+            <article class="resumen-item">
+              <span class="resumen-etiqueta">Trabajadores activos</span>
+              <span class="resumen-valor" id="r-activos">0</span>
+            </article>
+            <article class="resumen-item">
+              <span class="resumen-etiqueta">Capacitaciones</span>
+              <span class="resumen-valor" id="r-capacitaciones">0</span>
+            </article>
+            <article class="resumen-item">
+              <span class="resumen-etiqueta">Certificados emitidos</span>
+              <span class="resumen-valor" id="r-certificados">0</span>
+            </article>
+          </section>
+
+          <p class="nota lrn-desfase" id="aviso-desfase" hidden>
+            <span id="texto-desfase"></span>
+            <button class="boton-secundario boton-mini" id="btn-actualizar-numero" type="button">Actualizar en Nexus Academy</button>
+          </p>
+
+          <h2 class="lrn-titulo">Capacitaciones de la empresa</h2>
+          <div class="lrn-lista" id="lista-convocatorias"></div>
+          <p class="vacio" id="vacio-convocatorias" hidden>
+            Esta empresa aún no tiene capacitaciones en Nexus Academy. Créelas desde el panel de Nexus Academy.
+          </p>
+        </div>
+
+        <!-- Detalle de una capacitación -->
+        <section class="panel lrn-detalle" id="panel-detalle" hidden>
+          <div class="lrn-detalle-cabecera">
+            <div>
+              <h2 class="lrn-titulo" id="d-titulo">—</h2>
+              <p class="nota" id="d-sub">—</p>
+            </div>
+            <button class="boton-secundario" id="btn-cerrar-detalle" type="button">Volver</button>
+          </div>
+
+          <section class="resumen">
+            <article class="resumen-item resumen-ok">
+              <span class="resumen-etiqueta">Capacitados</span>
+              <span class="resumen-valor" id="d-capacitados">0</span>
+            </article>
+            <article class="resumen-item resumen-aviso">
+              <span class="resumen-etiqueta">Inscritos sin terminar</span>
+              <span class="resumen-valor" id="d-pendientes">0</span>
+            </article>
+            <article class="resumen-item resumen-critico">
+              <span class="resumen-etiqueta">No se han inscrito</span>
+              <span class="resumen-valor" id="d-faltan">0</span>
+            </article>
+            <article class="resumen-item resumen-destacado">
+              <span class="resumen-etiqueta">Avance</span>
+              <span class="resumen-valor" id="d-avance">—</span>
+            </article>
+          </section>
+
+          <div class="lrn-pestanas" role="tablist">
+            <button class="lrn-pestana" type="button" data-grupo="faltan">No se han inscrito</button>
+            <button class="lrn-pestana" type="button" data-grupo="pendientes">Inscritos sin terminar</button>
+            <button class="lrn-pestana" type="button" data-grupo="capacitados">Capacitados</button>
+            <button class="lrn-pestana" type="button" data-grupo="externos">No están en la nómina</button>
+          </div>
+
+          <p class="nota" id="d-explicacion"></p>
+
+          <section class="herramientas">
+            <input class="entrada busqueda" id="d-buscar" type="search" placeholder="Buscar por nombre, cédula o código">
+            <button class="boton-primario" id="btn-exportar" type="button">Descargar lista (Excel)</button>
+          </section>
+
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead id="d-cabecera"></thead>
+              <tbody id="d-cuerpo"></tbody>
+            </table>
+          </div>
+          <p class="vacio" id="d-vacio" hidden>No hay personas en este grupo.</p>
+        </section>
+
+      </div>
+
+      <p class="aviso-inicial" id="aviso-inicial">Cargando…</p>
+    </main>
+  </div>
+
+  <!-- ============ Modal: registrar en Seguridad o Salud ============ -->
+  <div class="modal" id="modal-registro" hidden>
+    <div class="modal-caja modal-estrecho" role="dialog" aria-modal="true">
+
+      <header class="modal-cabecera">
+        <h2 class="modal-titulo" id="r-titulo">Registrar en NEXUS</h2>
+        <button class="modal-cerrar" data-cierra="modal-registro" type="button" aria-label="Cerrar">×</button>
+      </header>
+
+      <div class="modal-cuerpo">
+        <p class="nota" id="r-curso">—</p>
+
+        <div class="rejilla">
+          <div class="campo">
+            <label class="etiqueta" for="r-ambito">Pestaña</label>
+            <select class="entrada" id="r-ambito">
+              <option value="salud">Salud ocupacional</option>
+              <option value="seguridad">Seguridad industrial</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label class="etiqueta" for="r-anio">Año</label>
+            <input class="entrada" id="r-anio" type="number" min="2020" max="2100">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label class="etiqueta" for="r-tema">Tema de capacitación</label>
+          <select class="entrada" id="r-tema"></select>
+          <span class="ayuda" id="r-tema-ayuda"></span>
+        </div>
+
+        <div class="lrn-resumen-registro" id="r-datos"></div>
+
+        <div class="campo">
+          <label class="etiqueta" for="r-facilitador">Facilitador</label>
+          <input class="entrada" id="r-facilitador" type="text">
+        </div>
+
+        <div class="campo">
+          <label class="etiqueta" for="r-url">Registro de asistencia (carpeta de Drive)</label>
+          <input class="entrada" id="r-url" type="url" placeholder="https://drive.google.com/…" autocomplete="off">
+          <span class="ayuda">Si ya tiene un enlace, se conserva. Alimenta GTH-09 del cumplimiento.</span>
+        </div>
+
+        <p class="nota lrn-aviso-reemplazo" id="r-reemplazo" hidden></p>
+        <p class="alerta" id="alerta-registro" role="alert" hidden></p>
+      </div>
+
+      <footer class="modal-pie">
+        <button class="boton-secundario" data-cierra="modal-registro" type="button">Cancelar</button>
+        <button class="boton-primario" id="btn-guardar-registro" type="button">Registrar</button>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module" src="js/learning.js?v=5"></script>
+</body>
+</html>

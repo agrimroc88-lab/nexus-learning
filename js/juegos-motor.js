@@ -9,6 +9,9 @@
 //                ordenar) y comparación de tiempos.
 //   clasificar → Tarjetas con dos opciones y explicación.
 //   ordenar    → Tocar los pasos en el orden correcto.
+//   ruleta     → Ruleta de preguntas por equipos con marcador.
+//   memoria    → Parejas de cartas (con turnos por equipo si hay equipos).
+//   reloj      → Verdadero o falso contra reloj, con puntos por rapidez y racha.
 // Lo usan charla.html (el docente lo proyecta en la charla) y juegos.html (vista previa).
 // Todo el texto se pinta con textContent (nunca HTML de la base).
 // =====================================================================
@@ -16,7 +19,8 @@
 const NexusJuegos = (function () {
   const NOMBRES = {
     numeros: "Busca los números", clasificar: "Clasifica", ordenar: "Ordena los pasos",
-    riesgos: "Caza de riesgos", escenarios: "¿Qué harías?"
+    riesgos: "Caza de riesgos", escenarios: "¿Qué harías?",
+    ruleta: "Ruleta de preguntas", memoria: "Memoria de parejas", reloj: "Contra reloj"
   };
 
   // ---------- utilidades ----------
@@ -59,6 +63,9 @@ const NexusJuegos = (function () {
     if (juego.tipo === "ordenar") return ordenar(cuerpo, cfg);
     if (juego.tipo === "riesgos") return riesgos(cuerpo, cfg);
     if (juego.tipo === "escenarios") return escenarios(cuerpo, cfg);
+    if (juego.tipo === "ruleta") return ruleta(cuerpo, cfg);
+    if (juego.tipo === "memoria") return memoria(cuerpo, cfg);
+    if (juego.tipo === "reloj") return reloj(cuerpo, cfg);
     cuerpo.textContent = "Este tipo de juego no está disponible.";
   }
 
@@ -559,6 +566,335 @@ const NexusJuegos = (function () {
     }
 
     empezar();
+  }
+
+  // ===================================================================
+  // Utilidades de equipos (ruleta, memoria y contra reloj)
+  // ===================================================================
+  function equiposDe(cfg) {
+    const e = (cfg.equipos || []).map(function (x) { return String(x || "").trim(); }).filter(Boolean).slice(0, 6);
+    return e.length >= 2 ? e : null;
+  }
+  // Marcador por equipos: { caja, sumar(i, n), turno(i), puntos }
+  function marcadorEquipos(equipos) {
+    const caja = crear("div", "marcador-equipos");
+    const puntos = equipos.map(function () { return 0; });
+    const fichas = equipos.map(function (n) {
+      const f = crear("div", "ficha-equipo");
+      f.append(crear("span", "", n), crear("strong", "", "0"));
+      caja.appendChild(f);
+      return f;
+    });
+    return {
+      caja: caja, puntos: puntos,
+      sumar: function (i, n) {
+        puntos[i] += n;
+        const s = fichas[i].querySelector("strong");
+        s.textContent = puntos[i];
+        fichas[i].classList.remove("cambio"); void fichas[i].offsetWidth; fichas[i].classList.add("cambio");
+      },
+      turno: function (i) { fichas.forEach(function (f, k) { f.classList.toggle("activa", k === i); }); }
+    };
+  }
+  function podio(equipos, puntos) {
+    const orden = equipos.map(function (n, i) { return { n: n, p: puntos[i] }; }).sort(function (a, b) { return b.p - a.p; });
+    const lista = crear("ol", "podio");
+    orden.forEach(function (o, i) {
+      const li = crear("li", i === 0 ? "primero" : "");
+      li.append(crear("span", "", o.n), crear("strong", "", o.p + (o.p === 1 ? " punto" : " puntos")));
+      lista.appendChild(li);
+    });
+    const empate = orden.length > 1 && orden[0].p === orden[1].p;
+    return { lista: lista, titulo: empate ? "¡Empate!" : "¡Gana " + orden[0].n + "!" };
+  }
+  const reducido = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ===================================================================
+  // 6. RULETA DE PREGUNTAS (por equipos)
+  // ===================================================================
+  const COLORES_RULETA = ["#123A7A", "#E3B341", "#1F55A8", "#0A2B5D", "#C9962B", "#2E6BC4"];
+
+  function ruleta(cuerpo, cfg) {
+    const preguntas = (cfg.preguntas || []).filter(function (p) { return p && p.pregunta; });
+    if (preguntas.length < 2) { cuerpo.textContent = "Esta ruleta todavía no tiene preguntas."; return; }
+    const equipos = equiposDe(cfg) || ["Equipo 1", "Equipo 2"];
+    let marcador, usadas, turno, giro, rueda, zona, botonGirar;
+
+    function empezar() {
+      cuerpo.innerHTML = "";
+      usadas = []; turno = 0; giro = 0;
+      marcador = marcadorEquipos(equipos);
+      marcador.turno(0);
+      const escenario = crear("div", "ruleta-escenario");
+      const marco = crear("div", "ruleta-marco");
+      rueda = crear("div", "ruleta-rueda");
+      const n = preguntas.length, paso = 360 / n;
+      rueda.style.background = "conic-gradient(" + preguntas.map(function (p, i) {
+        return COLORES_RULETA[i % COLORES_RULETA.length] + " " + (i * paso) + "deg " + ((i + 1) * paso) + "deg";
+      }).join(", ") + ")";
+      preguntas.forEach(function (p, i) {
+        const num = crear("span", "ruleta-num", String(i + 1));
+        num.style.transform = "rotate(" + ((i + 0.5) * paso) + "deg)";
+        num.style.color = (i % COLORES_RULETA.length === 1 || i % COLORES_RULETA.length === 4) ? "#0A2B5D" : "#FFFFFF";
+        rueda.appendChild(num);
+      });
+      marco.append(crear("div", "ruleta-puntero"), rueda, crear("div", "ruleta-centro"));
+      zona = crear("div", "ruleta-zona");
+      botonGirar = boton("Girar la ruleta", "boton boton-grande", girar);
+      zona.append(crear("p", "juego-nota", "Turno de " + equipos[turno]), botonGirar);
+      escenario.append(marco, zona);
+      cuerpo.append(marcador.caja, escenario);
+    }
+
+    function girar() {
+      const libres = preguntas.map(function (p, i) { return i; }).filter(function (i) { return usadas.indexOf(i) < 0; });
+      if (!libres.length) return final();
+      const i = libres[Math.floor(Math.random() * libres.length)];
+      const paso = 360 / preguntas.length;
+      const destino = (360 - (i + 0.5) * paso + (Math.random() - 0.5) * paso * 0.6 + 360) % 360;
+      giro += 360 * (reducido ? 1 : 5) + ((destino - (giro % 360)) + 360) % 360;
+      botonGirar.disabled = true;
+      rueda.style.transition = reducido ? "none" : "transform 4s cubic-bezier(.12,.8,.2,1)";
+      rueda.style.transform = "rotate(" + giro + "deg)";
+      setTimeout(function () { mostrarPregunta(i); }, reducido ? 50 : 4100);
+    }
+
+    function mostrarPregunta(i) {
+      usadas.push(i);
+      rueda.querySelectorAll(".ruleta-num")[i].classList.add("usada");
+      const p = preguntas[i];
+      zona.innerHTML = "";
+      const tarjeta = crear("div", "tarjeta-juego ruleta-pregunta");
+      tarjeta.append(crear("span", "juego-nota", "Pregunta " + (i + 1) + " · " + equipos[turno]), crear("p", "", p.pregunta));
+      zona.appendChild(tarjeta);
+      const acciones = crear("div", "acciones-ruleta");
+      const ver = boton("Mostrar respuesta", "boton secundario", function () {
+        ver.remove();
+        if (p.respuesta) tarjeta.appendChild(crear("p", "ruleta-respuesta", p.respuesta));
+        acciones.append(
+          boton("✓ Acertó (+1)", "boton boton-bien", function () { cerrar(true); }),
+          boton("✗ No acertó", "boton boton-mal", function () { cerrar(false); }));
+      });
+      acciones.appendChild(ver);
+      zona.appendChild(acciones);
+    }
+
+    function cerrar(acerto) {
+      if (acerto) marcador.sumar(turno, 1);
+      turno = (turno + 1) % equipos.length;
+      marcador.turno(turno);
+      if (usadas.length === preguntas.length) return final();
+      zona.innerHTML = "";
+      zona.append(crear("p", "juego-nota", "Turno de " + equipos[turno] + " · Quedan " + (preguntas.length - usadas.length) + " preguntas"), botonGirar);
+      botonGirar.disabled = false;
+    }
+
+    function final() {
+      const r = podio(equipos, marcador.puntos);
+      cuerpo.innerHTML = "";
+      const fin = crear("div", "juego-final");
+      fin.append(crear("h4", "", r.titulo), r.lista, boton("Jugar de nuevo", "boton secundario", empezar));
+      cuerpo.appendChild(fin);
+    }
+
+    empezar();
+  }
+
+  // ===================================================================
+  // 7. MEMORIA (parejas, por equipos opcional)
+  // ===================================================================
+  function memoria(cuerpo, cfg) {
+    const pares = (cfg.pares || []).filter(function (p) { return p && p.a && p.b; }).slice(0, 12);
+    if (pares.length < 3) { cuerpo.textContent = "Este juego todavía no tiene suficientes parejas."; return; }
+    const equipos = equiposDe(cfg);
+    let marcador, turno, abiertas, bloqueado, intentos, hechas, inicio, reloj;
+
+    function empezar() {
+      cuerpo.innerHTML = "";
+      turno = 0; abiertas = []; bloqueado = false; intentos = 0; hechas = 0; inicio = Date.now();
+      const barra = crear("div", "juego-barra");
+      const info = crear("span", "juego-nota", "");
+      barra.appendChild(info);
+      if (equipos) { marcador = marcadorEquipos(equipos); marcador.turno(0); cuerpo.appendChild(marcador.caja); }
+      cuerpo.appendChild(barra);
+      const tablero = crear("div", "memoria-tablero");
+      tablero.style.setProperty("--cols", pares.length * 2 <= 12 ? 4 : pares.length * 2 <= 16 ? 4 : 6);
+      const cartas = mezclar(pares.reduce(function (l, p, i) { return l.concat([{ par: i, texto: p.a, lado: "a" }, { par: i, texto: p.b, lado: "b" }]); }, []));
+      cartas.forEach(function (c) {
+        const b = crear("button", "carta-memoria");
+        b.type = "button";
+        b.setAttribute("aria-label", "Carta tapada");
+        const dentro = crear("span", "carta-dentro");
+        dentro.append(crear("span", "carta-dorso", "?"), crear("span", "carta-cara " + c.lado, c.texto));
+        b.appendChild(dentro);
+        b.addEventListener("click", function () { voltear(b, c); });
+        tablero.appendChild(b);
+      });
+      cuerpo.appendChild(tablero);
+      function pintarInfo() {
+        info.textContent = (equipos ? "Turno de " + equipos[turno] + " · " : "") + "Parejas: " + hechas + " de " + pares.length +
+          " · Intentos: " + intentos + " · Tiempo: " + Math.floor((Date.now() - inicio) / 1000) + " s";
+      }
+      clearInterval(reloj);
+      reloj = setInterval(function () { if (!cuerpo.isConnected) return clearInterval(reloj); pintarInfo(); }, 500);
+      pintarInfo();
+      empezar.pintar = pintarInfo;
+    }
+
+    function voltear(b, c) {
+      if (bloqueado || b.classList.contains("abierta") || b.classList.contains("hecha")) return;
+      b.classList.add("abierta");
+      b.setAttribute("aria-label", c.texto);
+      abiertas.push({ b: b, c: c });
+      if (abiertas.length < 2) return;
+      intentos++;
+      const x = abiertas[0], y = abiertas[1];
+      abiertas = [];
+      if (x.c.par === y.c.par) {
+        x.b.classList.add("hecha"); y.b.classList.add("hecha");
+        hechas++;
+        if (equipos) marcador.sumar(turno, 1);          // acierta: sigue el mismo equipo
+        empezar.pintar();
+        if (hechas === pares.length) setTimeout(final, 700);
+      } else {
+        bloqueado = true;
+        x.b.classList.add("fallo"); y.b.classList.add("fallo");
+        setTimeout(function () {
+          [x.b, y.b].forEach(function (k) { k.classList.remove("abierta", "fallo"); k.setAttribute("aria-label", "Carta tapada"); });
+          bloqueado = false;
+          if (equipos) { turno = (turno + 1) % equipos.length; marcador.turno(turno); }
+          empezar.pintar();
+        }, 1100);
+      }
+    }
+
+    function final() {
+      clearInterval(reloj);
+      const seg = Math.round((Date.now() - inicio) / 1000);
+      const fin = crear("div", "juego-final");
+      if (equipos) {
+        const r = podio(equipos, marcador.puntos);
+        fin.append(crear("h4", "", r.titulo), r.lista);
+      } else {
+        fin.append(crear("h4", "", "¡Completaste las " + pares.length + " parejas!"),
+          crear("p", "", "Lo lograste en " + intentos + " intentos y " + seg + " segundos."));
+      }
+      fin.appendChild(boton("Jugar de nuevo", "boton secundario", empezar));
+      cuerpo.innerHTML = "";
+      cuerpo.appendChild(fin);
+    }
+
+    empezar();
+  }
+
+  // ===================================================================
+  // 8. CONTRA RELOJ · VERDADERO O FALSO
+  // ===================================================================
+  function reloj(cuerpo, cfg) {
+    const lista = (cfg.afirmaciones || []).filter(function (a) { return a && a.texto && typeof a.verdadero === "boolean"; });
+    if (lista.length < 3) { cuerpo.textContent = "Este juego todavía no tiene suficientes afirmaciones."; return; }
+    const limite = Math.min(60, Math.max(5, Number(cfg.segundos) || 10));
+    const equipos = equiposDe(cfg);
+    let orden, i, puntos, aciertos, racha, mejorRacha, fallos, marcador, turno, temporizador;
+
+    function intro() {
+      cuerpo.innerHTML = "";
+      const c = crear("div", "juego-intro");
+      c.append(crear("h4", "", lista.length + " afirmaciones · " + limite + " segundos cada una"),
+        crear("p", "", "Responde Verdadero o Falso antes de que se acabe el tiempo. Mientras más rápido, más puntos; las respuestas seguidas suman racha."),
+        boton("Empezar", "boton boton-grande", empezar));
+      cuerpo.appendChild(c);
+    }
+    function empezar() {
+      orden = mezclar(lista); i = 0; puntos = 0; aciertos = 0; racha = 0; mejorRacha = 0; fallos = []; turno = 0;
+      if (equipos) { marcador = marcadorEquipos(equipos); marcador.turno(0); }
+      mostrar();
+    }
+    function mostrar() {
+      cuerpo.innerHTML = "";
+      const a = orden[i];
+      if (equipos) cuerpo.appendChild(marcador.caja);
+      const cab = crear("div", "reloj-cabecera");
+      const cuenta = crear("strong", "reloj-cuenta", String(limite));
+      cab.append(crear("span", "juego-nota", (equipos ? equipos[turno] + " · " : "") + "Afirmación " + (i + 1) + " de " + orden.length),
+        crear("span", "juego-nota", equipos ? "" : "Puntos: " + puntos + (racha > 1 ? " · Racha ×" + racha : "")), cuenta);
+      const barra = crear("div", "reloj-barra");
+      const relleno = crear("span", "");
+      barra.appendChild(relleno);
+      const botones = crear("div", "reloj-botones");
+      const bv = boton("VERDADERO", "reloj-opcion verdadero", function () { responder(true); });
+      const bf = boton("FALSO", "reloj-opcion falso", function () { responder(false); });
+      botones.append(bv, bf);
+      cuerpo.append(cab, barra, crear("div", "tarjeta-juego reloj-afirmacion", a.texto), botones);
+
+      const t0 = Date.now();
+      relleno.style.transition = "none"; relleno.style.width = "100%";
+      void relleno.offsetWidth;
+      relleno.style.transition = "width " + limite + "s linear"; relleno.style.width = "0%";
+      clearInterval(temporizador);
+      temporizador = setInterval(function () {
+        if (!cuerpo.isConnected) return clearInterval(temporizador);
+        const resta = Math.max(0, limite - (Date.now() - t0) / 1000);
+        cuenta.textContent = Math.ceil(resta);
+        cuenta.classList.toggle("urgente", resta <= 3);
+        if (resta <= 0) responder(null);
+      }, 100);
+
+      function responder(valor) {
+        clearInterval(temporizador);
+        bv.disabled = true; bf.disabled = true;
+        const ancho = getComputedStyle(relleno).width;
+        relleno.style.transition = "none"; relleno.style.width = ancho;
+        const resta = Math.max(0, limite - (Date.now() - t0) / 1000);
+        const bien = valor === a.verdadero;
+        (a.verdadero ? bv : bf).classList.add("correcta");
+        if (valor !== null && !bien) (valor ? bv : bf).classList.add("incorrecta");
+        let ganados = 0;
+        if (bien) {
+          aciertos++; racha++; mejorRacha = Math.max(mejorRacha, racha);
+          ganados = 100 + Math.round(resta * 10) + (racha > 1 ? (racha - 1) * 20 : 0);
+          puntos += ganados;
+          if (equipos) marcador.sumar(turno, ganados);
+        } else {
+          racha = 0;
+          fallos.push(a);
+        }
+        const fb = crear("div", "retro " + (bien ? "bien" : "mal"));
+        fb.append(crear("strong", "", valor === null ? "⏱ ¡Se acabó el tiempo! Era " + (a.verdadero ? "VERDADERO" : "FALSO") + "."
+          : bien ? "✓ ¡Correcto! +" + ganados + " puntos" : "✗ Incorrecto: es " + (a.verdadero ? "VERDADERO" : "FALSO") + "."));
+        if (a.explicacion) fb.append(crear("p", "", a.explicacion));
+        fb.append(boton(i < orden.length - 1 ? "Siguiente" : "Ver resultado", "boton boton-chico", function () {
+          i++;
+          if (equipos) { turno = (turno + 1) % equipos.length; marcador.turno(turno); }
+          if (i < orden.length) mostrar(); else final();
+        }));
+        cuerpo.appendChild(fb);
+      }
+    }
+    function final() {
+      cuerpo.innerHTML = "";
+      const fin = crear("div", "juego-final");
+      if (equipos) {
+        const r = podio(equipos, marcador.puntos);
+        fin.append(crear("h4", "", r.titulo), r.lista);
+      } else {
+        fin.append(crear("h4", "", puntos + " puntos"),
+          crear("p", "", aciertos + " de " + orden.length + " correctas · Mejor racha: " + mejorRacha));
+      }
+      if (fallos.length) {
+        const rep = crear("div", "reloj-repaso");
+        rep.appendChild(crear("strong", "", "Para repasar:"));
+        const ul = crear("ul", "");
+        fallos.forEach(function (a) {
+          ul.appendChild(crear("li", "", (a.verdadero ? "VERDADERO: " : "FALSO: ") + a.texto + (a.explicacion ? " — " + a.explicacion : "")));
+        });
+        rep.appendChild(ul);
+        fin.appendChild(rep);
+      }
+      fin.appendChild(boton("Jugar de nuevo", "boton secundario", empezar));
+      cuerpo.appendChild(fin);
+    }
+    intro();
   }
 
   return { montar: montar, NOMBRES: NOMBRES, urlImagen: urlImagen };

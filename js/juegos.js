@@ -22,7 +22,10 @@ const AYUDA_TIPO = {
   clasificar: "Clasifica: la persona decide entre dos opciones para cada tarjeta y ve la explicación.",
   ordenar: "Ordena los pasos: la persona toca los pasos de un procedimiento en el orden correcto.",
   riesgos: "Caza de riesgos: el grupo busca y toca los peligros en una foto o ilustración. Si marcas cada peligro como acto o condición subestándar, al encontrarlo se pregunta cuál es (modo Detective de riesgos).",
-  escenarios: "¿Qué harías?: situaciones reales con varias respuestas; al elegir se explica cuál es la decisión segura."
+  escenarios: "¿Qué harías?: situaciones reales con varias respuestas; al elegir se explica cuál es la decisión segura.",
+  ruleta: "Ruleta de preguntas: los equipos giran la ruleta por turnos, responden en voz alta y el docente marca los puntos.",
+  memoria: "Memoria de parejas: cartas boca abajo para unir, por ejemplo, cada peligro con su medida de control. Con equipos, quien acierta sigue jugando.",
+  reloj: "Contra reloj: afirmaciones de verdadero o falso con cuenta regresiva. Más rapidez y respuestas seguidas dan más puntos."
 };
 
 (async function iniciar() {
@@ -116,6 +119,9 @@ function resumenConfig(j) {
   if (j.tipo === "riesgos") return (c.peligros || []).length + " peligros en la imagen" +
     ((c.peligros || []).some(function (p) { return p.clase; }) ? " · acto o condición" : "");
   if (j.tipo === "escenarios") return (c.escenarios || []).length + " situaciones";
+  if (j.tipo === "ruleta") return (c.preguntas || []).length + " preguntas · " + (c.equipos || []).length + " equipos";
+  if (j.tipo === "memoria") return (c.pares || []).length + " parejas" + ((c.equipos || []).length ? " · " + c.equipos.length + " equipos" : "");
+  if (j.tipo === "reloj") return (c.afirmaciones || []).length + " afirmaciones · " + (c.segundos || 10) + " s cada una";
   return "";
 }
 
@@ -132,7 +138,7 @@ function abrirEditor(juego, tipo) {
   const c = (juego && juego.config) || {};
   $j("j-form-titulo").textContent = (juego ? "Editar juego · " : "Nuevo juego · ") + NexusJuegos.NOMBRES[jg.tipo];
   $j("j-tipo-ayuda").textContent = AYUDA_TIPO[jg.tipo];
-  document.querySelectorAll("[data-tipo]").forEach(function (d) { d.hidden = d.dataset.tipo !== jg.tipo; });
+  document.querySelectorAll("[data-tipo]").forEach(function (d) { d.hidden = d.dataset.tipo.split(" ").indexOf(jg.tipo) < 0; });
 
   $j("j-titulo").value = juego ? juego.titulo : "";
   $j("j-instruccion").value = c.instruccion || "";
@@ -141,6 +147,13 @@ function abrirEditor(juego, tipo) {
   $j("j-opcion-a").value = c.opcion_a || "";
   $j("j-opcion-b").value = c.opcion_b || "";
   $j("j-pasos").value = (c.pasos || []).join("\n");
+  $j("j-equipos").value = (c.equipos || []).join(", ");
+  $j("j-preguntas").value = (c.preguntas || []).map(function (p) { return p.pregunta + (p.respuesta ? " | " + p.respuesta : ""); }).join("\n");
+  $j("j-pares").value = (c.pares || []).map(function (p) { return p.a + " | " + p.b; }).join("\n");
+  $j("j-reloj-seg").value = c.segundos || 10;
+  $j("j-afirmaciones").value = (c.afirmaciones || []).map(function (a) {
+    return (a.verdadero ? "V" : "F") + " | " + a.texto + (a.explicacion ? " | " + a.explicacion : "");
+  }).join("\n");
   $j("j-tarjetas").innerHTML = "";
   if (jg.tipo === "clasificar") {
     const tarjetas = c.tarjetas && c.tarjetas.length ? c.tarjetas : [{}, {}, {}];
@@ -433,6 +446,39 @@ function leerFormulario() {
     });
     if (error) return { error: error };
     if (config.escenarios.length < 2) return { error: "Agrega al menos 2 situaciones completas." };
+  } else if (jg.tipo === "ruleta" || jg.tipo === "memoria" || jg.tipo === "reloj") {
+    const equipos = $j("j-equipos").value.split(",").map(function (e) { return e.trim(); }).filter(Boolean);
+    if (equipos.length === 1 || equipos.length > 6) return { error: "Escribe de 2 a 6 equipos separados por coma" + (jg.tipo === "ruleta" ? "." : ", o deja el campo vacío.") };
+    if (jg.tipo === "ruleta" && equipos.length < 2) return { error: "La ruleta necesita al menos 2 equipos, separados por coma." };
+    if (equipos.length) config.equipos = equipos;
+    const lineas = function (id) {
+      return $j(id).value.split("\n").map(function (l) { return l.split("|").map(function (x) { return x.trim(); }); })
+        .filter(function (p) { return p.join("").length; });
+    };
+    if (jg.tipo === "ruleta") {
+      config.preguntas = lineas("j-preguntas").map(function (p) { return { pregunta: p[0], respuesta: p[1] || "" }; })
+        .filter(function (p) { return p.pregunta; });
+      if (config.preguntas.length < 4 || config.preguntas.length > 16) return { error: "Escribe de 4 a 16 preguntas, una por línea." };
+    } else if (jg.tipo === "memoria") {
+      const pares = lineas("j-pares");
+      const malo = pares.findIndex(function (p) { return !p[0] || !p[1]; });
+      if (malo >= 0) return { error: "La línea " + (malo + 1) + " de las parejas necesita las dos cartas separadas por |." };
+      config.pares = pares.map(function (p) { return { a: p[0], b: p[1] }; });
+      if (config.pares.length < 3 || config.pares.length > 12) return { error: "Escribe de 3 a 12 parejas, una por línea." };
+    } else {
+      const seg = parseInt($j("j-reloj-seg").value, 10);
+      if (!(seg >= 5 && seg <= 60)) return { error: "Los segundos por afirmación deben estar entre 5 y 60." };
+      config.segundos = seg;
+      const filas = lineas("j-afirmaciones");
+      const malo = filas.findIndex(function (p) { return !/^(v|f|verdadero|falso)$/i.test(p[0]) || !p[1]; });
+      if (malo >= 0) return { error: "La línea " + (malo + 1) + " de las afirmaciones debe empezar con V o F, luego | y la afirmación." };
+      config.afirmaciones = filas.map(function (p) {
+        const a = { texto: p[1], verdadero: /^v/i.test(p[0]) };
+        if (p[2]) a.explicacion = p.slice(2).join(" | ");
+        return a;
+      });
+      if (config.afirmaciones.length < 4 || config.afirmaciones.length > 30) return { error: "Escribe de 4 a 30 afirmaciones, una por línea." };
+    }
   }
   return { juego: { tipo: jg.tipo, titulo: titulo, config: config } };
 }

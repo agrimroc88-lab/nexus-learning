@@ -79,10 +79,16 @@ function errorSupabase(e, texto) {
 // Lista de cursos
 // ---------------------------------------------------------------------
 async function cargarCursos(seleccionarId) {
-  const { data, error } = await nexusDb
+  const CAMPOS = "id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, preguntas_por_evaluacion, creado_en";
+  let { data, error } = await nexusDb
     .from("cap_cursos")
-    .select("id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, preguntas_por_evaluacion, creado_en")
+    .select(CAMPOS + ", video_url, archivo_pdf")
     .order("creado_en", { ascending: true });
+  if (error && /video_url|archivo_pdf|column/i.test(error.message || "")) {
+    // Aún no se ejecutó el SQL 29: el curso funciona sin video ni PDF propios
+    adm.sinMaterialCurso = true;
+    ({ data, error } = await nexusDb.from("cap_cursos").select(CAMPOS).order("creado_en", { ascending: true }));
+  }
   if (error) return errorSupabase(error, "No se pudieron cargar los cursos.");
 
   adm.cursos = data || [];
@@ -191,6 +197,28 @@ function actualizarPestanas() {
 }
 
 // ---------------------------------------------------------------------
+// Enlaces de YouTube: acepta cualquier forma en que YouTube los comparte
+// (youtube.com/watch, youtu.be, m.youtube.com, shorts, live, embed),
+// con o sin https://. Devuelve el enlace limpio, "" si está vacío,
+// o null si no es un video de YouTube válido.
+// ---------------------------------------------------------------------
+function normalizarYoutube(texto) {
+  let t = String(texto || "").trim();
+  if (!t) return "";
+  if (!/^https?:\/\//i.test(t)) t = "https://" + t;
+  let u;
+  try { u = new URL(t); } catch (e) { return null; }
+  const host = u.hostname.replace(/^(www|m|music)\./i, "").toLowerCase();
+  let id = null;
+  if (host === "youtu.be") id = u.pathname.slice(1, 12);
+  else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+    id = u.searchParams.get("v") || (u.pathname.match(/^\/(?:shorts|live|embed|v)\/([^/?#]{11})/) || [])[1] || null;
+  }
+  if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) return null;
+  return "https://www.youtube.com/watch?v=" + id;
+}
+
+// ---------------------------------------------------------------------
 // Datos del curso
 // ---------------------------------------------------------------------
 function llenarFormularioCurso(c) {
@@ -204,7 +232,29 @@ function llenarFormularioCurso(c) {
   el("c-imagen").value = "";
   el("c-imagen-quitar").checked = false;
   el("c-imagen-quitar-caja").hidden = !c.imagen;
+  el("c-video").value = c.video_url || "";
+  mostrarPdfCurso(c.archivo_pdf || null);
+  ["c-video", "c-pdf"].forEach(function (id) { el(id).disabled = Boolean(adm.sinMaterialCurso); });
+  el("c-video-ayuda").textContent = adm.sinMaterialCurso
+    ? "Para usar el video y el PDF del curso, primero ejecuta el SQL 29 en Supabase."
+    : "Pega el enlace tal como lo copias de YouTube (botón Compartir). Lo verán los participantes al iniciar el curso.";
   pintarPortada(el("c-imagen-vista"), c.titulo || "Nuevo curso", c.imagen ? urlPortada(c.imagen) : null);
+}
+
+function mostrarPdfCurso(ruta) {
+  el("c-pdf").value = "";
+  el("c-pdf-quitar").checked = false;
+  el("c-pdf-quitar-caja").hidden = !ruta;
+  const actual = el("c-pdf-actual");
+  actual.innerHTML = "";
+  actual.hidden = !ruta;
+  if (!ruta) return;
+  const a = document.createElement("a");
+  a.href = urlDiapositiva(ruta);
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = "Ver PDF actual";
+  actual.append("Este curso ya tiene un PDF. ", a, ". Si eliges otro archivo, se reemplaza.");
 }
 
 function urlPortada(ruta) {
@@ -257,6 +307,21 @@ el("form-curso").addEventListener("submit", async function (ev) {
     if (!/^image\/(jpeg|png|webp)$/.test(imagen.type)) return avisar("La portada debe ser JPG, PNG o WEBP.", "error");
     if (imagen.size > 2 * 1024 * 1024) return avisar("La portada pesa más de 2 MB. Redúcela e inténtalo de nuevo.", "error");
   }
+  // Video y PDF del curso
+  let pdfCurso = null;
+  if (!adm.sinMaterialCurso) {
+    const video = normalizarYoutube(el("c-video").value);
+    if (video === null) return avisar("Ese enlace no es un video de YouTube. Cópialo desde YouTube con el botón Compartir, por ejemplo https://youtu.be/abc123XYZ00", "error");
+    datos.video_url = video || null;
+    el("c-video").value = video;
+    pdfCurso = el("c-pdf").files[0] || null;
+    if (pdfCurso) {
+      if (pdfCurso.type !== "application/pdf" && !/\.pdf$/i.test(pdfCurso.name)) return avisar("El material debe ser un archivo PDF.", "error");
+      if (pdfCurso.size > 20 * 1024 * 1024) return avisar("El PDF pesa más de 20 MB. Redúcelo (por ejemplo, guardándolo con menor calidad) e inténtalo de nuevo.", "error");
+    }
+    if (!pdfCurso && adm.curso && adm.curso.archivo_pdf && el("c-pdf-quitar").checked) datos.archivo_pdf = null;
+  }
+  const pdfAnterior = adm.curso ? adm.curso.archivo_pdf : null;
   const portadaAnterior = adm.curso ? adm.curso.imagen : null;
   if (!imagen && portadaAnterior && el("c-imagen-quitar").checked) datos.imagen = null;
 
@@ -286,6 +351,30 @@ el("form-curso").addEventListener("submit", async function (ev) {
     }
   } else if (portadaAnterior && datos.imagen === null) {
     await borrarPortada(portadaAnterior);
+  }
+
+  // PDF del curso: se sube cuando el curso ya tiene id (misma carpeta que las diapositivas)
+  if (pdfCurso) {
+    boton.disabled = true;
+    boton.textContent = "Subiendo PDF…";
+    let ruta = null;
+    try {
+      const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + Math.random().toString(16).slice(2);
+      ruta = resp.data.id + "/curso-" + id + ".pdf";
+      const sub = await nexusDb.storage.from("diapositivas").upload(ruta, pdfCurso, { contentType: "application/pdf", upsert: false });
+      if (sub.error) throw sub.error;
+      const u = await nexusDb.from("cap_cursos").update({ archivo_pdf: ruta }).eq("id", resp.data.id).select().single();
+      if (u.error) throw u.error;
+      resp.data = u.data;
+      await borrarDiapositiva(pdfAnterior);
+    } catch (e) {
+      if (ruta) await borrarDiapositiva(ruta);
+      errorSupabase(e, "El curso se guardó, pero no se pudo subir el PDF.");
+    }
+    boton.disabled = false;
+    boton.textContent = "Guardar curso";
+  } else if (pdfAnterior && datos.archivo_pdf === null) {
+    await borrarDiapositiva(pdfAnterior);
   }
 
   const nuevo = !adm.curso;
@@ -464,8 +553,11 @@ el("form-leccion").addEventListener("submit", async function (ev) {
     juego_id: el("l-juego").value || null
   };
   if (datos.titulo.length < 3) return avisar("Escribe el título de la lección.", "error");
-  if (datos.video_url && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(datos.video_url)) {
-    return avisar("El enlace del video debe ser de YouTube y empezar con https://", "error");
+  if (datos.video_url) {
+    const v = normalizarYoutube(datos.video_url);
+    if (v === null) return avisar("Ese enlace no es un video de YouTube. Cópialo desde YouTube con el botón Compartir, por ejemplo https://youtu.be/abc123XYZ00", "error");
+    datos.video_url = v;
+    el("l-video").value = v;
   }
 
   const archivo = el("l-pdf").files[0] || null;

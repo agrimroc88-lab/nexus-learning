@@ -485,6 +485,7 @@ function limpiarFormLeccion() {
   el("leccion-form-titulo").textContent = "Agregar lección";
   el("l-titulo").value = "";
   el("l-video").value = "";
+  el("l-extra").open = false;
   el("l-contenido").value = "";
   el("l-juego").value = "";
   el("l-orden").value = siguienteOrden(adm.lecciones);
@@ -534,6 +535,7 @@ function editarLeccion(l) {
   el("l-titulo").value = l.titulo;
   el("l-orden").value = l.orden;
   el("l-video").value = l.video_url || "";
+  el("l-extra").open = Boolean(l.video_url || l.archivo_pdf);
   el("l-contenido").value = l.contenido || "";
   el("l-juego").value = l.juego_id || "";
   mostrarPdfActual(l.archivo_pdf);

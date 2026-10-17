@@ -1,5 +1,5 @@
 /* =====================================================================
-   NEXUS LEARNING · ESTILOS DE ADMINISTRACIÓN
+   NEXUS ACADEMY · ESTILOS DE ADMINISTRACIÓN
    Carpeta: css/admin.css
    Lo usan login.html, entrar.html y las páginas del panel (admin, empresas,
    administradores y apariencia).
@@ -394,3 +394,8 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .lista-revision li.correcta::after { content: "  ✓ correcta"; font-weight: 600; }
 .lista-revision small { display: block; margin-top: 6px; color: var(--error); font-weight: 600; }
 @media (max-width: 900px) { .importar-columnas { grid-template-columns: 1fr; } }
+
+/* Video/PDF propios de una lección: plegado por defecto */
+.extra-leccion { margin: 14px 0 4px; padding: 10px 14px; border: 1px dashed var(--niebla); border-radius: var(--radio); background: var(--blanco); }
+.extra-leccion summary { cursor: pointer; font-weight: 700; color: var(--pino); }
+.extra-leccion[open] summary { margin-bottom: 8px; }

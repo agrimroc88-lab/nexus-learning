@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin.css?v=2">
 </head>
 <body>
 
@@ -170,18 +170,23 @@
                 <input class="campo" id="l-orden" type="number" min="1" step="1">
               </div>
             </div>
-            <label class="etiqueta" for="l-video">Enlace de YouTube (opcional)</label>
-            <input class="campo" id="l-video" placeholder="https://youtu.be/…" maxlength="300">
+            <details class="extra-leccion" id="l-extra">
+              <summary>Video o PDF solo para esta lección (opcional)</summary>
+              <p class="ayuda">Normalmente no hace falta: el video y el PDF del curso van en <strong>Datos del curso</strong>. Úsalo solo si este tema tiene su propio video o presentación.</p>
+              <label class="etiqueta" for="l-video">Enlace de YouTube (opcional)</label>
+              <input class="campo" id="l-video" placeholder="https://youtu.be/…" maxlength="300">
 
-            <label class="etiqueta" for="l-pdf">Diapositivas en PDF (opcional, máx. 20 MB)</label>
-            <div class="bloque-pdf">
-              <p class="ayuda" id="l-pdf-actual" hidden></p>
-              <input class="campo campo-archivo" id="l-pdf" type="file" accept="application/pdf">
-              <label class="interruptor" id="l-pdf-quitar-caja" hidden>
-                <input type="checkbox" id="l-pdf-quitar">
-                <span>Quitar las diapositivas actuales</span>
-              </label>
-            </div>
+              <label class="etiqueta" for="l-pdf">Diapositivas en PDF (opcional, máx. 20 MB)</label>
+              <div class="bloque-pdf">
+                <p class="ayuda" id="l-pdf-actual" hidden></p>
+                <input class="campo campo-archivo" id="l-pdf" type="file" accept="application/pdf">
+                <label class="interruptor" id="l-pdf-quitar-caja" hidden>
+                  <input type="checkbox" id="l-pdf-quitar">
+                  <span>Quitar las diapositivas actuales</span>
+                </label>
+              </div>
+            </details>
+
             <label class="etiqueta" for="l-juego">Juego para la charla (opcional)</label>
             <select class="campo" id="l-juego">
               <option value="">Sin juego</option>
@@ -329,7 +334,7 @@ Respuesta: c"></textarea>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/juegos-motor.js?v=2"></script>
-  <script src="js/admin.js?v=2"></script>
+  <script src="js/admin.js?v=3"></script>
   <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

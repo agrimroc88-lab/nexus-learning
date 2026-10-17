@@ -259,7 +259,7 @@ async function cargarConvocatorias() {
   const { data, error } = await nexusDb
     .from("cap_convocatorias")
     .select("id, modalidad, evaluacion_presencial, horas, fecha_capacitacion, observaciones, creado_en, " +
-            "cap_cursos(id, titulo, horas), " +
+            "cap_cursos(id, titulo, horas, imagen), " +
             "cap_accesos(id, tipo, codigo, valido_desde, valido_hasta, anulado, creado_en), " +
             "cap_inscripciones(count), cap_certificados(count)")
     .eq("empresa_id", emp.actual.id)
@@ -274,14 +274,86 @@ async function cargarConvocatorias() {
     cont.appendChild(p);
     return;
   }
+  // Orden: por fecha de la charla, la más reciente primero (sin fecha: por creación)
+  const fechaOrden = function (c) { return new Date(c.fecha_capacitacion ? c.fecha_capacitacion + "T12:00" : c.creado_en).getTime(); };
+  emp.convs.sort(function (a, b) { return fechaOrden(b) - fechaOrden(a); });
+  // Abierta por defecto: la que tiene una clave vigente o programada (o ninguna)
+  if (!emp.abiertas || emp.abiertasEmpresa !== emp.actual.id) {
+    emp.abiertasEmpresa = emp.actual.id;
+    emp.abiertas = new Set();
+    const activa = emp.convs.find(function (c) { return estadoConvocatoria(c).clase === "activa"; });
+    if (activa) emp.abiertas.add(activa.id);
+  }
+  const ayuda = document.createElement("p");
+  ayuda.className = "ayuda conv-ayuda";
+  ayuda.textContent = emp.convs.length + (emp.convs.length === 1 ? " capacitación" : " capacitaciones") +
+    ", de la más reciente a la más antigua. Toca una para ver sus claves, nómina y opciones.";
+  cont.appendChild(ayuda);
   emp.convs.forEach(function (c) { cont.appendChild(tarjetaConvocatoria(c)); });
+}
+
+// Estado general de una capacitación para la miniatura
+function estadoConvocatoria(c) {
+  const estados = (c.cap_accesos || []).map(estadoAcceso).map(function (e) { return e.clase; });
+  if (estados.indexOf("vigente") >= 0) return { clase: "activa", texto: "Clave vigente" };
+  if (estados.indexOf("programado") >= 0) return { clase: "programada", texto: "Programada" };
+  if (c.fecha_capacitacion && new Date(c.fecha_capacitacion + "T23:59") > new Date()) return { clase: "programada", texto: "Próxima" };
+  return { clase: "finalizada", texto: "Finalizada" };
 }
 
 const NOMBRE_MODALIDAD = { presencial: "Presencial", virtual: "Virtual", mixta: "Mixta" };
 
 function tarjetaConvocatoria(c) {
   const art = document.createElement("article");
-  art.className = "conv";
+  art.className = "conv conv-plegable" + (emp.abiertas.has(c.id) ? " abierta" : "");
+
+  // Miniatura (siempre visible): título, fecha, estado y avance. Al tocarla se abre el detalle.
+  const inscritosMini = c.cap_inscripciones[0] ? c.cap_inscripciones[0].count : 0;
+  const certMini = c.cap_certificados[0] ? c.cap_certificados[0].count : 0;
+  const est = estadoConvocatoria(c);
+  const mini = document.createElement("button");
+  mini.type = "button";
+  mini.className = "conv-mini";
+  mini.setAttribute("aria-expanded", emp.abiertas.has(c.id) ? "true" : "false");
+  const fecha = document.createElement("span");
+  fecha.className = "conv-mini-fecha";
+  // Con portada del curso: la imagen en miniatura con la fecha encima
+  if (c.cap_cursos.imagen) {
+    fecha.classList.add("con-imagen");
+    fecha.style.backgroundImage = "url(\"" + nexusDb.storage.from("portadas").getPublicUrl(c.cap_cursos.imagen).data.publicUrl + "\")";
+  }
+  const f = new Date(c.fecha_capacitacion ? c.fecha_capacitacion + "T12:00" : c.creado_en);
+  const dia = document.createElement("strong");
+  dia.textContent = f.getDate();
+  const mes = document.createElement("small");
+  mes.textContent = f.toLocaleDateString("es-EC", { month: "short", year: "numeric" }).replace(".", "");
+  fecha.append(dia, mes);
+  const cuerpoMini = document.createElement("span");
+  cuerpoMini.className = "conv-mini-cuerpo";
+  const tituloMini = document.createElement("span");
+  tituloMini.className = "conv-mini-titulo";
+  tituloMini.textContent = c.cap_cursos.titulo;
+  const datosMini = document.createElement("span");
+  datosMini.className = "conv-mini-datos";
+  datosMini.textContent = NOMBRE_MODALIDAD[c.modalidad] + " · " + inscritosMini + (inscritosMini === 1 ? " inscrito" : " inscritos") +
+    " · " + certMini + (certMini === 1 ? " certificado" : " certificados") + (c.fecha_capacitacion ? "" : " · sin fecha de charla");
+  cuerpoMini.append(tituloMini, datosMini);
+  const estado = document.createElement("span");
+  estado.className = "conv-mini-estado " + est.clase;
+  estado.textContent = est.texto;
+  const flecha = document.createElement("span");
+  flecha.className = "conv-mini-flecha";
+  flecha.setAttribute("aria-hidden", "true");
+  flecha.textContent = "▾";
+  mini.append(fecha, cuerpoMini, estado, flecha);
+  mini.addEventListener("click", function () {
+    const abrir = !art.classList.contains("abierta");
+    art.classList.toggle("abierta", abrir);
+    mini.setAttribute("aria-expanded", abrir ? "true" : "false");
+    if (abrir) emp.abiertas.add(c.id); else emp.abiertas.delete(c.id);
+  });
+  const detalle = document.createElement("div");
+  detalle.className = "conv-detalle";
 
   // Encabezado
   const cab = document.createElement("div");
@@ -348,7 +420,8 @@ function tarjetaConvocatoria(c) {
     acciones.appendChild(boton("Eliminar", "enlace-boton rojo", function () { eliminarConvocatoria(c); }));
   }
 
-  art.append(cab, avance, lista, acciones);
+  detalle.append(cab, avance, lista, acciones);
+  art.append(mini, detalle);
   return art;
 }
 

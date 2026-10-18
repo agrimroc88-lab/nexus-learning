@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/admin.css?v=6">
+  <link rel="stylesheet" href="css/admin.css?v=7">
 </head>
 <body>
 
@@ -195,6 +195,23 @@
                   <button type="button" class="boton secundario boton-chico" id="btn-cancelar-clave-curso">Cancelar</button>
                   <button type="button" class="boton boton-chico" id="btn-crear-clave-curso">Crear clave</button>
                 </div>
+              </div>
+            </div>
+
+            <div class="registros-curso">
+              <h4>Registro de asistencia</h4>
+              <p class="ayuda">Quiénes se registraron, su nota y su certificado. Elige una capacitación o mira todas juntas.</p>
+              <div class="fila-registros">
+                <select class="campo" id="r-conv"></select>
+                <input class="campo" id="r-buscar" type="search" placeholder="Buscar nombre o cédula">
+                <button type="button" class="boton secundario boton-chico" id="btn-registros-excel">Descargar Excel</button>
+              </div>
+              <div id="r-cifras" class="r-cifras"></div>
+              <div class="tabla-registros">
+                <table>
+                  <thead><tr><th>Nombres</th><th>Cédula</th><th>Empresa</th><th>Fecha</th><th>Modalidad</th><th>Estado</th><th>Nota</th><th>Certificado</th></tr></thead>
+                  <tbody id="r-filas"></tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -385,7 +402,7 @@ Respuesta: c"></textarea>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/juegos-motor.js?v=2"></script>
-  <script src="js/admin.js?v=7"></script>
+  <script src="js/admin.js?v=8"></script>
   <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

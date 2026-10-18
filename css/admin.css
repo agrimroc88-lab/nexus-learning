@@ -404,3 +404,22 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .encabezado-planificacion { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 8px; }
 .encabezado-planificacion h1 { margin: 0; }
 .eyebrow-planificacion { margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--senal); }
+
+/* Claves de acceso del curso (debajo del QR permanente) */
+.claves-curso { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--niebla); }
+.claves-curso h4 { margin: 0 0 4px; font-size: 16px; color: var(--pino); }
+.lista-claves-curso { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.clave-curso {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 6px 12px;
+  padding: 10px 14px; border-radius: var(--radio); background: var(--blanco); border: 1px solid var(--niebla);
+}
+.clave-curso-codigo { font-size: 20px; letter-spacing: .06em; color: var(--pino); font-variant-numeric: tabular-nums; }
+.clave-curso-info { font-size: 13px; color: var(--gris); min-width: 0; }
+.estado-clave { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.estado-clave.vigente { background: #DDF0E5; color: var(--ok); }
+.estado-clave.programada { background: #FDF1D3; color: #8A6200; }
+.clave-curso.empresa-inactiva .estado-clave { background: #F6DCD6; color: var(--error); }
+@media (max-width: 600px) {
+  .clave-curso { grid-template-columns: auto auto; }
+  .clave-curso-info { grid-column: 1 / -1; }
+}

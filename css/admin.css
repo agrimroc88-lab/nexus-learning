@@ -427,3 +427,21 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .opciones-modalidad { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; }
 .opciones-modalidad .interruptor { margin: 0; }
 #btn-nueva-clave-curso { margin-top: 10px; }
+
+/* Registro de asistencia del curso */
+.registros-curso { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--niebla); }
+.registros-curso h4 { margin: 0 0 4px; font-size: 16px; color: var(--pino); }
+.fila-registros { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.fila-registros #r-conv { flex: 2 1 260px; }
+.fila-registros #r-buscar { flex: 1 1 180px; }
+.r-cifras { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
+.r-cifra { background: var(--blanco); border: 1px solid var(--niebla); border-radius: 10px; padding: 6px 12px; display: flex; gap: 6px; align-items: baseline; }
+.r-cifra strong { font-size: 18px; color: var(--pino); }
+.r-cifra span { font-size: 13px; opacity: .8; }
+.tabla-registros { overflow-x: auto; max-height: 420px; overflow-y: auto; border: 1px solid var(--niebla); border-radius: 10px; background: var(--blanco); }
+.tabla-registros table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.tabla-registros th { position: sticky; top: 0; background: var(--pino); color: #fff; text-align: left; padding: 8px 10px; white-space: nowrap; font-weight: 600; }
+.tabla-registros td { padding: 7px 10px; border-top: 1px solid var(--niebla); white-space: nowrap; }
+.tabla-registros .vacio-lista { text-align: center; opacity: .7; padding: 18px; white-space: normal; }
+.estado-clave.programado { background: #eef3fb; color: #2a4f8a; }
+.estado-clave.anulado { background: #fdecec; color: #a12a2a; }

@@ -126,3 +126,34 @@
   .salon .salon-navegacion .boton { min-height: 40px; font-size: 14px; padding: 8px 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .tarjeta-aula { transition: none; } }
+
+/* ---------- Diapositivas PDF (visor propio) ---------- */
+.escena-pdf { display: flex; flex-direction: column; gap: 10px; }
+.pdf-herramientas { display: flex; align-items: center; gap: 14px; }
+.salon .pdf-herramientas .boton { margin: 0; min-height: 40px; font-size: 15px; }
+.pdf-abrir { margin: 0; }
+.pdf-lienzo-caja {
+  position: relative; flex: 1; min-height: 50vh; display: grid; place-items: center; overflow: hidden;
+  border-radius: 12px; background: #1B2433;
+}
+.pdf-lienzo { display: block; max-width: 100%; max-height: 100%; cursor: pointer; box-shadow: 0 8px 30px rgba(0, 0, 0, .35); background: #FFFFFF; }
+.pdf-estado { position: absolute; margin: 0; color: #FFFFFF; font-weight: 600; }
+.pdf-barra { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.salon .pdf-barra .boton { margin: 0; min-height: 40px; min-width: 52px; font-size: 16px; }
+.pdf-contador { font-weight: 700; color: var(--pino); font-variant-numeric: tabular-nums; min-width: 12ch; text-align: center; }
+
+/* Modo presentación: negro, sin barras, una diapositiva */
+.presentacion-pdf {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  background: #000000; cursor: none; outline: none;
+}
+.presentacion-pdf:hover { cursor: default; }
+.presentacion-pdf canvas { display: block; }
+.presentacion-fin { display: grid; gap: 8px; text-align: center; color: #FFFFFF; }
+.presentacion-fin p { margin: 0; font-size: clamp(22px, 3vw, 40px); font-weight: 700; }
+.presentacion-fin small { color: #B8C2D6; font-size: 16px; }
+.presentacion-pista {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 8px 16px; border-radius: 99px;
+  background: rgba(255, 255, 255, .14); color: #FFFFFF; font-size: 14px; transition: opacity .6s;
+}
+.presentacion-pista.oculta { opacity: 0; }

@@ -214,6 +214,7 @@ function irA(k) {
 }
 
 function pintarPaso(paso) {
+  pdfActivo = null;
   const caja = $a("salon-contenido");
   caja.innerHTML = "";
   caja.className = "salon-contenido escena-" + paso.tipo;
@@ -269,19 +270,181 @@ function escenaVideo(caja, paso) {
   caja.append(marco, abrir);
 }
 
+// ---------------------------------------------------------------------
+// Diapositivas en PDF: visor propio (PDF.js) con Modo presentación.
+// En el Salón: la diapositiva grande con Anterior/Siguiente.
+// Modo presentación: pantalla completa en negro, sin barras; se avanza
+// con → ↓ Espacio Enter PageDown o clic (también con presentadores
+// inalámbricos), se retrocede con ← ↑ PageUp; Esc o el final la cierran.
+// ---------------------------------------------------------------------
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let pdfActivo = null;   // { doc, pagina, total, dibujar, irPagina }
+
+function cargarPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve();
+  return new Promise(function (ok, falla) {
+    const s = document.createElement("script");
+    s.src = PDFJS + "pdf.min.js";
+    s.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(); };
+    s.onerror = function () { s.remove(); falla(new Error("pdfjs")); };
+    document.head.appendChild(s);
+  });
+}
+
 function escenaPdf(caja, paso) {
   const url = urlPublica("diapositivas", paso.ruta);
   const cab = crear("div", "escena-cabecera");
-  const abrir = crear("a", "boton secundario boton-chico", "Abrir PDF en pestaña nueva");
+  const herramientas = crear("div", "pdf-herramientas");
+  const presentar = crear("button", "boton boton-chico pdf-presentar", "▶ Modo presentación");
+  presentar.type = "button";
+  presentar.title = "Pantalla completa, diapositiva por diapositiva (tecla P)";
+  const abrir = crear("a", "enlace-escena pdf-abrir", "Abrir PDF");
   abrir.href = url;
   abrir.target = "_blank";
   abrir.rel = "noopener";
-  cab.append(crear("h2", "escena-titulo", paso.titulo), abrir);
-  const visor = document.createElement("iframe");
-  visor.className = "pdf-visor";
-  visor.src = url + "#view=FitH";
-  visor.title = "PDF: " + paso.titulo;
-  caja.append(cab, visor);
+  herramientas.append(presentar, abrir);
+  cab.append(crear("h2", "escena-titulo", paso.titulo), herramientas);
+
+  const lienzoCaja = crear("div", "pdf-lienzo-caja");
+  const lienzo = document.createElement("canvas");
+  lienzo.className = "pdf-lienzo";
+  lienzoCaja.appendChild(lienzo);
+  const estado = crear("p", "pdf-estado", "Cargando diapositivas…");
+  lienzoCaja.appendChild(estado);
+
+  const barra = crear("div", "pdf-barra");
+  const ant = crear("button", "boton secundario boton-chico", "◀");
+  ant.type = "button"; ant.setAttribute("aria-label", "Diapositiva anterior");
+  const sig = crear("button", "boton secundario boton-chico", "▶");
+  sig.type = "button"; sig.setAttribute("aria-label", "Diapositiva siguiente");
+  const contador = crear("span", "pdf-contador", "");
+  barra.append(ant, contador, sig);
+  caja.append(cab, lienzoCaja, barra);
+
+  const visor = { doc: null, pagina: 1, total: 0, lienzo: lienzo, caja: lienzoCaja, tarea: null };
+  pdfActivo = visor;
+
+  visor.dibujar = async function (destino, contenedor) {
+    if (!visor.doc) return;
+    const pag = await visor.doc.getPage(visor.pagina);
+    const base = pag.getViewport({ scale: 1 });
+    const ancho = contenedor.clientWidth || 800, alto = contenedor.clientHeight || 450;
+    const escala = Math.min(ancho / base.width, alto / base.height);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const vista = pag.getViewport({ scale: escala * dpr });
+    destino.width = Math.floor(vista.width);
+    destino.height = Math.floor(vista.height);
+    destino.style.width = Math.floor(vista.width / dpr) + "px";
+    destino.style.height = Math.floor(vista.height / dpr) + "px";
+    if (destino._tarea) { try { destino._tarea.cancel(); } catch (e) { /* nada */ } }
+    destino._tarea = pag.render({ canvasContext: destino.getContext("2d"), viewport: vista });
+    try { await destino._tarea.promise; } catch (e) { /* render cancelado */ }
+  };
+  visor.irPagina = function (n) {
+    if (!visor.doc) return;
+    visor.pagina = Math.max(1, Math.min(visor.total, n));
+    contador.textContent = "Diapositiva " + visor.pagina + " de " + visor.total;
+    ant.disabled = visor.pagina === 1;
+    sig.disabled = visor.pagina === visor.total;
+    visor.dibujar(lienzo, lienzoCaja);
+    if (visor.presentacion) visor.presentacion.mostrar();
+  };
+
+  ant.addEventListener("click", function () { visor.irPagina(visor.pagina - 1); });
+  sig.addEventListener("click", function () { visor.irPagina(visor.pagina + 1); });
+  lienzo.addEventListener("click", function () { visor.irPagina(visor.pagina + 1); });
+  presentar.addEventListener("click", function () { abrirPresentacion(visor); });
+
+  cargarPdfJs()
+    .then(function () { return window.pdfjsLib.getDocument({ url: url }).promise; })
+    .then(function (doc) {
+      if (pdfActivo !== visor) return;
+      visor.doc = doc;
+      visor.total = doc.numPages;
+      estado.remove();
+      visor.irPagina(1);
+    })
+    .catch(function (e) {
+      console.error(e);
+      estado.textContent = "No se pudieron mostrar las diapositivas aquí. Usa \"Abrir PDF\".";
+      presentar.disabled = true;
+    });
+}
+
+// Pantalla completa en negro con una diapositiva a la vez
+function abrirPresentacion(visor) {
+  if (!visor.doc) return;
+  const capa = crear("div", "presentacion-pdf");
+  capa.tabIndex = -1;
+  const lienzo = document.createElement("canvas");
+  const fin = crear("div", "presentacion-fin");
+  fin.append(crear("p", "", "Fin de la presentación"), crear("small", "", "Presiona Esc o haz clic para salir"));
+  fin.hidden = true;
+  const pista = crear("div", "presentacion-pista", "← → para avanzar · Esc para salir");
+  capa.append(lienzo, fin, pista);
+  document.body.appendChild(capa);
+  setTimeout(function () { pista.classList.add("oculta"); }, 2500);
+
+  let alFinal = false;
+  const pres = {
+    mostrar: function () {
+      alFinal = false;
+      fin.hidden = true;
+      lienzo.hidden = false;
+      visor.dibujar(lienzo, capa);
+    },
+    siguiente: function () {
+      if (alFinal) return cerrar();
+      if (visor.pagina < visor.total) visor.irPagina(visor.pagina + 1);
+      else { alFinal = true; lienzo.hidden = true; fin.hidden = false; }
+    },
+    anterior: function () {
+      if (alFinal) return pres.mostrar();
+      visor.irPagina(visor.pagina - 1);
+    }
+  };
+  visor.presentacion = pres;
+
+  function tecla(ev) {
+    const k = ev.key;
+    if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter", "n", "N"].indexOf(k) >= 0) { ev.preventDefault(); ev.stopImmediatePropagation(); pres.siguiente(); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace", "p", "P"].indexOf(k) >= 0) { ev.preventDefault(); ev.stopImmediatePropagation(); pres.anterior(); }
+    else if (k === "Home") { ev.preventDefault(); ev.stopImmediatePropagation(); visor.irPagina(1); }
+    else if (k === "End") { ev.preventDefault(); ev.stopImmediatePropagation(); visor.irPagina(visor.total); }
+    else if (k === "Escape") { ev.preventDefault(); ev.stopImmediatePropagation(); cerrar(); }
+    else if (k === "f" || k === "F") { ev.stopImmediatePropagation(); }
+  }
+  function redimensionar() { if (!alFinal) visor.dibujar(lienzo, capa); }
+  function alSalirPantalla() { if (!document.fullscreenElement) cerrar(); }
+  let cerrada = false;
+  function cerrar() {
+    if (cerrada) return;
+    cerrada = true;
+    document.removeEventListener("keydown", tecla, true);
+    window.removeEventListener("resize", redimensionar);
+    document.removeEventListener("fullscreenchange", alSalirPantalla);
+    visor.presentacion = null;
+    if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+    capa.remove();
+    visor.dibujar(visor.lienzo, visor.caja);
+  }
+
+  capa.addEventListener("click", function (ev) {
+    if (alFinal) return cerrar();
+    // Clic en el tercio izquierdo: atrás; en el resto: adelante
+    if (ev.clientX < window.innerWidth / 3) pres.anterior(); else pres.siguiente();
+  });
+  document.addEventListener("keydown", tecla, true);
+  window.addEventListener("resize", redimensionar);
+
+  const pedir = capa.requestFullscreen || capa.webkitRequestFullscreen;
+  const empezar = function () { capa.focus(); pres.mostrar(); };
+  if (pedir) {
+    Promise.resolve(pedir.call(capa)).then(function () {
+      document.addEventListener("fullscreenchange", alSalirPantalla);
+      empezar();
+    }).catch(empezar);   // sin pantalla completa del sistema: igual ocupa toda la ventana
+  } else empezar();
 }
 
 function escenaEnlace(caja, paso, sinTitulo) {
@@ -426,7 +589,24 @@ document.addEventListener("keydown", function (ev) {
   if ($a("salon").hidden) return;
   const t = ev.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  if (ev.key === "ArrowRight" || ev.key === "PageDown") { ev.preventDefault(); irA(au.i + 1); }
-  else if (ev.key === "ArrowLeft" || ev.key === "PageUp") { ev.preventDefault(); irA(au.i - 1); }
+  const pdf = pdfActivo && pdfActivo.doc ? pdfActivo : null;
+  if (ev.key === "ArrowRight" || ev.key === "PageDown") {
+    ev.preventDefault();
+    if (pdf && pdf.pagina < pdf.total) pdf.irPagina(pdf.pagina + 1); else irA(au.i + 1);
+  } else if (ev.key === "ArrowLeft" || ev.key === "PageUp") {
+    ev.preventDefault();
+    if (pdf && pdf.pagina > 1) pdf.irPagina(pdf.pagina - 1); else irA(au.i - 1);
+  } else if ((ev.key === "p" || ev.key === "P") && pdf) { ev.preventDefault(); abrirPresentacion(pdf); }
   else if ((ev.key === "f" || ev.key === "F") && !ev.ctrlKey && !ev.metaKey) { alternarPantalla(); }
 });
+
+// Al cambiar el tamaño (o entrar/salir de pantalla completa) se vuelve a dibujar la diapositiva
+let esperaRedibujo = null;
+function redibujarPdf() {
+  clearTimeout(esperaRedibujo);
+  esperaRedibujo = setTimeout(function () {
+    if (pdfActivo && pdfActivo.doc && !pdfActivo.presentacion) pdfActivo.dibujar(pdfActivo.lienzo, pdfActivo.caja);
+  }, 150);
+}
+window.addEventListener("resize", redibujarPdf);
+document.addEventListener("fullscreenchange", redibujarPdf);

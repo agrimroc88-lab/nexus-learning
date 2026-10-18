@@ -32,7 +32,7 @@ if (new URLSearchParams(location.search).get("motivo") === "sin-permiso") {
 // Si ya hay una sesión activa, ir directo al panel
 nexusDb.auth.getSession().then(function (r) {
   if (r.data && r.data.session && !location.search.includes("sin-permiso")) {
-    location.replace("admin.html");
+    location.replace("aula.html");
   }
 });
 
@@ -54,7 +54,7 @@ document.getElementById("form-login").addEventListener("submit", async function 
 
   // 1. Cuenta propia de Nexus Academy (correo, o cédula con contraseña creada aquí)
   const { error } = await nexusDb.auth.signInWithPassword({ email: correo, password: clave });
-  if (!error) return location.replace("admin.html");
+  if (!error) return location.replace("aula.html");
 
   if (error.status === 429) {
     terminar(boton);
@@ -65,7 +65,7 @@ document.getElementById("form-login").addEventListener("submit", async function 
   const cedula = document.getElementById("correo").value.replace(/\D/g, "");
   if (/^[0-9]{10}$/.test(cedula) && !document.getElementById("correo").value.includes("@")) {
     const r = await entrarConNexus(cedula, clave);
-    if (r.ok) return location.replace("admin.html");
+    if (r.ok) return location.replace("aula.html");
     terminar(boton);
     return mostrarMensaje(r.mensaje);
   }

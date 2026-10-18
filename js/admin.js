@@ -40,10 +40,15 @@ const NUM_OPCIONES = 4;
 
   construirOpcionesPregunta();
   cargarJuegos();
-  await cargarCursos();
+  // admin.html?curso=<id> abre ese curso (viene del Salón de clases)
+  const pedido = new URLSearchParams(location.search).get("curso");
+  await cargarCursos(pedido || undefined);
 })();
 
 el("btn-salir").addEventListener("click", cerrarSesion);
+el("btn-abrir-salon").addEventListener("click", function () {
+  if (adm.curso) location.href = "aula.html?c=" + encodeURIComponent(adm.curso.id);
+});
 
 function esDocente() { return adm.papel === "docente"; }
 
@@ -82,8 +87,14 @@ async function cargarCursos(seleccionarId) {
   const CAMPOS = "id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, preguntas_por_evaluacion, creado_en";
   let { data, error } = await nexusDb
     .from("cap_cursos")
-    .select(CAMPOS + ", video_url, archivo_pdf")
+    .select(CAMPOS + ", video_url, archivo_pdf, enlaces")
     .order("creado_en", { ascending: true });
+  adm.sinEnlaces = false;
+  if (error && /enlaces/i.test(error.message || "")) {
+    // Falta el SQL 30: todo funciona, menos los enlaces adicionales
+    adm.sinEnlaces = true;
+    ({ data, error } = await nexusDb.from("cap_cursos").select(CAMPOS + ", video_url, archivo_pdf").order("creado_en", { ascending: true }));
+  }
   if (error && /video_url|archivo_pdf|column/i.test(error.message || "")) {
     // Aún no se ejecutó el SQL 29: el curso funciona sin video ni PDF propios
     adm.sinMaterialCurso = true;
@@ -233,6 +244,9 @@ function llenarFormularioCurso(c) {
   el("c-imagen-quitar").checked = false;
   el("c-imagen-quitar-caja").hidden = !c.imagen;
   el("c-video").value = c.video_url || "";
+  el("c-enlaces").value = (Array.isArray(c.enlaces) ? c.enlaces : []).map(function (e) { return (e.titulo ? e.titulo + " | " : "") + e.url; }).join("\n");
+  el("c-enlaces").disabled = Boolean(adm.sinMaterialCurso) || adm.sinEnlaces === true || esDocente();
+  el("btn-abrir-salon").hidden = !c.id;
   mostrarPdfCurso(c.archivo_pdf || null);
   ["c-video", "c-pdf"].forEach(function (id) { el(id).disabled = Boolean(adm.sinMaterialCurso); });
   el("c-video-ayuda").textContent = adm.sinMaterialCurso
@@ -314,6 +328,21 @@ el("form-curso").addEventListener("submit", async function (ev) {
     if (video === null) return avisar("Ese enlace no es un video de YouTube. Cópialo desde YouTube con el botón Compartir, por ejemplo https://youtu.be/abc123XYZ00", "error");
     datos.video_url = video || null;
     el("c-video").value = video;
+    if (!adm.sinEnlaces) {
+      const enlaces = [];
+      let malo = "";
+      el("c-enlaces").value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (l, i) {
+        const partes = l.split("|").map(function (x) { return x.trim(); });
+        let url = partes.length > 1 ? partes.slice(1).join("|").trim() : partes[0];
+        const titulo = partes.length > 1 ? partes[0] : "";
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+        try { new URL(url); } catch (e) { malo = malo || "La línea " + (i + 1) + " de los enlaces adicionales no es una dirección válida."; return; }
+        enlaces.push({ titulo: titulo.slice(0, 120), url: url.slice(0, 500) });
+      });
+      if (malo) return avisar(malo, "error");
+      if (enlaces.length > 15) return avisar("Puedes agregar hasta 15 enlaces adicionales.", "error");
+      datos.enlaces = enlaces;
+    }
     pdfCurso = el("c-pdf").files[0] || null;
     if (pdfCurso) {
       if (pdfCurso.type !== "application/pdf" && !/\.pdf$/i.test(pdfCurso.name)) return avisar("El material debe ser un archivo PDF.", "error");

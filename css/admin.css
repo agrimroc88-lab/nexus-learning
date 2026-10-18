@@ -423,3 +423,7 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
   .clave-curso { grid-template-columns: auto auto; }
   .clave-curso-info { grid-column: 1 / -1; }
 }
+.form-clave-curso { margin-top: 12px; padding: 14px 16px; border-radius: var(--radio); background: var(--blanco); border: 1px solid var(--niebla); }
+.opciones-modalidad { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; }
+.opciones-modalidad .interruptor { margin: 0; }
+#btn-nueva-clave-curso { margin-top: 10px; }

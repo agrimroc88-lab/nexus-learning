@@ -135,7 +135,7 @@ async function abrirSalon(id) {
     nexusDb.rpc("cap_salon_claves", { p_curso: id })
   ]);
   const lecciones = rl.data || [];
-  au.claves = rk.error ? null : (rk.data || []);   // null = no se pudo consultar (falta el SQL 30)
+  au.claves = rk.error ? null : (rk.data || []).filter(function (k) { return !k.estado || k.estado === "vigente"; });   // null = no se pudo consultar (falta el SQL 30)
 
   const ids = lecciones.map(function (l) { return l.juego_id; }).filter(Boolean);
   let juegos = {};

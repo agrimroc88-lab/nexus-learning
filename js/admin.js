@@ -166,6 +166,7 @@ async function seleccionarCurso(id) {
   el("btn-eliminar-curso").hidden = false;
   el("bloque-qr").hidden = false;
   llenarFormularioCurso(adm.curso);
+  if (!esDocente()) cargarClavesCurso(adm.curso.id);
 
   const cargas = [cargarLecciones(), cargarPreguntas()];
   if (!esDocente()) cargas.push(cargarDocentes());
@@ -269,6 +270,46 @@ function mostrarPdfCurso(ruta) {
   a.rel = "noopener";
   a.textContent = "Ver PDF actual";
   actual.append("Este curso ya tiene un PDF. ", a, ". Si eliges otro archivo, se reemplaza.");
+}
+
+// Claves vigentes y programadas del curso (debajo del QR permanente)
+async function cargarClavesCurso(cursoId) {
+  const ul = el("lista-claves-curso");
+  ul.innerHTML = "";
+  const cargando = document.createElement("li");
+  cargando.className = "ayuda";
+  cargando.textContent = "Buscando claves…";
+  ul.appendChild(cargando);
+  const { data, error } = await nexusDb.rpc("cap_salon_claves", { p_curso: cursoId });
+  if (!adm.curso || adm.curso.id !== cursoId) return;
+  ul.innerHTML = "";
+  const nota = function (t) { const li = document.createElement("li"); li.className = "ayuda"; li.textContent = t; ul.appendChild(li); };
+  if (error) return nota("Para ver aquí las claves, ejecuta los SQL 30 y 31 en Supabase.");
+  if (!data || !data.length) return nota("Este curso no tiene claves vigentes ni programadas. Créalas en Empresas → la capacitación → Nueva clave.");
+  data.forEach(function (k) {
+    const li = document.createElement("li");
+    li.className = "clave-curso " + k.estado + (k.empresa_activa === false ? " empresa-inactiva" : "");
+    const codigo = document.createElement("strong");
+    codigo.className = "clave-curso-codigo";
+    codigo.textContent = k.codigo;
+    const info = document.createElement("span");
+    info.className = "clave-curso-info";
+    const f = function (v) { return new Date(v).toLocaleString("es-EC", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
+    info.textContent = k.empresa + " · " + (k.tipo === "virtual" ? "virtual" : "presencial") + " · del " + f(k.valido_desde) + " al " + f(k.valido_hasta);
+    const estado = document.createElement("span");
+    estado.className = "estado-clave " + k.estado;
+    estado.textContent = k.empresa_activa === false ? "Empresa inactiva" : (k.estado === "vigente" ? "Vigente" : "Programada");
+    const copiar = document.createElement("button");
+    copiar.type = "button";
+    copiar.className = "enlace-boton";
+    copiar.textContent = "Copiar";
+    copiar.addEventListener("click", function () {
+      if (navigator.clipboard) navigator.clipboard.writeText(k.codigo).then(function () { avisar("Clave " + k.codigo + " copiada."); }, function () { window.prompt("Copia la clave:", k.codigo); });
+      else window.prompt("Copia la clave:", k.codigo);
+    });
+    li.append(codigo, estado, info, copiar);
+    ul.appendChild(li);
+  });
 }
 
 function urlPortada(ruta) {

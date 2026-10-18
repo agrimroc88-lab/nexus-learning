@@ -300,6 +300,18 @@ const NexusCertificado = (function () {
     // --- Sello dorado ---
     sello(doc);
 
+    // --- Certificado de ejemplo: marca de agua y se abre para mostrar (no se descarga) ---
+    if (d.muestra) {
+      doc.saveGraphicsState();
+      doc.setGState(new doc.GState({ opacity: 0.13 }));
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(110);
+      doc.setTextColor(PINO[0], PINO[1], PINO[2]);
+      doc.text("MUESTRA", W / 2, H / 2 + 22, { align: "center", angle: 18 });
+      doc.restoreGraphicsState();
+      return doc;
+    }
+
     doc.save("Certificado_" + d.codigo + ".pdf");
   }
 
@@ -319,6 +331,22 @@ const NexusCertificado = (function () {
     if (typeof qrcode === "undefined") pendientes.push(cargar("https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"));
     return Promise.all(pendientes);
   }
+  // Ejemplo para mostrar: abre una pestaña al instante (evita el bloqueo de ventanas)
+  // y la llena cuando el PDF está listo.
+  function muestra(d) {
+    const ventana = window.open("", "_blank");
+    if (ventana) ventana.document.write("<p style='font:16px sans-serif;padding:24px'>Preparando el certificado de ejemplo…</p>");
+    return librerias().then(function () {
+      const doc = dibujar(Object.assign({ codigo: "VW-" + new Date().getFullYear() + "-MUESTRA0", cedula: "0000000000", nombres: "Nombre del participante" }, d, { muestra: true }));
+      const url = doc.output("bloburl");
+      if (ventana) ventana.location.href = url;
+      else doc.save("Certificado_de_ejemplo.pdf");
+    }).catch(function (e) {
+      console.error(e);
+      if (ventana) ventana.close();
+      alert("No se pudo generar el certificado de ejemplo. Revisa tu conexión e inténtalo de nuevo.");
+    });
+  }
   function generar(d) {
     return librerias().then(function () { dibujar(d); }).catch(function (e) {
       console.error(e);
@@ -329,5 +357,5 @@ const NexusCertificado = (function () {
   if ("requestIdleCallback" in window) requestIdleCallback(function () { librerias().catch(function () {}); });
   else setTimeout(function () { librerias().catch(function () {}); }, 3000);
 
-  return { generar: generar };
+  return { generar: generar, muestra: muestra };
 })();

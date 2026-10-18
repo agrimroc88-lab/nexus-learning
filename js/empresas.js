@@ -416,9 +416,8 @@ function tarjetaConvocatoria(c) {
   if (c.modalidad !== "virtual") {
     acciones.appendChild(boton("Nueva clave presencial", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "presencial"); }));
   }
-  if (inscritos === 0) {
-    acciones.appendChild(boton("Eliminar", "enlace-boton rojo", function () { eliminarConvocatoria(c); }));
-  }
+  acciones.appendChild(boton("Ver certificado de ejemplo", "boton secundario boton-chico", function () { certificadoEjemplo(c); }));
+  acciones.appendChild(boton("Eliminar capacitación", "enlace-boton rojo", function () { eliminarConvocatoria(c, inscritos, certificados); }));
 
   detalle.append(cab, avance, lista, acciones);
   art.append(mini, detalle);
@@ -601,12 +600,48 @@ async function anularAcceso(a) {
   await cargarConvocatorias();
 }
 
-async function eliminarConvocatoria(c) {
-  if (!confirm("¿Eliminar la capacitación \"" + c.cap_cursos.titulo + "\" y sus códigos? Solo es posible porque nadie se ha inscrito todavía.")) return;
-  const r = await nexusDb.from("cap_convocatorias").delete().eq("id", c.id);
-  if (r.error) return errorSupabase(r.error, "No se pudo eliminar la capacitación.");
+async function eliminarConvocatoria(c, inscritos, certificados) {
+  const titulo = c.cap_cursos.titulo;
+  if (!inscritos) {
+    if (!confirm("¿Eliminar la capacitación \"" + titulo + "\" y sus claves? Nadie se ha inscrito todavía.")) return;
+  } else {
+    const aviso = "¿Eliminar la capacitación \"" + titulo + "\"?\n\n" +
+      "Se borrarán " + inscritos + (inscritos === 1 ? " inscrito" : " inscritos") +
+      (certificados ? " y " + certificados + (certificados === 1 ? " certificado" : " certificados") + " (dejarán de ser válidos en la verificación)" : "") +
+      ", con sus claves y notas. No se puede deshacer.\n\nSi la necesitas como respaldo, descarga antes el Excel de la nómina.\n\nPara confirmar escribe ELIMINAR:";
+    const r = window.prompt(aviso, "");
+    if (r === null) return;
+    if (r.trim().toUpperCase() !== "ELIMINAR") return avisar("No se eliminó: no escribiste ELIMINAR.", "error");
+  }
+  let r = await nexusDb.rpc("cap_eliminar_capacitacion", { p_convocatoria: c.id });
+  // Sin el SQL 32: solo se puede borrar si no tiene inscritos
+  if (r.error && /cap_eliminar_capacitacion|function/i.test(r.error.message || "") && !inscritos) {
+    r = await nexusDb.from("cap_convocatorias").delete().eq("id", c.id);
+  }
+  if (r.error) {
+    if (/cap_eliminar_capacitacion|schema cache/i.test(r.error.message || "")) return avisar("Para eliminar capacitaciones con inscritos, ejecuta el SQL 32 en Supabase.", "error");
+    return errorSupabase(r.error, "No se pudo eliminar la capacitación.");
+  }
   avisar("Capacitación eliminada.");
   await cargarConvocatorias();
+}
+
+// Certificado de ejemplo con los datos reales de la capacitación (marca MUESTRA)
+async function certificadoEjemplo(c) {
+  if (!window.NexusCertificado) return avisar("Recarga la página para ver el certificado de ejemplo.", "error");
+  const curso = await nexusDb.from("cap_cursos").select("subtemas").eq("id", c.cap_cursos.id).maybeSingle();
+  const asistencia = c.modalidad === "presencial" && !c.evaluacion_presencial;
+  NexusCertificado.muestra({
+    tipo: asistencia ? "asistencia" : "evaluacion",
+    curso: c.cap_cursos.titulo,
+    empresa: emp.actual.nombre,
+    modalidad: c.modalidad === "virtual" ? "virtual" : "presencial",
+    fecha_capacitacion: c.fecha_capacitacion,
+    horas: Number(c.horas || c.cap_cursos.horas),
+    nota: asistencia ? null : 100,
+    subtemas: curso.data ? curso.data.subtemas : [],
+    emitido_en: new Date().toISOString()
+  });
 }
 
 // Formulario corto para un código adicional (por ejemplo, para rezagados)

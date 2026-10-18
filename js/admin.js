@@ -272,6 +272,120 @@ function mostrarPdfCurso(ruta) {
   actual.append("Este curso ya tiene un PDF. ", a, ". Si eliges otro archivo, se reemplaza.");
 }
 
+// ---------------------------------------------------------------------
+// Nueva clave desde el curso: elige empresa, fecha y horas; usa la
+// capacitación (convocatoria) de esa empresa y ese día o la crea.
+// ---------------------------------------------------------------------
+const dosD = function (n) { return String(n).padStart(2, "0"); };
+const fechaLocal = function (d) { return d.getFullYear() + "-" + dosD(d.getMonth() + 1) + "-" + dosD(d.getDate()); };
+const horaLocal = function (d) { return dosD(d.getHours()) + ":" + dosD(d.getMinutes()); };
+
+function modalidadClave() { return document.querySelector('input[name="k-modalidad"]:checked').value; }
+function actualizarFormClave() {
+  const v = modalidadClave() === "virtual";
+  el("k-bloque-presencial").hidden = v;
+  el("k-eval-caja").hidden = v;
+  el("k-bloque-virtual").hidden = !v;
+}
+document.querySelectorAll('input[name="k-modalidad"]').forEach(function (r) { r.addEventListener("change", actualizarFormClave); });
+
+function sugerirClaveEmpresa(nombre) {
+  const letras = String(nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
+  const n = new Uint32Array(1);
+  crypto.getRandomValues(n);
+  return (letras + "XXX").slice(0, 3) + String(10000 + (n[0] % 90000));
+}
+
+el("btn-nueva-clave-curso").addEventListener("click", async function () {
+  const f = el("form-clave-curso");
+  if (!f.hidden) { f.hidden = true; return; }
+  const { data, error } = await nexusDb.from("cap_empresas").select("id, nombre, activa").order("nombre");
+  if (error) return errorSupabase(error, "No se pudieron cargar las empresas.");
+  const activas = (data || []).filter(function (e) { return e.activa !== false; });
+  if (!activas.length) return avisar("No hay empresas activas. Créala primero en Empresas.", "error");
+  const sel = el("k-empresa");
+  sel.innerHTML = "";
+  activas.forEach(function (e) {
+    const o = document.createElement("option");
+    o.value = e.id;
+    o.textContent = e.nombre;
+    sel.appendChild(o);
+  });
+  const ahora = new Date(), luego = new Date(Date.now() + 4 * 3600e3), quince = new Date(Date.now() + 15 * 864e5);
+  el("k-fecha").value = fechaLocal(ahora);
+  el("k-desde").value = horaLocal(ahora);
+  el("k-hasta").value = luego.getDate() === ahora.getDate() ? horaLocal(luego) : "23:59";
+  el("k-v-desde").value = fechaLocal(ahora);
+  el("k-v-hasta").value = fechaLocal(quince);
+  el("k-eval").checked = adm.preguntas.length > 0;
+  el("k-clave").value = sugerirClaveEmpresa(activas[0].nombre);
+  actualizarFormClave();
+  f.hidden = false;
+  sel.focus();
+});
+el("k-empresa").addEventListener("change", function () {
+  el("k-clave").value = sugerirClaveEmpresa(el("k-empresa").selectedOptions[0].textContent);
+});
+el("btn-cancelar-clave-curso").addEventListener("click", function () { el("form-clave-curso").hidden = true; });
+
+el("btn-crear-clave-curso").addEventListener("click", async function () {
+  if (!adm.curso) return;
+  const empresaId = el("k-empresa").value;
+  const virtual = modalidadClave() === "virtual";
+  const clave = String(el("k-clave").value || "").toUpperCase().replace(/\s/g, "");
+  if (clave && !/^[A-Z0-9][A-Z0-9-]{2,10}[A-Z0-9]$/.test(clave)) return avisar("La clave debe tener de 4 a 12 letras o números, sin espacios ni símbolos.", "error");
+  let desde, hasta, fecha = null;
+  if (virtual) {
+    if (!adm.lecciones.length || !adm.preguntas.length) return avisar("Para el acceso virtual el curso necesita lecciones y preguntas.", "error");
+    desde = new Date(el("k-v-desde").value + "T00:00:00");
+    hasta = new Date(el("k-v-hasta").value + "T23:59:59");
+  } else {
+    fecha = el("k-fecha").value;
+    desde = new Date(fecha + "T" + el("k-desde").value);
+    hasta = new Date(fecha + "T" + el("k-hasta").value);
+    if (el("k-eval").checked && !adm.preguntas.length) return avisar("Este curso no tiene preguntas: desmarca la evaluación o agrega preguntas.", "error");
+  }
+  if (isNaN(desde) || isNaN(hasta) || !(hasta > desde)) return avisar("Revisa las fechas y horas: el final debe ser posterior al inicio.", "error");
+
+  const boton = el("btn-crear-clave-curso");
+  boton.disabled = true;
+  try {
+    // ¿Ya hay una capacitación de esta empresa con este curso para ese día (o virtual)?
+    let q = nexusDb.from("cap_convocatorias").select("id, modalidad, fecha_capacitacion")
+      .eq("empresa_id", empresaId).eq("curso_id", adm.curso.id).order("creado_en", { ascending: false });
+    const { data: convs, error: e1 } = await q;
+    if (e1) throw e1;
+    let conv = (convs || []).find(function (c) {
+      return virtual ? c.modalidad !== "presencial" : (c.modalidad !== "virtual" && c.fecha_capacitacion === fecha);
+    });
+    let creada = null;
+    if (!conv) {
+      const nueva = await nexusDb.from("cap_convocatorias").insert({
+        empresa_id: empresaId, curso_id: adm.curso.id, modalidad: virtual ? "virtual" : "presencial",
+        evaluacion_presencial: !virtual && el("k-eval").checked, fecha_capacitacion: fecha
+      }).select().single();
+      if (nueva.error) throw nueva.error;
+      conv = creada = nueva.data;
+    }
+    const acc = await nexusDb.from("cap_accesos").insert(Object.assign({
+      convocatoria_id: conv.id, tipo: virtual ? "virtual" : "presencial",
+      valido_desde: desde.toISOString(), valido_hasta: hasta.toISOString()
+    }, clave ? { codigo: clave } : {}));
+    if (acc.error) {
+      if (creada) await nexusDb.from("cap_convocatorias").delete().eq("id", creada.id);
+      throw acc.error;
+    }
+    el("form-clave-curso").hidden = true;
+    avisar("Clave creada" + (creada ? " (también se creó la capacitación en Empresas)." : "."));
+    await cargarClavesCurso(adm.curso.id);
+  } catch (e) {
+    const msj = String(e.message || "");
+    errorSupabase(e, /duplicate|unique|23505/i.test(msj + (e.code || "")) ? "Esa clave ya existe; escribe otra o deja el campo vacío." : "No se pudo crear la clave.");
+  } finally {
+    boton.disabled = false;
+  }
+});
+
 // Claves vigentes y programadas del curso (debajo del QR permanente)
 async function cargarClavesCurso(cursoId) {
   const ul = el("lista-claves-curso");
@@ -285,7 +399,7 @@ async function cargarClavesCurso(cursoId) {
   ul.innerHTML = "";
   const nota = function (t) { const li = document.createElement("li"); li.className = "ayuda"; li.textContent = t; ul.appendChild(li); };
   if (error) return nota("Para ver aquí las claves, ejecuta los SQL 30 y 31 en Supabase.");
-  if (!data || !data.length) return nota("Este curso no tiene claves vigentes ni programadas. Créalas en Empresas → la capacitación → Nueva clave.");
+  if (!data || !data.length) return nota("Este curso no tiene claves vigentes ni programadas. Crea una con + Nueva clave.");
   data.forEach(function (k) {
     const li = document.createElement("li");
     li.className = "clave-curso " + k.estado + (k.empresa_activa === false ? " empresa-inactiva" : "");
@@ -1016,3 +1130,11 @@ function pintarItems(ol, items, describir, alEditar, alEliminar, textoVacio, eti
 function siguienteOrden(lista) {
   return lista.reduce(function (m, x) { return Math.max(m, x.orden || 0); }, 0) + 1;
 }
+
+// Enter dentro del formulario de la clave crea la clave (no guarda el curso)
+el("form-clave-curso").addEventListener("keydown", function (ev) {
+  if (ev.key === "Enter" && ev.target.tagName === "INPUT") {
+    ev.preventDefault();
+    el("btn-crear-clave-curso").click();
+  }
+});

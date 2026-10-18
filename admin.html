@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/admin.css?v=4">
+  <link rel="stylesheet" href="css/admin.css?v=6">
 </head>
 <body>
 
@@ -151,15 +151,51 @@
 
           <div class="bloque-qr" id="bloque-qr" hidden>
             <h3>QR permanente del programa</h3>
-            <p class="ayuda">Un solo código QR para todas las empresas: no caduca. Cada empresa entra con su propia clave de acceso, que se crea en la sección Empresas.</p>
+            <p class="ayuda">Un solo código QR para todas las empresas: no caduca. Cada empresa entra con su propia clave de acceso, que creas aquí abajo.</p>
             <div class="fila-botones">
               <button type="button" class="boton secundario boton-chico" id="btn-cartel-programa">Descargar cartel QR</button>
               <button type="button" class="boton secundario boton-chico" id="btn-enlace-programa">Copiar enlace del programa</button>
             </div>
             <div class="claves-curso">
               <h4>Claves de acceso de este curso</h4>
-              <p class="ayuda">Las que funcionan ahora y las programadas. Los participantes la escriben después de escanear el QR o en la página de inicio. Se crean en <a href="empresas.html">Empresas</a> → la capacitación → Nueva clave.</p>
+              <p class="ayuda">Las que funcionan ahora y las programadas. Los participantes la escriben después de escanear el QR o en la página de inicio. Créala aquí mismo con <strong>+ Nueva clave</strong>.</p>
               <ul id="lista-claves-curso" class="lista-claves-curso"></ul>
+              <button type="button" class="boton boton-chico" id="btn-nueva-clave-curso">+ Nueva clave</button>
+              <div id="form-clave-curso" class="form-clave-curso" hidden>
+                <div class="fila-dos">
+                  <div>
+                    <label class="etiqueta" for="k-empresa">Empresa</label>
+                    <select class="campo" id="k-empresa"></select>
+                  </div>
+                  <div>
+                    <span class="etiqueta">Modalidad</span>
+                    <div class="opciones-modalidad">
+                      <label class="interruptor"><input type="radio" name="k-modalidad" value="presencial" checked> <span>Presencial (charla)</span></label>
+                      <label class="interruptor"><input type="radio" name="k-modalidad" value="virtual"> <span>Virtual</span></label>
+                    </div>
+                  </div>
+                </div>
+                <div class="fila-tres" id="k-bloque-presencial">
+                  <div><label class="etiqueta" for="k-fecha">Fecha de la charla</label><input class="campo" id="k-fecha" type="date"></div>
+                  <div><label class="etiqueta" for="k-desde">Desde</label><input class="campo" id="k-desde" type="time"></div>
+                  <div><label class="etiqueta" for="k-hasta">Hasta</label><input class="campo" id="k-hasta" type="time"></div>
+                </div>
+                <div class="fila-dos" id="k-bloque-virtual" hidden>
+                  <div><label class="etiqueta" for="k-v-desde">Desde</label><input class="campo" id="k-v-desde" type="date"></div>
+                  <div><label class="etiqueta" for="k-v-hasta">Hasta (inclusive)</label><input class="campo" id="k-v-hasta" type="date"></div>
+                </div>
+                <label class="interruptor" id="k-eval-caja">
+                  <input type="checkbox" id="k-eval">
+                  <span>El QR pide evaluación (responder preguntas antes del certificado)</span>
+                </label>
+                <label class="etiqueta" for="k-clave">Clave (puedes cambiarla; vacío = automática)</label>
+                <input class="campo campo-corto" id="k-clave" maxlength="12" autocomplete="off" spellcheck="false" autocapitalize="characters">
+                <p class="ayuda">Si ya existe la capacitación de esa empresa para ese día, la clave se agrega ahí; si no, se crea sola y aparece también en Empresas.</p>
+                <div class="acciones-form">
+                  <button type="button" class="boton secundario boton-chico" id="btn-cancelar-clave-curso">Cancelar</button>
+                  <button type="button" class="boton boton-chico" id="btn-crear-clave-curso">Crear clave</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -349,7 +385,7 @@ Respuesta: c"></textarea>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/juegos-motor.js?v=2"></script>
-  <script src="js/admin.js?v=5"></script>
+  <script src="js/admin.js?v=7"></script>
   <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

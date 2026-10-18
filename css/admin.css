@@ -399,3 +399,8 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .extra-leccion { margin: 14px 0 4px; padding: 10px 14px; border: 1px dashed var(--niebla); border-radius: var(--radio); background: var(--blanco); }
 .extra-leccion summary { cursor: pointer; font-weight: 700; color: var(--pino); }
 .extra-leccion[open] summary { margin-bottom: 8px; }
+
+/* Encabezado del editor: Planificación y diseño + botón al Salón de clases */
+.encabezado-planificacion { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 8px; }
+.encabezado-planificacion h1 { margin: 0; }
+.eyebrow-planificacion { margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--senal); }

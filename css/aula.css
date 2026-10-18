@@ -1,0 +1,128 @@
+/* =====================================================================
+   NEXUS ACADEMY · CURSOS Y SALÓN DE CLASES
+   Carpeta: css/aula.css · La usa aula.html (después de juegos.css).
+   ===================================================================== */
+
+/* ---------- Lista de cursos ---------- */
+.pagina-aula { max-width: 1100px; }
+.aula-cabecera { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; margin-bottom: 14px; }
+.aula-cabecera h1 { margin: 0 0 4px; }
+.aula-cabecera .ayuda { margin: 0; max-width: 62ch; }
+.aula-buscador { max-width: 420px; margin: 0 0 18px; background: var(--blanco); }
+.cursos-aula { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.tarjeta-aula {
+  display: flex; flex-direction: column; height: 100%; overflow: hidden;
+  border: 2px solid var(--niebla); border-radius: 14px; background: var(--blanco);
+  color: var(--tinta); text-decoration: none; transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.tarjeta-aula:hover, .tarjeta-aula:focus-visible { transform: translateY(-3px); border-color: var(--senal); box-shadow: 0 10px 24px rgba(10, 43, 93, .12); outline: none; }
+.tarjeta-aula-portada {
+  display: grid; place-items: center; aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, var(--pino) 0%, var(--pino-claro) 100%) center / cover no-repeat;
+}
+.tarjeta-aula-inicial { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: 52px; font-weight: 700; color: var(--senal); }
+.tarjeta-aula-cuerpo { display: grid; gap: 4px; padding: 14px 16px 6px; flex: 1; }
+.tarjeta-aula-cuerpo strong { font-size: 17px; line-height: 1.25; color: var(--pino); }
+.tarjeta-aula-cuerpo small { color: var(--gris); font-size: 13px; }
+.tarjeta-aula-entrar { padding: 6px 16px 14px; font-weight: 700; font-size: 14px; color: var(--pino-claro); }
+
+/* ---------- Salón de clases (pantalla de proyección) ---------- */
+.salon .salon-barra { gap: 10px 16px; flex-wrap: wrap; }
+.salon-titulos { display: grid; min-width: 0; }
+.salon-titulos small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--senal); font-weight: 700; }
+.salon-titulos strong { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.salon-acciones { flex-wrap: wrap; justify-content: flex-end; }
+.salon .salon-barra .boton { min-height: 0; font-size: 14px; }
+.salon-barra .boton.secundario[aria-pressed="false"] { opacity: .7; }
+
+.salon-cuerpo { flex: 1; min-height: 0; display: grid; grid-template-columns: 270px minmax(0, 1fr); }
+.salon.sin-recorrido .salon-cuerpo { grid-template-columns: minmax(0, 1fr); }
+.salon.sin-recorrido .salon-recorrido { display: none; }
+
+.salon-recorrido { overflow-y: auto; padding: 14px 10px; background: var(--blanco); border-right: 1px solid var(--niebla); }
+.salon-recorrido ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.paso-recorrido {
+  display: grid; gap: 1px; width: 100%; padding: 8px 10px 8px 12px; text-align: left; font: inherit; color: var(--tinta);
+  background: none; border: 0; border-left: 4px solid transparent; border-radius: 8px; cursor: pointer;
+}
+.paso-recorrido:hover { background: var(--papel); }
+.paso-recorrido:focus-visible { outline: 3px solid var(--senal); outline-offset: -3px; }
+.paso-recorrido.activo { background: color-mix(in srgb, var(--senal) 18%, var(--blanco)); border-left-color: var(--senal); }
+.paso-recorrido.visto .paso-titulo { color: var(--gris); }
+.paso-etiqueta { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pino-claro); }
+.tipo-video .paso-etiqueta { color: #B3402A; }
+.tipo-pdf .paso-etiqueta { color: #8A6200; }
+.tipo-juego .paso-etiqueta { color: var(--ok); }
+.paso-titulo { font-size: 14px; font-weight: 600; line-height: 1.3; }
+
+.salon-escena { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.salon-contenido { flex: 1; min-height: 0; overflow: auto; padding: 24px clamp(16px, 3vw, 40px); }
+.salon-contenido:focus { outline: none; }
+.salon-navegacion {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--blanco); border-top: 1px solid var(--niebla);
+}
+.salon .salon-navegacion .boton { margin: 0; min-height: 46px; font-size: 16px; }
+.salon-paso { flex: 1; text-align: center; color: var(--gris); font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.salon-aviso { margin: 0 0 12px; }
+
+/* Escenas */
+.escena-titulo { margin: 0 0 14px; font-size: clamp(22px, 2.4vw, 32px); color: var(--pino); }
+.escena-titulo.grande { font-size: clamp(28px, 3.4vw, 48px); line-height: 1.15; }
+.escena-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 10px; }
+.escena-cabecera .escena-titulo { margin: 0; }
+.inicio-eyebrow { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--senal); }
+
+.escena-inicio { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(20px, 3vw, 48px); align-items: center; max-width: 1400px; margin: 0 auto; }
+.inicio-portada { aspect-ratio: 16 / 10; border-radius: 18px; background: linear-gradient(135deg, var(--pino) 0%, var(--pino-claro) 100%) center / cover no-repeat; box-shadow: 0 14px 40px rgba(10, 43, 93, .2); }
+.inicio-titulo { margin: 0 0 12px; font-size: clamp(30px, 4vw, 56px); line-height: 1.08; color: var(--pino); text-wrap: balance; }
+.inicio-descripcion { margin: 0 0 16px; font-size: clamp(17px, 1.6vw, 22px); color: var(--gris); max-width: 60ch; }
+.inicio-subtitulo { margin: 0 0 8px; font-size: 18px; color: var(--pino); }
+.inicio-temas { margin: 0 0 14px; padding-left: 22px; font-size: clamp(17px, 1.6vw, 22px); display: grid; gap: 4px; }
+.inicio-temas li::marker { color: var(--senal); }
+.inicio-resumen { display: inline-block; margin: 6px 0 0; padding: 6px 12px; border-radius: 99px; background: var(--zona); color: var(--pino); font-weight: 600; font-size: 14px; }
+
+.video-marco { position: relative; width: 100%; max-width: min(1400px, calc((100vh - 230px) * 16 / 9)); margin: 0 auto; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; }
+.salon.en-pantalla-completa .video-marco { max-width: min(100%, calc((100vh - 150px) * 16 / 9)); }
+.video-marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.enlace-escena { display: inline-block; margin-top: 10px; font-weight: 700; color: var(--pino-claro); }
+
+.escena-pdf { display: flex; flex-direction: column; padding-bottom: 12px; }
+.pdf-visor { flex: 1; width: 100%; min-height: 60vh; border: 1px solid var(--niebla); border-radius: 10px; background: var(--blanco); }
+
+.enlace-tarjeta { max-width: 720px; padding: 22px; border-radius: 14px; background: var(--blanco); border: 1px solid var(--niebla); }
+.enlace-url { margin: 0 0 14px; overflow-wrap: anywhere; color: var(--gris); }
+
+.leccion-proyectada { max-width: 70ch; font-size: clamp(19px, 2vw, 28px); line-height: 1.5; }
+.leccion-proyectada p { margin: 0 0 .7em; white-space: pre-line; }
+.leccion-proyectada ul, .leccion-proyectada ol { margin: 0 0 .7em; padding-left: 1.2em; display: grid; gap: .25em; }
+.leccion-proyectada li::marker { color: var(--senal); }
+
+.escena-juego .juego { margin: 0 auto; max-width: 1200px; }
+
+.cierre { display: grid; grid-template-columns: minmax(220px, 420px) minmax(0, 1fr); gap: clamp(20px, 4vw, 56px); align-items: center; max-width: 1200px; margin: 0 auto; }
+.cierre-qr { padding: 18px; border-radius: 18px; background: #FFFFFF; border: 3px solid var(--senal); display: grid; place-items: center; aspect-ratio: 1; color: var(--gris); }
+.cierre-qr svg { width: 100%; height: auto; display: block; }
+.cierre-paso { margin: 0 0 8px; font-size: clamp(17px, 1.8vw, 24px); }
+.cierre-claves { display: grid; gap: 10px; margin-top: 18px; }
+.clave-vigente { display: grid; gap: 2px; padding: 14px 18px; border-radius: 14px; background: var(--pino); color: var(--blanco); }
+.clave-empresa { font-size: 14px; font-weight: 600; opacity: .85; }
+.clave-codigo { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: clamp(34px, 4.4vw, 60px); letter-spacing: .08em; color: var(--senal); line-height: 1.1; }
+.clave-vigente small { opacity: .8; }
+.cierre-sin-clave { padding: 12px 16px; border-radius: 12px; background: #FDF1D3; color: #6B4C00; font-weight: 600; }
+
+@media (max-width: 900px) {
+  .salon-cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .salon-recorrido { border-right: 0; border-bottom: 1px solid var(--niebla); padding: 8px; overflow-x: auto; overflow-y: hidden; }
+  .salon-recorrido ol { grid-auto-flow: column; grid-auto-columns: minmax(150px, 200px); }
+  .escena-inicio, .cierre { grid-template-columns: minmax(0, 1fr); }
+  .cierre-qr { max-width: 320px; }
+  .salon-titulos strong { white-space: normal; }
+}
+@media (max-width: 560px) {
+  .salon .salon-barra { padding: 8px 12px; }
+  .salon-acciones .boton { padding: 6px 10px; font-size: 13px; }
+  .salon-navegacion { padding: 8px 12px; }
+  .salon .salon-navegacion .boton { min-height: 40px; font-size: 14px; padding: 8px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .tarjeta-aula { transition: none; } }

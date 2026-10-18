@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Cursos · Nexus Academy</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://yfmefiytswvxsqmnmrvg.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css?v=3">
+  <link rel="stylesheet" href="css/juegos.css?v=2">
+  <link rel="stylesheet" href="css/aula.css">
+</head>
+<body>
+
+  <!-- ===== Barra superior ===== -->
+  <header class="barra">
+    <div class="contenedor">
+      <a class="marca" href="aula.html">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+          <circle cx="8" cy="15" r="6" fill="#E3B341"/>
+          <circle cx="22" cy="15" r="6" fill="none" stroke="#E3B341" stroke-width="3"/>
+          <rect x="12" y="13.5" width="6" height="3" fill="#E3B341"/>
+        </svg>
+        <span id="marca-texto">Administración</span>
+      </a>
+      <nav class="nav-admin">
+        <a href="resumen.html" data-solo-admin>Resumen</a>
+        <a href="aula.html" id="nav-cursos" aria-current="page">Cursos</a>
+        <a href="empresas.html" data-solo-admin>Empresas</a>
+        <a href="juegos.html" data-solo-admin>Juegos</a>
+        <a href="charla.html" data-solo-docente>Juegos</a>
+        <a href="administradores.html" data-solo-admin>Administradores</a>
+        <a href="apariencia.html" data-solo-admin>Apariencia</a>
+        <a href="index.html" target="_blank" rel="noopener">Ver sitio público</a>
+        <a data-nexus="" href="#" class="enlace-nexus">NEXUS</a>
+        <span id="usuario-correo" class="usuario"></span>
+        <button type="button" class="enlace-boton" id="btn-salir">Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="cargando" class="contenedor aviso-pagina">Verificando acceso…</div>
+
+  <!-- ===== Lista de cursos ===== -->
+  <main id="panel" class="contenedor pagina-simple pagina-aula" hidden>
+    <div class="aula-cabecera">
+      <div>
+        <h1 id="aula-titulo">Cursos</h1>
+        <p class="ayuda">Toca un curso para abrir su <strong>Salón de clases</strong> y dar la charla. Para preparar el contenido usa <strong>Planificación y diseño</strong>.</p>
+      </div>
+      <a class="boton secundario" href="admin.html" id="btn-planificar-general">Planificación y diseño</a>
+    </div>
+    <div id="aviso" class="aviso" role="status" hidden></div>
+    <label class="buscador-cursos aula-buscador">
+      <span class="sr-only">Buscar curso</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="search" id="buscar-curso" placeholder="Buscar curso…" autocomplete="off">
+    </label>
+    <ul id="cursos-aula" class="cursos-aula"></ul>
+  </main>
+
+  <!-- ===== Salón de clases ===== -->
+  <div id="salon" class="escenario-juego salon" hidden>
+    <div class="escenario-barra salon-barra">
+      <div class="salon-titulos">
+        <small>Salón de clases</small>
+        <strong id="salon-curso"></strong>
+      </div>
+      <span class="escenario-acciones salon-acciones">
+        <button type="button" class="boton secundario boton-chico" id="btn-recorrido" aria-pressed="true">Recorrido</button>
+        <button type="button" class="boton secundario boton-chico" id="btn-qr">QR de asistencia</button>
+        <button type="button" class="boton secundario boton-chico" id="btn-planificar">Planificación y diseño del curso</button>
+        <button type="button" class="boton boton-chico" id="btn-pantalla">⛶ Pantalla completa</button>
+        <button type="button" class="boton secundario boton-chico" id="btn-cerrar-salon" aria-label="Volver a la lista de cursos">✕</button>
+      </span>
+    </div>
+    <div class="salon-cuerpo">
+      <nav class="salon-recorrido" id="salon-recorrido" aria-label="Recorrido de la clase">
+        <ol id="lista-pasos"></ol>
+      </nav>
+      <section class="salon-escena">
+        <div class="salon-contenido" id="salon-contenido" tabindex="-1"></div>
+        <div class="salon-navegacion">
+          <button type="button" class="boton secundario" id="btn-anterior">◀ Anterior</button>
+          <span id="salon-paso" class="salon-paso"></span>
+          <button type="button" class="boton" id="btn-siguiente">Siguiente ▶</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/juegos-motor.js?v=2"></script>
+  <script src="js/aula.js"></script>
+</body>
+</html>

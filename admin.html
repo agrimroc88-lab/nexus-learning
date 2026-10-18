@@ -17,14 +17,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/admin.css?v=2">
+  <link rel="stylesheet" href="css/admin.css?v=3">
 </head>
 <body>
 
   <!-- ===== Barra superior ===== -->
   <header class="barra">
     <div class="contenedor">
-      <a class="marca" href="admin.html">
+      <a class="marca" href="aula.html">
         <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
           <circle cx="8" cy="15" r="6" fill="#E3B341"/>
           <circle cx="22" cy="15" r="6" fill="none" stroke="#E3B341" stroke-width="3"/>
@@ -34,7 +34,7 @@
       </a>
       <nav class="nav-admin">
         <a href="resumen.html" data-solo-admin>Resumen</a>
-        <a href="admin.html" aria-current="page">Cursos</a>
+        <a href="aula.html">Cursos</a>
         <a href="empresas.html" data-solo-admin>Empresas</a>
         <a href="juegos.html" data-solo-admin>Juegos</a>
         <a href="charla.html" data-solo-docente>Juegos</a>
@@ -71,7 +71,13 @@
       </div>
 
       <div id="editor-curso" hidden>
-        <h1 id="editor-titulo"></h1>
+        <div class="encabezado-planificacion">
+          <div>
+            <p class="eyebrow-planificacion">Planificación y diseño del curso</p>
+            <h1 id="editor-titulo"></h1>
+          </div>
+          <button type="button" class="boton" id="btn-abrir-salon" hidden>Abrir salón de clases</button>
+        </div>
 
         <div class="pestanas" role="tablist">
           <button type="button" role="tab" class="pestana" data-pestana="datos">Datos del curso</button>
@@ -104,6 +110,10 @@
           <label class="etiqueta" for="c-video">Video del curso en YouTube (opcional)</label>
           <input class="campo" id="c-video" placeholder="https://www.youtube.com/watch?v=… o https://youtu.be/…" maxlength="300" inputmode="url" autocomplete="off">
           <p class="ayuda" id="c-video-ayuda">Pega el enlace tal como lo copias de YouTube (botón Compartir). Lo verán los participantes al iniciar el curso.</p>
+
+          <label class="etiqueta" for="c-enlaces">Enlaces adicionales (opcional)</label>
+          <textarea class="campo area" id="c-enlaces" rows="3" placeholder="Video: uso del arnés | https://youtu.be/…&#10;Norma técnica | https://www.trabajo.gob.ec/…"></textarea>
+          <p class="ayuda">Uno por línea: <strong>Título | enlace</strong>. Aparecen en el Salón de clases para abrirlos durante la charla (videos de YouTube se ven dentro de la página).</p>
 
           <label class="etiqueta" for="c-pdf">Material del curso en PDF (opcional, máx. 20 MB)</label>
           <div class="bloque-pdf">
@@ -334,7 +344,7 @@ Respuesta: c"></textarea>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/juegos-motor.js?v=2"></script>
-  <script src="js/admin.js?v=3"></script>
+  <script src="js/admin.js?v=4"></script>
   <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

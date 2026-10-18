@@ -166,7 +166,7 @@ async function seleccionarCurso(id) {
   el("btn-eliminar-curso").hidden = false;
   el("bloque-qr").hidden = false;
   llenarFormularioCurso(adm.curso);
-  if (!esDocente()) cargarClavesCurso(adm.curso.id);
+  if (!esDocente()) { cargarClavesCurso(adm.curso.id); cargarRegistrosCurso(adm.curso.id); }
 
   const cargas = [cargarLecciones(), cargarPreguntas()];
   if (!esDocente()) cargas.push(cargarDocentes());
@@ -378,6 +378,7 @@ el("btn-crear-clave-curso").addEventListener("click", async function () {
     el("form-clave-curso").hidden = true;
     avisar("Clave creada" + (creada ? " (también se creó la capacitación en Empresas)." : "."));
     await cargarClavesCurso(adm.curso.id);
+    cargarRegistrosCurso(adm.curso.id);
   } catch (e) {
     const msj = String(e.message || "");
     errorSupabase(e, /duplicate|unique|23505/i.test(msj + (e.code || "")) ? "Esa clave ya existe; escribe otra o deja el campo vacío." : "No se pudo crear la clave.");
@@ -425,6 +426,184 @@ async function cargarClavesCurso(cursoId) {
     ul.appendChild(li);
   });
 }
+
+// ---------------------------------------------------------------------
+// Registro de asistencia del curso (todas las empresas o una capacitación)
+// ---------------------------------------------------------------------
+const MODALIDAD_CONV = { presencial: "Presencial", virtual: "Virtual", mixta: "Presencial y virtual" };
+const ETNIAS_REG = {
+  mestizo: "Mestizo", blanco: "Blanco", indigena: "Indígena", montubio: "Montubio",
+  afroecuatoriano: "Afroecuatoriano", otro: "Otro", no_responde: "No declara"
+};
+adm.registros = { convs: [], filas: [] };
+
+function fechaCorta(v) {
+  if (!v) return "";
+  const t = String(v);
+  const d = t.length === 10 ? new Date(t + "T12:00:00") : new Date(t);
+  return d.toLocaleDateString("es-EC", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+function fechaHoraReg(v) {
+  return v ? new Date(v).toLocaleString("es-EC", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+}
+function edadReg(nac, fecha) {
+  if (!nac) return "";
+  const n = String(nac).slice(0, 10).split("-").map(Number);
+  const f = new Date(fecha || Date.now());
+  let e = f.getFullYear() - n[0];
+  if (f.getMonth() + 1 < n[1] || (f.getMonth() + 1 === n[1] && f.getDate() < n[2])) e--;
+  return e >= 0 && e < 120 ? e : "";
+}
+
+async function cargarRegistrosCurso(cursoId) {
+  const sel = el("r-conv");
+  sel.innerHTML = "<option>Cargando…</option>";
+  el("r-filas").innerHTML = "";
+  el("r-cifras").innerHTML = "";
+  const { data, error } = await nexusDb.from("cap_convocatorias")
+    .select("id, modalidad, horas, fecha_capacitacion, creado_en, cap_empresas(nombre, ruc)")
+    .eq("curso_id", cursoId)
+    .order("fecha_capacitacion", { ascending: false, nullsFirst: false });
+  if (!adm.curso || adm.curso.id !== cursoId) return;
+  sel.innerHTML = "";
+  if (error) { sel.innerHTML = "<option>No se pudo cargar</option>"; return errorSupabase(error, "No se pudo cargar el registro de asistencia."); }
+  adm.registros.convs = data || [];
+  const opt = function (v, t) { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.appendChild(o); };
+  if (!adm.registros.convs.length) {
+    opt("", "Este curso aún no tiene capacitaciones");
+    pintarRegistros();
+    return;
+  }
+  opt("todas", "Todas las capacitaciones (" + adm.registros.convs.length + ")");
+  adm.registros.convs.forEach(function (c) {
+    const emp = c.cap_empresas ? c.cap_empresas.nombre : "Empresa";
+    opt(c.id, emp + " · " + (c.fecha_capacitacion ? fechaCorta(c.fecha_capacitacion) : "sin fecha") + " · " + (MODALIDAD_CONV[c.modalidad] || c.modalidad));
+  });
+  // Por defecto la capacitación más reciente
+  sel.value = adm.registros.convs[0].id;
+  await cargarFilasRegistro();
+}
+
+async function cargarFilasRegistro() {
+  const v = el("r-conv").value;
+  const convs = v === "todas" ? adm.registros.convs : adm.registros.convs.filter(function (c) { return c.id === v; });
+  adm.registros.filas = [];
+  if (!convs.length) return pintarRegistros();
+  el("r-filas").innerHTML = '<tr><td colspan="8" class="vacio-lista">Cargando…</td></tr>';
+  const ids = convs.map(function (c) { return c.id; });
+  const [insc, certs, intentos] = await Promise.all([
+    nexusDb.from("cap_inscripciones").select("id, convocatoria_id, cedula, nombres, correo, modalidad, creado_en, sexo, fecha_nacimiento, etnia").in("convocatoria_id", ids).order("nombres"),
+    nexusDb.from("cap_certificados").select("id, codigo, cedula, inscripcion_id, convocatoria_id, tipo, nota, emitido_en").in("convocatoria_id", ids),
+    nexusDb.from("cap_intentos").select("inscripcion_id, nota").in("convocatoria_id", ids)
+  ]);
+  if (el("r-conv").value !== v) return;
+  const fallo = insc.error || certs.error || intentos.error;
+  if (fallo) { el("r-filas").innerHTML = ""; return errorSupabase(fallo, "No se pudo cargar el registro de asistencia."); }
+  const porConv = {};
+  convs.forEach(function (c) { porConv[c.id] = c; });
+  adm.registros.filas = insc.data.map(function (i) {
+    const c = porConv[i.convocatoria_id] || {};
+    const cert = certs.data.find(function (x) { return x.inscripcion_id === i.id || (x.cedula === i.cedula && x.convocatoria_id === i.convocatoria_id); });
+    const suyos = intentos.data.filter(function (x) { return x.inscripcion_id === i.id; });
+    const mejor = suyos.reduce(function (m, x) { return Math.max(m, Number(x.nota)); }, -1);
+    let estado, clase;
+    if (cert) { estado = cert.tipo === "asistencia" ? "Asistencia certificada" : "Aprobado"; clase = "vigente"; }
+    else if (suyos.length) { estado = "No aprobado (" + suyos.length + (suyos.length === 1 ? " intento)" : " intentos)"); clase = "anulado"; }
+    else { estado = "Pendiente"; clase = "programado"; }
+    return {
+      nombres: i.nombres, cedula: i.cedula, correo: i.correo || "",
+      sexo: i.sexo || "", edad: edadReg(i.fecha_nacimiento, i.creado_en), etnia: ETNIAS_REG[i.etnia] || "",
+      empresa: c.cap_empresas ? c.cap_empresas.nombre : "", ruc: c.cap_empresas ? (c.cap_empresas.ruc || "") : "",
+      fecha: c.fecha_capacitacion || "", horas: c.horas || adm.curso.horas || "",
+      modalidad: i.modalidad === "presencial" ? "Presencial" : "Virtual",
+      registro: i.creado_en, estado: estado, clase: clase,
+      nota: cert && cert.nota !== null ? Number(cert.nota) : (mejor >= 0 ? mejor : null),
+      intentos: suyos.length, certificado: cert ? cert.codigo : "", emitido: cert ? cert.emitido_en : null
+    };
+  });
+  pintarRegistros();
+}
+
+function pintarRegistros() {
+  const filas = adm.registros.filas;
+  const cif = el("r-cifras");
+  cif.innerHTML = "";
+  const cert = filas.filter(function (f) { return f.certificado; }).length;
+  [["Registrados", filas.length], ["Con certificado", cert], ["Hombres", filas.filter(function (f) { return f.sexo === "M"; }).length],
+   ["Mujeres", filas.filter(function (f) { return f.sexo === "F"; }).length], ["Pendientes o no aprobados", filas.length - cert]]
+    .forEach(function (d) {
+      const div = document.createElement("div");
+      div.className = "r-cifra";
+      const n = document.createElement("strong"); n.textContent = d[1];
+      const t = document.createElement("span"); t.textContent = d[0];
+      div.append(n, t);
+      cif.appendChild(div);
+    });
+
+  const tbody = el("r-filas");
+  tbody.innerHTML = "";
+  const q = el("r-buscar").value.trim().toLowerCase();
+  const vis = filas.filter(function (f) { return !q || f.nombres.toLowerCase().includes(q) || f.cedula.includes(q); });
+  if (!vis.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 8; td.className = "vacio-lista";
+    td.textContent = filas.length ? "Nadie coincide con la búsqueda." : "Todavía nadie se ha registrado.";
+    tr.appendChild(td); tbody.appendChild(tr);
+    return;
+  }
+  vis.forEach(function (f) {
+    const tr = document.createElement("tr");
+    [f.nombres, f.cedula, f.empresa, f.fecha ? fechaCorta(f.fecha) : "—", f.modalidad, null,
+     f.nota === null ? "—" : (Math.round(f.nota * 10) / 10) + " %", f.certificado || "—"].forEach(function (v, i) {
+      const td = document.createElement("td");
+      if (i === 5) { const s = document.createElement("span"); s.className = "estado-clave " + f.clase; s.textContent = f.estado; td.appendChild(s); }
+      else td.textContent = v;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+el("r-conv").addEventListener("change", cargarFilasRegistro);
+el("r-buscar").addEventListener("input", pintarRegistros);
+
+el("btn-registros-excel").addEventListener("click", async function () {
+  if (!adm.registros.filas.length) return avisar("No hay registros para descargar.", "error");
+  try { await cargarXLSX(); } catch (e) { return avisar("No se pudo cargar el generador de Excel. Revisa tu conexión.", "error"); }
+  const todas = el("r-conv").value === "todas";
+  const filas = adm.registros.filas.map(function (f, n) {
+    return {
+      "N°": n + 1, "Nombres": f.nombres, "Cédula": f.cedula, "Correo": f.correo, "Sexo": f.sexo, "Edad": f.edad,
+      "Autoidentificación étnica": f.etnia, "Empresa": f.empresa, "RUC": f.ruc,
+      "Fecha de la capacitación": f.fecha ? fechaCorta(f.fecha) : "", "Horas": Number(f.horas) || "",
+      "Modalidad": f.modalidad, "Fecha de registro": fechaHoraReg(f.registro), "Estado": f.estado,
+      "Nota (%)": f.nota === null ? "" : f.nota, "Intentos": f.intentos,
+      "Código de certificado": f.certificado, "Fecha del certificado": fechaHoraReg(f.emitido), "Firma": ""
+    };
+  });
+  const cert = adm.registros.filas.filter(function (f) { return f.certificado; }).length;
+  const resumen = [
+    ["Curso", adm.curso.titulo],
+    ["Capacitación", el("r-conv").selectedOptions[0].textContent],
+    ["Registrados", adm.registros.filas.length],
+    ["Con certificado", cert],
+    ["Hombres", adm.registros.filas.filter(function (f) { return f.sexo === "M"; }).length],
+    ["Mujeres", adm.registros.filas.filter(function (f) { return f.sexo === "F"; }).length],
+    ["Generado el", fechaHoraReg(new Date().toISOString())]
+  ];
+  const libro = XLSX.utils.book_new();
+  const hoja = XLSX.utils.json_to_sheet(filas);
+  hoja["!cols"] = [{ wch: 4 }, { wch: 34 }, { wch: 13 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 6 }, { wch: 11 }, { wch: 17 }, { wch: 22 }, { wch: 8 }, { wch: 8 }, { wch: 20 }, { wch: 17 }, { wch: 22 }];
+  XLSX.utils.book_append_sheet(libro, hoja, "Asistencia");
+  const hojaRes = XLSX.utils.aoa_to_sheet(resumen);
+  hojaRes["!cols"] = [{ wch: 18 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(libro, hojaRes, "Resumen");
+  const etiqueta = todas ? "Todas" : el("r-conv").selectedOptions[0].textContent;
+  const nombre = ("Asistencia_" + adm.curso.titulo + "_" + etiqueta)
+    .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 90);
+  XLSX.writeFile(libro, nombre + ".xlsx");
+});
 
 function urlPortada(ruta) {
   return nexusDb.storage.from("portadas").getPublicUrl(ruta).data.publicUrl;

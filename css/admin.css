@@ -428,3 +428,10 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .opciones-modalidad .interruptor { margin: 0; }
 #btn-nueva-clave-curso { margin-top: 10px; }
 
+
+/* Mensajes del editor (Cursos y Empresas): siempre visibles, aunque estés al final del formulario */
+.editor > #aviso {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  z-index: 1000; width: max-content; max-width: min(640px, calc(100vw - 32px));
+  box-shadow: 0 10px 30px rgba(10, 30, 70, .25); font-weight: 600; line-height: 1.4;
+}

@@ -447,9 +447,12 @@ const NexusJuegos = (function () {
         const capa = crear("div", "pregunta-riesgo");
         capa.addEventListener("click", function (ev) { ev.stopPropagation(); });   // no cuenta como toque en la imagen
         const tarjeta = crear("div", "pregunta-riesgo-caja");
+        // Acercamiento centrado en ESE peligro, a su tamaño, con un círculo que lo marca
         const zoom = crear("div", "zoom-riesgo");
         zoom.style.backgroundImage = "url(\"" + img.src + "\")";
-        zoom.style.backgroundPosition = p.x + "% " + p.y + "%";
+        const aro = crear("span", "aro-zoom");
+        zoom.appendChild(aro);
+        const nombre = p.nombre ? crear("p", "nombre-zoom", p.nombre) : null;
         const opciones = crear("div", "opciones-juego");
         ["acto", "condicion"].forEach(function (k) {
           const b = boton(CLASES[k], "opcion-juego", function () {
@@ -461,9 +464,26 @@ const NexusJuegos = (function () {
           b.dataset.op = k;
           opciones.appendChild(b);
         });
-        tarjeta.append(crear("strong", "pregunta-riesgo-titulo", "¡Encontraste un peligro! ¿Qué es?"), zoom, opciones);
+        tarjeta.append(crear("strong", "pregunta-riesgo-titulo", "¡Encontraste un peligro! ¿Es un acto o una condición?"), zoom);
+        if (nombre) tarjeta.appendChild(nombre);
+        tarjeta.appendChild(opciones);
         capa.appendChild(tarjeta);
         (cuerpo.closest(".juego") || cuerpo).appendChild(capa);   // ventana sobre toda la pantalla
+        enfocarZoom(zoom, aro, p);
+      }
+
+      // Muestra un recuadro de unas 3 veces el tamaño del peligro, con el peligro al centro
+      function enfocarZoom(zoom, aro, p) {
+        const W = zoom.clientWidth, H = zoom.clientHeight;
+        const nw = img.naturalWidth || 4, nh = img.naturalHeight || 3;
+        const r = (p.r || 6) / 100;                               // radio como fracción del ancho de la imagen
+        const visible = Math.min(1, Math.max(0.14, r * 6));       // parte del ancho que se ve
+        const bw = W / visible, bh = bw * nh / nw;                // tamaño de la imagen ampliada
+        const cx = p.x / 100 * bw, cy = p.y / 100 * bh;
+        zoom.style.backgroundSize = bw + "px " + bh + "px";
+        zoom.style.backgroundPosition = (W / 2 - cx) + "px " + (H / 2 - cy) + "px";
+        const d = Math.max(28, 2 * r * bw);
+        aro.style.width = aro.style.height = d + "px";
       }
 
       function registrar(p, i, acierto) {
@@ -796,12 +816,16 @@ const NexusJuegos = (function () {
     const limite = Math.min(60, Math.max(5, Number(cfg.segundos) || 10));
     const equipos = equiposDe(cfg);
     let orden, i, puntos, aciertos, racha, mejorRacha, fallos, marcador, turno, temporizador;
+    // Nombres de los botones (opcional): por ejemplo "REALIDAD" y "MITO"
+    const SI = String(cfg.etiqueta_verdadero || "VERDADERO").toUpperCase().slice(0, 20);
+    const NO = String(cfg.etiqueta_falso || "FALSO").toUpperCase().slice(0, 20);
+    const titulo = function (t) { return t.charAt(0) + t.slice(1).toLowerCase(); };
 
     function intro() {
       cuerpo.innerHTML = "";
       const c = crear("div", "juego-intro");
       c.append(crear("h4", "", lista.length + " afirmaciones · " + limite + " segundos cada una"),
-        crear("p", "", "Responde Verdadero o Falso antes de que se acabe el tiempo. Mientras más rápido, más puntos; las respuestas seguidas suman racha."),
+        crear("p", "", "Responde " + titulo(SI) + " o " + titulo(NO) + " antes de que se acabe el tiempo. Mientras más rápido, más puntos; las respuestas seguidas suman racha."),
         boton("Empezar", "boton boton-grande", empezar));
       cuerpo.appendChild(c);
     }
@@ -822,8 +846,8 @@ const NexusJuegos = (function () {
       const relleno = crear("span", "");
       barra.appendChild(relleno);
       const botones = crear("div", "reloj-botones");
-      const bv = boton("VERDADERO", "reloj-opcion verdadero", function () { responder(true); });
-      const bf = boton("FALSO", "reloj-opcion falso", function () { responder(false); });
+      const bv = boton(SI, "reloj-opcion verdadero", function () { responder(true); });
+      const bf = boton(NO, "reloj-opcion falso", function () { responder(false); });
       botones.append(bv, bf);
       cuerpo.append(cab, barra, crear("div", "tarjeta-juego reloj-afirmacion", a.texto), botones);
 
@@ -860,8 +884,8 @@ const NexusJuegos = (function () {
           fallos.push(a);
         }
         const fb = crear("div", "retro " + (bien ? "bien" : "mal"));
-        fb.append(crear("strong", "", valor === null ? "⏱ ¡Se acabó el tiempo! Era " + (a.verdadero ? "VERDADERO" : "FALSO") + "."
-          : bien ? "✓ ¡Correcto! +" + ganados + " puntos" : "✗ Incorrecto: es " + (a.verdadero ? "VERDADERO" : "FALSO") + "."));
+        fb.append(crear("strong", "", valor === null ? "⏱ ¡Se acabó el tiempo! Era " + (a.verdadero ? SI : NO) + "."
+          : bien ? "✓ ¡Correcto! +" + ganados + " puntos" : "✗ Incorrecto: es " + (a.verdadero ? SI : NO) + "."));
         if (a.explicacion) fb.append(crear("p", "", a.explicacion));
         fb.append(boton(i < orden.length - 1 ? "Siguiente" : "Ver resultado", "boton boton-chico", function () {
           i++;
@@ -886,7 +910,7 @@ const NexusJuegos = (function () {
         rep.appendChild(crear("strong", "", "Para repasar:"));
         const ul = crear("ul", "");
         fallos.forEach(function (a) {
-          ul.appendChild(crear("li", "", (a.verdadero ? "VERDADERO: " : "FALSO: ") + a.texto + (a.explicacion ? " — " + a.explicacion : "")));
+          ul.appendChild(crear("li", "", (a.verdadero ? SI + ": " : NO + ": ") + a.texto + (a.explicacion ? " — " + a.explicacion : "")));
         });
         rep.appendChild(ul);
         fin.appendChild(rep);

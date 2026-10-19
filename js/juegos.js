@@ -469,6 +469,10 @@ function leerFormulario() {
       const seg = parseInt($j("j-reloj-seg").value, 10);
       if (!(seg >= 5 && seg <= 60)) return { error: "Los segundos por afirmación deben estar entre 5 y 60." };
       config.segundos = seg;
+      // Conserva los nombres de los botones si el juego los tiene (p. ej. "REALIDAD" / "MITO")
+      const previa = jg.editando && jg.editando.config ? jg.editando.config : {};
+      if (previa.etiqueta_verdadero) config.etiqueta_verdadero = previa.etiqueta_verdadero;
+      if (previa.etiqueta_falso) config.etiqueta_falso = previa.etiqueta_falso;
       const filas = lineas("j-afirmaciones");
       const malo = filas.findIndex(function (p) { return !/^(v|f|verdadero|falso)$/i.test(p[0]) || !p[1]; });
       if (malo >= 0) return { error: "La línea " + (malo + 1) + " de las afirmaciones debe empezar con V o F, luego | y la afirmación." };

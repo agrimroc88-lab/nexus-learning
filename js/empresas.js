@@ -375,7 +375,15 @@ function tarjetaConvocatoria(c) {
     s.textContent = t;
     chips.appendChild(s);
   });
-  cab.append(h3, chips);
+  // Acceso directo al Salón de clases de ese curso
+  const entrar = document.createElement("a");
+  entrar.className = "boton boton-chico btn-entrar-curso";
+  entrar.href = "aula.html?c=" + encodeURIComponent(c.cap_cursos.id);
+  entrar.textContent = "Entrar al curso ▸";
+  const fila = document.createElement("div");
+  fila.className = "conv-fila-chips";
+  fila.append(chips, entrar);
+  cab.append(h3, fila);
 
   // Avance
   const inscritos = c.cap_inscripciones[0] ? c.cap_inscripciones[0].count : 0;

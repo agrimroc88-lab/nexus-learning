@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/admin.css?v=9">
+  <link rel="stylesheet" href="css/admin.css?v=10">
 </head>
 <body>
 
@@ -59,6 +59,7 @@
         <button type="button" class="boton boton-chico" id="btn-nuevo-curso">Nuevo curso</button>
       </div>
       <ul id="cursos"></ul>
+      <button type="button" class="enlace-boton btn-versiones" id="btn-versiones" data-solo-admin>🗂 Versiones guardadas y restaurar</button>
     </aside>
 
     <!-- ===== Editor ===== -->
@@ -76,7 +77,10 @@
             <p class="eyebrow-planificacion">Planificación y diseño del curso</p>
             <h1 id="editor-titulo"></h1>
           </div>
-          <button type="button" class="boton" id="btn-abrir-salon" hidden>Abrir salón de clases</button>
+          <div class="acciones-planificacion">
+            <button type="button" class="boton secundario" id="btn-guardar-version" data-solo-admin hidden title="Guarda una copia completa del curso para poder restaurarlo si alguien lo borra o cambia por error">💾 Guardar versión definitiva</button>
+            <button type="button" class="boton" id="btn-abrir-salon" hidden>Abrir salón de clases</button>
+          </div>
         </div>
 
         <div class="pestanas" role="tablist">
@@ -337,6 +341,15 @@ Respuesta: c"></textarea>
     </section>
   </main>
 
+  <dialog id="dlg-versiones" class="dlg-versiones" aria-labelledby="dlg-versiones-titulo">
+    <div class="dlg-cabecera">
+      <h2 id="dlg-versiones-titulo">Versiones guardadas</h2>
+      <button type="button" class="enlace-boton" id="btn-cerrar-versiones" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="ayuda">Copias completas de cada curso (datos, lecciones, preguntas, juegos y docentes). <strong>Restaurar</strong> deja el curso exactamente como estaba en esa versión, aunque lo hayan eliminado. Los PDF y portadas de estas versiones no se borran nunca.</p>
+    <div id="lista-versiones" class="lista-versiones"></div>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -344,7 +357,7 @@ Respuesta: c"></textarea>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/juegos-motor.js?v=3"></script>
-  <script src="js/admin.js?v=10"></script>
+  <script src="js/admin.js?v=11"></script>
   <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

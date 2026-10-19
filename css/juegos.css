@@ -288,12 +288,26 @@
 }
 .pregunta-riesgo-titulo { display: block; margin-bottom: 10px; font-size: 18px; color: var(--pino); }
 .zoom-riesgo {
-  height: 150px;
+  position: relative;
+  height: 220px;
   border-radius: 10px;
   border: 3px solid var(--senal);
-  background-size: 320%;
+  background-color: #1d2a3f;
   background-repeat: no-repeat;
+  overflow: hidden;
 }
+/* Círculo que marca el peligro encontrado (al centro del acercamiento) */
+.aro-zoom {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px var(--senal), 0 0 0 999px rgba(10, 25, 50, 0.2);
+  pointer-events: none;
+  animation: aro-latido 1.4s ease-in-out infinite;
+}
+@keyframes aro-latido { 50% { transform: translate(-50%, -50%) scale(1.08); } }
+.nombre-zoom { margin: 10px 0 0; font-weight: 700; font-size: 16px; color: var(--pino); }
 .pregunta-riesgo .opciones-juego { margin-top: 12px; }
 .retro-riesgo.mal { background: #F8E1DB; border-left-color: var(--error); }
 .lista-riesgos li.regular strong { color: var(--error); }
@@ -311,10 +325,10 @@
 .etiqueta-clase.condicion { background: #DDE8F8; color: var(--pino); }
 .escenario-juego .pregunta-riesgo-caja { width: min(560px, 100%); }
 .escenario-juego .pregunta-riesgo-titulo { font-size: 24px; }
-.escenario-juego .zoom-riesgo { height: 220px; }
+.escenario-juego .zoom-riesgo { height: 280px; }
 
 @media (max-width: 600px) {
-  .zoom-riesgo { height: 110px; }
+  .zoom-riesgo { height: 170px; }
   .pregunta-riesgo .opciones-juego { grid-template-columns: 1fr 1fr; }
   .pregunta-riesgo .opcion-juego { min-height: 48px; font-size: 14px; }
 }

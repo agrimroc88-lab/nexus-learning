@@ -185,3 +185,7 @@
 /* Mismo ancho con o sin portada, para que los títulos queden alineados */
 .conv-mini-fecha { width: 104px; height: 66px; align-content: center; }
 @media (max-width: 560px) { .conv-mini-fecha { width: 84px; height: 56px; min-width: 0; } }
+
+/* Fila de etiquetas con el botón "Entrar al curso" a la derecha */
+.conv-fila-chips { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.btn-entrar-curso { white-space: nowrap; text-decoration: none; }

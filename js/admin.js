@@ -247,6 +247,7 @@ function llenarFormularioCurso(c) {
   el("c-enlaces").value = (Array.isArray(c.enlaces) ? c.enlaces : []).map(function (e) { return (e.titulo ? e.titulo + " | " : "") + e.url; }).join("\n");
   el("c-enlaces").disabled = Boolean(adm.sinMaterialCurso) || adm.sinEnlaces === true || esDocente();
   el("btn-abrir-salon").hidden = !c.id;
+  el("btn-guardar-version").hidden = !c.id || esDocente();
   mostrarPdfCurso(c.archivo_pdf || null);
   ["c-video", "c-pdf"].forEach(function (id) { el(id).disabled = Boolean(adm.sinMaterialCurso); });
   el("c-video-ayuda").textContent = adm.sinMaterialCurso
@@ -286,7 +287,7 @@ async function subirPortada(cursoId, archivo) {
 }
 
 async function borrarPortada(ruta) {
-  if (!ruta) return;
+  if (!ruta || await archivoProtegido(ruta)) return;
   const { error } = await nexusDb.storage.from("portadas").remove([ruta]);
   if (error) console.warn("No se pudo borrar la portada anterior", error);
 }
@@ -555,7 +556,7 @@ async function subirDiapositiva(archivo) {
 }
 
 async function borrarDiapositiva(ruta) {
-  if (!ruta) return;
+  if (!ruta || await archivoProtegido(ruta)) return;
   const { error } = await nexusDb.storage.from("diapositivas").remove([ruta]);
   if (error) console.warn("No se pudo borrar el PDF anterior", error);
 }
@@ -978,3 +979,115 @@ function siguienteOrden(lista) {
   return lista.reduce(function (m, x) { return Math.max(m, x.orden || 0); }, 0) + 1;
 }
 
+
+
+// ---------------------------------------------------------------------
+// Versiones definitivas (respaldo y restauración · SQL 34)
+// ---------------------------------------------------------------------
+// Un archivo que usa alguna versión guardada no se borra del almacenamiento
+async function archivoProtegido(ruta) {
+  const { data, error } = await nexusDb.rpc("cap_archivo_protegido", { p_ruta: ruta });
+  return !error && data === true;
+}
+
+function faltaSql34(error) {
+  return /cap_guardar_respaldo|cap_restaurar_respaldo|cap_respaldos|schema cache|does not exist/i.test((error && error.message) || "");
+}
+
+el("btn-guardar-version").addEventListener("click", async function () {
+  if (!adm.curso || esDocente()) return;
+  const nota = window.prompt("Guardar versión definitiva de \"" + adm.curso.titulo + "\".\n\nSe guarda una copia completa (datos, lecciones, preguntas, juegos y docentes) para restaurarla si algo se borra o cambia por error.\n\nNota opcional (por ejemplo: versión revisada, octubre 2026):", "");
+  if (nota === null) return;
+  const boton = el("btn-guardar-version");
+  boton.disabled = true;
+  const { error } = await nexusDb.rpc("cap_guardar_respaldo", { p_curso: adm.curso.id, p_nota: nota });
+  boton.disabled = false;
+  if (error) return faltaSql34(error)
+    ? avisar("Para guardar versiones, ejecuta el SQL 34 en Supabase.", "error")
+    : errorSupabase(error, "No se pudo guardar la versión.");
+  avisar("Versión definitiva guardada. Puedes restaurarla desde \"Versiones guardadas\".");
+});
+
+el("btn-versiones").addEventListener("click", abrirVersiones);
+el("btn-cerrar-versiones").addEventListener("click", function () { el("dlg-versiones").close(); });
+
+async function abrirVersiones() {
+  const dlg = el("dlg-versiones");
+  const cont = el("lista-versiones");
+  cont.innerHTML = '<p class="ayuda">Cargando…</p>';
+  if (!dlg.open) dlg.showModal();
+  const { data, error } = await nexusDb.from("cap_respaldos")
+    .select("id, curso_id, titulo, nota, creado_en, contenido")
+    .order("creado_en", { ascending: false });
+  cont.innerHTML = "";
+  if (error) {
+    const p = document.createElement("p");
+    p.className = "ayuda";
+    p.textContent = faltaSql34(error) ? "Para usar las versiones, ejecuta el SQL 34 en Supabase." : "No se pudieron cargar las versiones: " + error.message;
+    cont.appendChild(p);
+    return;
+  }
+  if (!data.length) {
+    const p = document.createElement("p");
+    p.className = "ayuda";
+    p.textContent = "Aún no hay versiones guardadas. Abre un curso terminado y pulsa \"Guardar versión definitiva\".";
+    cont.appendChild(p);
+    return;
+  }
+  const existentes = new Set(adm.cursos.map(function (c) { return c.id; }));
+  // Agrupadas por curso
+  const grupos = new Map();
+  data.forEach(function (v) {
+    if (!grupos.has(v.curso_id)) grupos.set(v.curso_id, []);
+    grupos.get(v.curso_id).push(v);
+  });
+  grupos.forEach(function (lista, cursoId) {
+    const g = document.createElement("section");
+    g.className = "grupo-versiones";
+    const h = document.createElement("h3");
+    h.textContent = (lista[0].contenido && lista[0].contenido.curso && lista[0].contenido.curso.titulo) || lista[0].titulo;
+    if (!existentes.has(cursoId)) {
+      const b = document.createElement("span");
+      b.className = "estado-clave anulado";
+      b.textContent = "Curso eliminado";
+      h.append(" ", b);
+    }
+    g.appendChild(h);
+    lista.forEach(function (v) {
+      const fila = document.createElement("div");
+      fila.className = "fila-version";
+      const info = document.createElement("div");
+      const c = v.contenido || {};
+      const fecha = new Date(v.creado_en).toLocaleString("es-EC", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const t = document.createElement("strong");
+      t.textContent = fecha + (v.nota ? " · " + v.nota : "");
+      const d = document.createElement("small");
+      d.textContent = (c.lecciones || []).length + " lecciones · " + (c.preguntas || []).length + " preguntas · " + (c.juegos || []).length + " juegos";
+      info.append(t, d);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "boton boton-chico";
+      b.textContent = "Restaurar";
+      b.addEventListener("click", function () { restaurarVersion(v, existentes.has(cursoId), b); });
+      fila.append(info, b);
+      g.appendChild(fila);
+    });
+    cont.appendChild(g);
+  });
+}
+
+async function restaurarVersion(v, existe, boton) {
+  const fecha = new Date(v.creado_en).toLocaleString("es-EC", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const msj = existe
+    ? "¿Restaurar \"" + v.titulo + "\" a la versión del " + fecha + "?\n\nLos datos, lecciones y preguntas actuales se reemplazan por los de esa versión. Lo que se agregó después se perderá (si quieres conservarlo, primero guarda una versión nueva)."
+    : "¿Recuperar el curso eliminado \"" + v.titulo + "\" con la versión del " + fecha + "?";
+  if (!confirm(msj)) return;
+  boton.disabled = true;
+  const { data, error } = await nexusDb.rpc("cap_restaurar_respaldo", { p_respaldo: v.id });
+  boton.disabled = false;
+  if (error) return errorSupabase(error, "No se pudo restaurar la versión.");
+  el("dlg-versiones").close();
+  adm.curso = null;
+  await cargarCursos(data || v.curso_id);
+  avisar("Curso restaurado a la versión del " + fecha + ".");
+}

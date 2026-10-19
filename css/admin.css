@@ -435,3 +435,18 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
   z-index: 1000; width: max-content; max-width: min(640px, calc(100vw - 32px));
   box-shadow: 0 10px 30px rgba(10, 30, 70, .25); font-weight: 600; line-height: 1.4;
 }
+
+/* Versiones guardadas (respaldo y restauración) */
+.acciones-planificacion { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn-versiones { display: block; margin-top: 12px; font-size: 14px; }
+.dlg-versiones { width: min(640px, calc(100vw - 32px)); max-height: 85vh; border: 0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 20px 60px rgba(10, 30, 70, .35); }
+.dlg-versiones::backdrop { background: rgba(10, 25, 50, .45); }
+.dlg-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.dlg-cabecera h2 { margin: 0; font-size: 22px; color: var(--pino); }
+.lista-versiones { margin-top: 10px; display: grid; gap: 14px; }
+.grupo-versiones h3 { margin: 0 0 6px; font-size: 16px; color: var(--pino); }
+.fila-version { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--niebla); border-radius: 10px; background: var(--blanco); }
+.fila-version + .fila-version { margin-top: 6px; }
+.fila-version strong { display: block; font-size: 14px; }
+.fila-version small { opacity: .75; }
+.grupo-versiones .estado-clave { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; background: #fdecec; color: #a12a2a; vertical-align: middle; }

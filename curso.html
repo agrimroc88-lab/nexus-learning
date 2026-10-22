@@ -18,7 +18,7 @@
 
   <!-- Estilos: generales + propios de esta página -->
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/curso.css">
+  <link rel="stylesheet" href="css/curso.css?v=2">
 </head>
 <body class="fondo-zona">
 
@@ -82,6 +82,16 @@
           <div class="barra-progreso" aria-hidden="true"><span id="cabecera-progreso-barra"></span></div>
         </div>
       </div>
+
+      <!-- ----- Clase en vivo (Meet / Zoom / Teams) ----- -->
+      <section id="bloque-reunion" class="bloque-reunion vista-angosta" hidden aria-live="polite">
+        <p class="reunion-estado" id="reunion-estado"></p>
+        <p class="reunion-cuenta" id="reunion-cuenta"></p>
+        <a class="btn-reunion" id="btn-reunion" href="#" target="_blank" rel="noopener">
+          <span aria-hidden="true">🎥</span> Unirse a la reunión
+        </a>
+        <p class="reunion-persona" id="reunion-persona"></p>
+      </section>
 
       <!-- ----- Jornada: capacitaciones del día (una sola clave) ----- -->
       <section id="vista-jornada" class="vista vista-angosta" hidden>
@@ -208,6 +218,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/certificado.js?v=6"></script>
-  <script src="js/curso.js?v=2"></script>
+  <script src="js/curso.js?v=3"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/admin.css?v=10">
+  <link rel="stylesheet" href="css/admin.css?v=11">
 </head>
 <body>
 
@@ -118,6 +118,23 @@
           <label class="etiqueta" for="c-enlaces">Enlaces adicionales (opcional)</label>
           <textarea class="campo area" id="c-enlaces" rows="3" placeholder="Video: uso del arnés | https://youtu.be/…&#10;Norma técnica | https://www.trabajo.gob.ec/…"></textarea>
           <p class="ayuda">Uno por línea: <strong>Título | enlace</strong>. Aparecen en el Salón de clases para abrirlos durante la charla (videos de YouTube se ven dentro de la página).</p>
+
+          <fieldset class="bloque-reunion" id="c-reunion-bloque">
+            <legend class="etiqueta">Clase en vivo (Meet, Zoom o Teams) · opcional</legend>
+            <label class="etiqueta" for="c-reunion-url">Enlace de la reunión</label>
+            <input class="campo" id="c-reunion-url" placeholder="https://meet.google.com/abc-defg-hij" maxlength="500" inputmode="url" autocomplete="off">
+            <div class="fila-dos">
+              <div>
+                <label class="etiqueta" for="c-reunion-inicio">Fecha y hora de inicio</label>
+                <input class="campo" id="c-reunion-inicio" type="datetime-local">
+              </div>
+              <div>
+                <label class="etiqueta" for="c-reunion-duracion">Duración (minutos)</label>
+                <input class="campo" id="c-reunion-duracion" type="number" min="10" max="600" step="5" value="60">
+              </div>
+            </div>
+            <p class="ayuda" id="c-reunion-ayuda">Los participantes, al registrarse con su clave, verán un botón grande «Unirse a la reunión» con la cuenta regresiva o «Reunión en curso». Déjelo vacío si la charla no es en vivo.</p>
+          </fieldset>
 
           <label class="etiqueta" for="c-pdf">Material del curso en PDF (opcional, máx. 20 MB)</label>
           <div class="bloque-pdf">
@@ -357,7 +374,7 @@ Respuesta: c"></textarea>
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/juegos-motor.js?v=3"></script>
-  <script src="js/admin.js?v=11"></script>
+  <script src="js/admin.js?v=12"></script>
   <script src="js/importar-preguntas.js"></script>
 </body>
 </html>

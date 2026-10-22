@@ -29,7 +29,7 @@ const au = { papel: null, cursos: [], curso: null, pasos: [], i: 0, claves: [] }
 
   const id = new URLSearchParams(location.search).get("c");
   if (id) await abrirSalon(id);
-  else await listarCursos();
+  else { await listarCursos(); cargarProximas(); }
 })();
 
 $a("btn-salir").addEventListener("click", cerrarSesion);
@@ -67,6 +67,86 @@ async function listarCursos() {
   }
   au.cursos = data || [];
   pintarCursos();
+}
+
+// ---------------------------------------------------------------------
+// Capacitaciones programadas (empresa, fecha, clave y clase en vivo)
+// ---------------------------------------------------------------------
+const prox = { lista: [], desfase: 0, reloj: null };
+
+async function cargarProximas() {
+  const { data, error } = await nexusDb.rpc("cap_mis_capacitaciones");
+  if (error || !data) return; // sin el SQL 37: la página sigue como antes
+  prox.lista = data.lista || [];
+  if (data.ahora) prox.desfase = new Date(data.ahora).getTime() - Date.now();
+  pintarProximas();
+  clearInterval(prox.reloj);
+  if (prox.lista.length) prox.reloj = setInterval(pintarProximas, 30000);
+}
+
+function pintarProximas() {
+  const ul = $a("lista-proximas");
+  ul.innerHTML = "";
+  $a("proximas").hidden = !prox.lista.length;
+  $a("titulo-programas").hidden = !prox.lista.length;
+  const ahora = Date.now() + prox.desfase;
+  prox.lista.forEach(function (c) {
+    const li = crear("li", "tarjeta-proxima");
+    const estado = estadoProxima(c, ahora);
+    if (estado.clase) li.classList.add(estado.clase);
+    li.append(crear("span", "proxima-empresa", c.empresa),
+      crear("strong", "proxima-curso", c.curso),
+      crear("span", "proxima-cuando", estado.texto));
+    if (c.claves && c.claves.length) {
+      const claves = crear("div", "proxima-claves");
+      c.claves.forEach(function (k) {
+        claves.appendChild(crear("span", "proxima-clave", "Clave " + (k.tipo === "virtual" ? "virtual" : "presencial") + ": " + k.codigo));
+      });
+      li.appendChild(claves);
+    }
+    const acciones = crear("div", "proxima-acciones");
+    if (c.reunion_url) {
+      const unirse = crear("a", "boton btn-unirse", "🎥 Unirse a la reunión");
+      unirse.href = c.reunion_url;
+      unirse.target = "_blank";
+      unirse.rel = "noopener";
+      acciones.appendChild(unirse);
+    }
+    const salon = crear("a", "boton secundario", "Abrir salón ▸");
+    salon.href = "aula.html?c=" + encodeURIComponent(c.curso_id);
+    acciones.appendChild(salon);
+    li.appendChild(acciones);
+    ul.appendChild(li);
+  });
+}
+
+function estadoProxima(c, ahora) {
+  const fmtHora = function (d) { return d.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" }); };
+  const fmtDia = function (d) {
+    const hoy = new Date(ahora);
+    if (d.toDateString() === hoy.toDateString()) return "Hoy";
+    if (d.toDateString() === new Date(ahora + 86400000).toDateString()) return "Mañana";
+    return d.toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
+  };
+  if (c.reunion_inicio) {
+    const ini = new Date(c.reunion_inicio), fin = ini.getTime() + (c.reunion_duracion || 60) * 60000;
+    const base = fmtDia(ini) + " a las " + fmtHora(ini);
+    if (ahora < ini.getTime()) return { texto: "🎥 " + base + " (faltan " + faltaTexto(ini.getTime() - ahora) + ")", clase: "" };
+    if (ahora < fin) return { texto: "🔴 Reunión en curso · empezó a las " + fmtHora(ini), clase: "en-curso" };
+    return { texto: "Reunión terminada · " + base, clase: "terminada" };
+  }
+  if (c.fecha) return { texto: "📅 " + fmtDia(new Date(c.fecha + "T12:00")), clase: "" };
+  return { texto: "Clave vigente", clase: "" };
+}
+
+function faltaTexto(ms) {
+  const min = Math.max(1, Math.ceil(ms / 60000));
+  const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+  const p = [];
+  if (d) p.push(d + (d === 1 ? " día" : " días"));
+  if (h) p.push(h + " h");
+  if (m && !d) p.push(m + " min");
+  return p.join(" ");
 }
 
 $a("buscar-curso").addEventListener("input", pintarCursos);
@@ -158,11 +238,10 @@ function idYoutube(url) {
   return m ? m[1] : null;
 }
 
-// El orden de la clase: inicio → material del curso → cada lección (texto,
-// video, PDF, juego) → cierre con QR de asistencia.
+// El orden de la clase: inicio → PDF y enlaces del curso → cada lección (texto,
+// video, PDF, juego) → video del curso → cierre con QR de asistencia.
 function armarPasos(curso, lecciones, juegos) {
   const p = [{ tipo: "inicio", etiqueta: "Inicio", titulo: "Bienvenida" }];
-  if (curso.video_url) p.push({ tipo: "video", etiqueta: "Video", titulo: "Video del curso", url: curso.video_url });
   if (curso.archivo_pdf) p.push({ tipo: "pdf", etiqueta: "PDF", titulo: "Material del curso", ruta: curso.archivo_pdf });
   (Array.isArray(curso.enlaces) ? curso.enlaces : []).forEach(function (e, k) {
     if (!e || !e.url) return;
@@ -178,6 +257,8 @@ function armarPasos(curso, lecciones, juegos) {
     if (l.archivo_pdf) p.push({ tipo: "pdf", etiqueta: "PDF", titulo: nombre, ruta: l.archivo_pdf });
     if (l.juego_id && juegos[l.juego_id]) p.push({ tipo: "juego", etiqueta: "Juego", titulo: juegos[l.juego_id].titulo, juego: juegos[l.juego_id] });
   });
+  // El video del curso va al final, justo antes del cierre
+  if (curso.video_url) p.push({ tipo: "video", etiqueta: "Video", titulo: "Video del curso", url: curso.video_url });
   p.push({ tipo: "cierre", etiqueta: "Cierre", titulo: "Asistencia y certificado" });
   return p;
 }

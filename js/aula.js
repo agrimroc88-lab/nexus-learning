@@ -113,7 +113,7 @@ function pintarProximas() {
       acciones.appendChild(unirse);
     }
     const salon = crear("a", "boton secundario", "Abrir salón ▸");
-    salon.href = "aula.html?c=" + encodeURIComponent(c.curso_id);
+    salon.href = "aula.html?c=" + encodeURIComponent(c.curso_id) + "&emp=" + encodeURIComponent(c.empresa || "");
     acciones.appendChild(salon);
     li.appendChild(acciones);
     ul.appendChild(li);
@@ -461,8 +461,14 @@ function abrirPresentacion(visor) {
   const fin = crear("div", "presentacion-fin");
   fin.append(crear("p", "", "Fin de la presentación"), crear("small", "", "Presiona Esc o haz clic para salir"));
   fin.hidden = true;
-  const pista = crear("div", "presentacion-pista", "← → para avanzar · Esc para salir");
-  capa.append(lienzo, fin, pista);
+  const pista = crear("div", "presentacion-pista", "← → para avanzar · C para foto · Esc para salir");
+  const foto = crear("button", "presentacion-foto");
+  foto.type = "button";
+  foto.title = "Tomar foto y guardarla en Descargas (tecla C)";
+  foto.setAttribute("aria-label", foto.title);
+  foto.innerHTML = $a("btn-captura").querySelector("svg").outerHTML;
+  foto.addEventListener("click", function (ev) { ev.stopPropagation(); tomarCaptura(); });
+  capa.append(lienzo, fin, pista, foto);
   document.body.appendChild(capa);
   setTimeout(function () { pista.classList.add("oculta"); }, 2500);
 
@@ -494,6 +500,7 @@ function abrirPresentacion(visor) {
     else if (k === "End") { ev.preventDefault(); ev.stopImmediatePropagation(); visor.irPagina(visor.total); }
     else if (k === "Escape") { ev.preventDefault(); ev.stopImmediatePropagation(); cerrar(); }
     else if (k === "f" || k === "F") { ev.stopImmediatePropagation(); }
+    else if (k === "c" || k === "C") { ev.preventDefault(); ev.stopImmediatePropagation(); tomarCaptura(); }
   }
   function redimensionar() { if (!alFinal) visor.dibujar(lienzo, capa); }
   function alSalirPantalla() { if (!document.fullscreenElement) cerrar(); }
@@ -653,6 +660,111 @@ function alternarPantalla() {
   Promise.resolve(pedir.call(salon)).catch(function () { avisarSalon("No se pudo activar la pantalla completa. Usa la tecla F11."); });
 }
 $a("btn-pantalla").addEventListener("click", alternarPantalla);
+
+// ---------------------------------------------------------------------
+// 📷 CAPTURAS (evidencia de la charla)
+// Un clic (o la tecla C) toma la foto de lo que muestra el Salón —la
+// diapositiva, el PDF, la lección o el QR— y la guarda en Descargas:
+//   Empresa_Charla_Foto-01_2026-10-22.png
+// Sin permisos ni pasos previos; funciona también en pantalla completa.
+// ---------------------------------------------------------------------
+const cap = { ocupada: false };
+
+function nombreArchivo(t) {
+  return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "Sin-nombre";
+}
+
+function empresaCaptura() {
+  const deUrl = new URLSearchParams(location.search).get("emp");
+  if (deUrl) return deUrl;
+  const empresas = Array.from(new Set((au.claves || []).map(function (k) { return k.empresa; }).filter(Boolean)));
+  return empresas.length === 1 ? empresas[0] : (empresas.length ? empresas.join(" y ") : "Capacitacion");
+}
+
+function siguienteFoto(clave) {
+  let n = 1;
+  try { n = (parseInt(localStorage.getItem(clave), 10) || 0) + 1; localStorage.setItem(clave, String(n)); } catch (e) { cap.n = (cap.n || 0) + 1; n = cap.n; }
+  return n;
+}
+
+// html-to-image: el navegador dibuja la página tal cual (colores y letras modernas incluidas)
+function cargarLibCaptura() {
+  if (window.htmlToImage) return Promise.resolve();
+  return new Promise(function (ok, falla) {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js";
+    s.onload = ok;
+    s.onerror = function () { s.remove(); falla(new Error("html-to-image")); };
+    document.head.appendChild(s);
+  });
+}
+
+// Lienzo con lo que se ve: en la presentación del PDF, la diapositiva tal cual;
+// en el resto, el salón (o lo que esté en pantalla completa).
+async function lienzoCaptura() {
+  const pres = document.querySelector(".presentacion-pdf canvas");
+  if (pres && !pres.hidden && pres.width) return pres;
+  await cargarLibCaptura();
+  const zona = document.fullscreenElement || $a("salon");
+  const fondo = getComputedStyle(zona).backgroundColor;
+  return window.htmlToImage.toCanvas(zona, {
+    pixelRatio: Math.min(2, window.devicePixelRatio || 1),
+    backgroundColor: fondo && fondo !== "rgba(0, 0, 0, 0)" ? fondo : "#ffffff",
+    width: zona.clientWidth,
+    height: zona.clientHeight,
+    filter: function (el) {
+      return !(el.classList && (el.classList.contains("captura-toast") || el.classList.contains("captura-flash") || el.classList.contains("presentacion-foto")));
+    }
+  });
+}
+
+async function tomarCaptura() {
+  if (cap.ocupada) return;
+  cap.ocupada = true;
+  const boton = $a("btn-captura");
+  boton.disabled = true;
+  let lienzo = null;
+  try { lienzo = await lienzoCaptura(); } catch (e) { console.error(e); }
+  if (!lienzo) {
+    cap.ocupada = false;
+    boton.disabled = false;
+    return destelloCaptura("No se pudo tomar la foto. Revisa tu conexión e inténtalo de nuevo.", true);
+  }
+  const hoy = new Date();
+  const fecha = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0") + "-" + String(hoy.getDate()).padStart(2, "0");
+  const empresa = nombreArchivo(empresaCaptura());
+  const charla = nombreArchivo(au.curso && au.curso.titulo);
+  lienzo.toBlob(function (blob) {
+    cap.ocupada = false;
+    boton.disabled = false;
+    if (!blob) return destelloCaptura("No se pudo tomar la foto. Inténtalo de nuevo.", true);
+    const n = siguienteFoto("nexus_fotos_" + empresa + "_" + charla + "_" + fecha);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = empresa + "_" + charla + "_Foto-" + String(n).padStart(2, "0") + "_" + fecha + ".png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    destelloCaptura("📷 Foto " + n + " guardada en Descargas");
+  }, "image/png");
+}
+
+// En pantalla completa solo se ve lo que está dentro de ella
+function destelloCaptura(texto, soloAviso) {
+  const zona = document.fullscreenElement || document.body;
+  if (!soloAviso) {
+    const f = crear("div", "captura-flash");
+    zona.appendChild(f);
+    setTimeout(function () { f.remove(); }, 400);
+  }
+  const t = crear("div", "captura-toast", texto);
+  zona.appendChild(t);
+  setTimeout(function () { t.remove(); }, soloAviso ? 6000 : 2600);
+}
+
+$a("btn-captura").addEventListener("click", tomarCaptura);
 document.addEventListener("fullscreenchange", function () {
   const activa = Boolean(document.fullscreenElement);
   $a("btn-pantalla").textContent = activa ? "Salir de pantalla completa" : "⛶ Pantalla completa";
@@ -679,6 +791,7 @@ document.addEventListener("keydown", function (ev) {
     if (pdf && pdf.pagina > 1) pdf.irPagina(pdf.pagina - 1); else irA(au.i - 1);
   } else if ((ev.key === "p" || ev.key === "P") && pdf) { ev.preventDefault(); abrirPresentacion(pdf); }
   else if ((ev.key === "f" || ev.key === "F") && !ev.ctrlKey && !ev.metaKey) { alternarPantalla(); }
+  else if ((ev.key === "c" || ev.key === "C") && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); tomarCaptura(); }
 });
 
 // Al cambiar el tamaño (o entrar/salir de pantalla completa) se vuelve a dibujar la diapositiva

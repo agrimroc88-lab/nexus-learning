@@ -184,7 +184,7 @@ const NexusCertificado = (function () {
     // Con alianza: logo de VitalWork a la derecha, separado por una línea
     let ah = 0, aw = 0;
     if (alianza) {
-      ah = 20; aw = logoAliado ? ah * logoAliado.prop : 40;
+      ah = 25; aw = logoAliado ? ah * logoAliado.prop : 40;
       if (aw > 46) { aw = 46; ah = logoAliado ? aw / logoAliado.prop : ah; }
     }
     const total = w + 4 + tw + (alianza ? 14 + aw : 0);
@@ -197,7 +197,7 @@ const NexusCertificado = (function () {
       doc.line(xs, 10, xs, 36);
       const xa = xs + 8;
       texto(doc, "EN ALIANZA CON", xa + aw / 2, 12, { tam: 6.5, estilo: "bold", color: GRIS });
-      if (logoAliado) doc.addImage(logoAliado.datos, "PNG", xa, 14 + (20 - ah) / 2, aw, ah, "logoAliado", "FAST");
+      if (logoAliado) doc.addImage(logoAliado.datos, "PNG", xa, 14 + (25 - ah) / 2, aw, ah, "logoAliado", "FAST");
       else texto(doc, ALIANZA.nombre, xa + aw / 2, 26, { tam: 11, estilo: "bold", color: PINO });
     }
     texto(doc, "NEXUS ACADEMY", x0 + w + 4, 22, { tam: 17, estilo: "bold", color: PINO, alinear: "left" });
@@ -322,9 +322,9 @@ const NexusCertificado = (function () {
       // --- Segunda firma: representante de VitalWork (centro) ---
       const fx = 150;
       if (firmaAliado) {
-        let fh = 22, fw = fh * firmaAliado.prop;
-        if (fw > 54) { fw = 54; fh = fw / firmaAliado.prop; }
-        doc.addImage(firmaAliado.datos, "PNG", fx - fw / 2, 173 + Y - fh, fw, fh, "firmaAliado", "FAST");
+        let fh = 30, fw = fh * firmaAliado.prop;
+        if (fw > 50) { fw = 50; fh = fw / firmaAliado.prop; }
+        doc.addImage(firmaAliado.datos, "PNG", fx - fw / 2, 176 + Y - fh, fw, fh, "firmaAliado", "FAST");
       }
       doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]);
       doc.setLineWidth(0.3);

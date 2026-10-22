@@ -189,3 +189,7 @@
 /* Fila de etiquetas con el botón "Entrar al curso" a la derecha */
 .conv-fila-chips { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .btn-entrar-curso { white-space: nowrap; text-decoration: none; }
+
+/* Clase en vivo en la capacitación planificada */
+.bloque-reunion-conv { border: 1px solid #c9d6ee; background: #f5f8fe; }
+.bloque-reunion-conv h4 { color: #123A7A; }

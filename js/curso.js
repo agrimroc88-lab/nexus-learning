@@ -56,7 +56,7 @@ const CLAVE_SESION = "nexus_" + st.codigo;
   $("curso").hidden = false;
 
   // Si la persona ya se registró con este código en esta pestaña, continuar
-  const guardado = leerSesion();
+  const guardado = leerSesion() || leerRecordado();
   if (guardado && guardado.persona) {
     st.vistas = new Set(guardado.vistas || []);
     await registrar(guardado.persona, true);
@@ -207,6 +207,8 @@ async function registrar(persona, silencioso) {
   st.persona = persona;
   guardarSesion();
   $("vista-registro").hidden = true;
+  recordarPersona();
+  mostrarReunion();
 
   if (data.estado === "certificado") {
     mostrarCertificado(data.certificado, data.ya_emitido);
@@ -665,6 +667,91 @@ function leerSesion() {
 }
 function borrarSesion() {
   try { sessionStorage.removeItem(CLAVE_SESION); } catch (e) { /* nada */ }
+  try { localStorage.removeItem(CLAVE_RECORDAR); } catch (e) { /* nada */ }
+}
+
+// Recuerda en este teléfono a quien ya se registró con este código, para
+// que al volver (por el QR o el enlace) no tenga que inscribirse de nuevo.
+const CLAVE_RECORDAR = "nexus_reg_" + st.codigo;
+function recordarPersona() {
+  try { localStorage.setItem(CLAVE_RECORDAR, JSON.stringify({ persona: st.persona })); } catch (e) { /* nada */ }
+}
+function leerRecordado() {
+  try { return JSON.parse(localStorage.getItem(CLAVE_RECORDAR)); } catch (e) { return null; }
+}
+
+// ---------------------------------------------------------------------
+// CLASE EN VIVO: botón «Unirse a la reunión» con cuenta regresiva
+// ---------------------------------------------------------------------
+const reu = { datos: null, desfase: 0, reloj: null };
+
+async function mostrarReunion() {
+  if (reu.datos) return pintarReunion();
+  const { data, error } = await nexusDb.rpc("cap_reunion", { p_codigo: st.codigo });
+  if (error || !data || !data.url) return; // sin SQL 35 o sin reunión: no se muestra nada
+  reu.datos = data;
+  // Corrige el reloj del teléfono con la hora del servidor
+  if (data.ahora) reu.desfase = new Date(data.ahora).getTime() - Date.now();
+  $("btn-reunion").href = data.url;
+  const nombre = (st.persona && st.persona.nombres || "").split(" ").slice(0, 2).join(" ");
+  const p = $("reunion-persona");
+  p.textContent = nombre ? "Registrado como " + nombre + ". " : "";
+  const cambiar = document.createElement("button");
+  cambiar.type = "button";
+  cambiar.textContent = "¿No eres tú? Cambiar";
+  cambiar.addEventListener("click", function () {
+    borrarSesion();
+    location.reload();
+  });
+  p.appendChild(cambiar);
+  $("bloque-reunion").hidden = false;
+  pintarReunion();
+  clearInterval(reu.reloj);
+  reu.reloj = setInterval(pintarReunion, 15000);
+}
+
+function pintarReunion() {
+  const d = reu.datos;
+  if (!d) return;
+  const bloque = $("bloque-reunion");
+  const ahora = Date.now() + reu.desfase;
+  const inicio = d.inicio ? new Date(d.inicio).getTime() : null;
+  const fin = inicio ? inicio + (d.duracion || 60) * 60000 : null;
+  bloque.classList.remove("en-curso", "terminada");
+
+  if (!inicio) {
+    $("reunion-estado").textContent = "Clase en vivo";
+    $("reunion-cuenta").textContent = "Toca el botón para entrar a la reunión.";
+  } else if (ahora < inicio) {
+    const f = new Date(inicio);
+    const hoy = new Date(ahora);
+    const mismoDia = f.toDateString() === hoy.toDateString();
+    const manana = new Date(ahora + 86400000).toDateString() === f.toDateString();
+    const hora = f.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" });
+    const dia = mismoDia ? "hoy" : manana ? "mañana" : "el " + f.toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
+    $("reunion-estado").textContent = "La reunión empezará " + dia + " a las " + hora;
+    $("reunion-cuenta").textContent = "(faltan " + textoFalta(inicio - ahora) + ")";
+  } else if (ahora < fin) {
+    bloque.classList.add("en-curso");
+    $("reunion-estado").textContent = "🔴 Reunión en curso";
+    $("reunion-cuenta").textContent = "Entra ahora, ya empezó.";
+  } else {
+    bloque.classList.add("terminada");
+    $("reunion-estado").textContent = "La reunión ya terminó";
+    $("reunion-cuenta").textContent = "Si todavía siguen conectados, puedes intentar entrar.";
+  }
+}
+
+function textoFalta(ms) {
+  const min = Math.max(1, Math.ceil(ms / 60000));
+  const dias = Math.floor(min / 1440);
+  const h = Math.floor((min % 1440) / 60);
+  const m = min % 60;
+  const partes = [];
+  if (dias) partes.push(dias + (dias === 1 ? " día" : " días"));
+  if (h) partes.push(h + (h === 1 ? " hora" : " horas"));
+  if (m && !dias) partes.push(m + (m === 1 ? " minuto" : " minutos"));
+  return partes.join(" y ") || "menos de 1 minuto";
 }
 
 // ---------------------------------------------------------------------

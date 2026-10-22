@@ -87,14 +87,8 @@ async function cargarCursos(seleccionarId) {
   const CAMPOS = "id, titulo, descripcion, subtemas, horas, nota_minima, publicado, imagen, preguntas_por_evaluacion, creado_en";
   let { data, error } = await nexusDb
     .from("cap_cursos")
-    .select(CAMPOS + ", video_url, archivo_pdf, enlaces, reunion_url, reunion_inicio, reunion_duracion")
+    .select(CAMPOS + ", video_url, archivo_pdf, enlaces")
     .order("creado_en", { ascending: true });
-  adm.sinReunion = false;
-  if (error && /reunion/i.test(error.message || "")) {
-    // Falta el SQL 35: todo funciona, menos la clase en vivo
-    adm.sinReunion = true;
-    ({ data, error } = await nexusDb.from("cap_cursos").select(CAMPOS + ", video_url, archivo_pdf, enlaces").order("creado_en", { ascending: true }));
-  }
   adm.sinEnlaces = false;
   if (error && /enlaces/i.test(error.message || "")) {
     // Falta el SQL 30: todo funciona, menos los enlaces adicionales
@@ -250,13 +244,6 @@ function llenarFormularioCurso(c) {
   el("c-imagen-quitar").checked = false;
   el("c-imagen-quitar-caja").hidden = !c.imagen;
   el("c-video").value = c.video_url || "";
-  el("c-reunion-url").value = c.reunion_url || "";
-  el("c-reunion-inicio").value = c.reunion_inicio ? aLocalInput(c.reunion_inicio) : "";
-  el("c-reunion-duracion").value = c.reunion_duracion || 60;
-  ["c-reunion-url", "c-reunion-inicio", "c-reunion-duracion"].forEach(function (id) { el(id).disabled = adm.sinReunion === true || esDocente(); });
-  el("c-reunion-ayuda").textContent = adm.sinReunion
-    ? "Para usar la clase en vivo, ejecuta el SQL 35 en Supabase."
-    : "Los participantes, al registrarse con su clave, verán un botón grande «Unirse a la reunión» con la cuenta regresiva o «Reunión en curso». Déjelo vacío si la charla no es en vivo.";
   el("c-enlaces").value = (Array.isArray(c.enlaces) ? c.enlaces : []).map(function (e) { return (e.titulo ? e.titulo + " | " : "") + e.url; }).join("\n");
   el("c-enlaces").disabled = Boolean(adm.sinMaterialCurso) || adm.sinEnlaces === true || esDocente();
   el("btn-abrir-salon").hidden = !c.id;
@@ -283,13 +270,6 @@ function mostrarPdfCurso(ruta) {
   a.rel = "noopener";
   a.textContent = "Ver PDF actual";
   actual.append("Este curso ya tiene un PDF. ", a, ". Si eliges otro archivo, se reemplaza.");
-}
-
-// "2026-10-22T15:00:00Z" → "2026-10-22T10:00" (hora local, para <input type="datetime-local">)
-function aLocalInput(iso) {
-  const d = new Date(iso);
-  const z = function (n) { return String(n).padStart(2, "0"); };
-  return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + "T" + z(d.getHours()) + ":" + z(d.getMinutes());
 }
 
 function urlPortada(ruta) {
@@ -363,20 +343,6 @@ el("form-curso").addEventListener("submit", async function (ev) {
       if (malo) return avisar(malo, "error");
       if (enlaces.length > 15) return avisar("Puedes agregar hasta 15 enlaces adicionales.", "error");
       datos.enlaces = enlaces;
-    }
-    if (!adm.sinReunion) {
-      let url = el("c-reunion-url").value.trim();
-      if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
-      if (/^http:\/\//i.test(url)) url = "https://" + url.slice(7);
-      el("c-reunion-url").value = url;
-      const inicio = el("c-reunion-inicio").value;
-      const dur = parseInt(el("c-reunion-duracion").value, 10) || 60;
-      if (url && !/^https:\/\/\S+$/i.test(url)) return avisar("El enlace de la reunión debe empezar con https:// (cópialo tal cual de Meet, Zoom o Teams).", "error");
-      if (inicio && !url) return avisar("Pega el enlace de la reunión o borra la fecha y hora.", "error");
-      if (!(dur >= 10 && dur <= 600)) return avisar("La duración de la reunión debe estar entre 10 y 600 minutos.", "error");
-      datos.reunion_url = url || null;
-      datos.reunion_inicio = inicio ? new Date(inicio).toISOString() : null;
-      datos.reunion_duracion = dur;
     }
     pdfCurso = el("c-pdf").files[0] || null;
     if (pdfCurso) {

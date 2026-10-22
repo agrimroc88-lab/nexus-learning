@@ -256,14 +256,23 @@ el("form-empresa").addEventListener("submit", async function (ev) {
 async function cargarConvocatorias() {
   const cont = el("lista-conv");
   cont.innerHTML = "";
-  const { data, error } = await nexusDb
+  const consulta = function (extra) {
+    return nexusDb
     .from("cap_convocatorias")
-    .select("id, modalidad, evaluacion_presencial, horas, fecha_capacitacion, observaciones, creado_en, " +
+    .select("id, modalidad, evaluacion_presencial, horas, fecha_capacitacion, observaciones, creado_en, " + extra +
             "cap_cursos(id, titulo, horas, imagen), " +
             "cap_accesos(id, tipo, codigo, valido_desde, valido_hasta, anulado, creado_en), " +
             "cap_inscripciones(count), cap_certificados(count)")
     .eq("empresa_id", emp.actual.id)
     .order("creado_en", { ascending: false });
+  };
+  let { data, error } = await consulta("reunion_url, reunion_inicio, reunion_duracion, ");
+  emp.sinReunion = false;
+  if (error && /reunion/i.test(error.message || "")) {
+    // Falta el SQL 35: todo funciona, menos la clase en vivo
+    emp.sinReunion = true;
+    ({ data, error } = await consulta(""));
+  }
   if (error) return errorSupabase(error, "No se pudieron cargar las capacitaciones.");
 
   emp.convs = data || [];
@@ -368,7 +377,8 @@ function tarjetaConvocatoria(c) {
     formatearHoras(horas),
     c.fecha_capacitacion ? "Charla: " + fechaCorta(c.fecha_capacitacion + "T12:00") : null,
     c.modalidad !== "virtual" ? (c.evaluacion_presencial ? "QR con evaluación" : "QR sin evaluación") : null,
-    c.observaciones
+    c.observaciones,
+    c.reunion_url ? "🎥 En vivo" + (c.reunion_inicio ? ": " + fechaHora(c.reunion_inicio) : "") : null
   ].filter(Boolean).forEach(function (t) {
     const s = document.createElement("span");
     s.className = "chip";
@@ -423,6 +433,9 @@ function tarjetaConvocatoria(c) {
   }
   if (c.modalidad !== "virtual") {
     acciones.appendChild(boton("Nueva clave presencial", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "presencial"); }));
+  }
+  if (!emp.sinReunion) {
+    acciones.appendChild(boton(c.reunion_url ? "🎥 Clase en vivo" : "🎥 Agregar clase en vivo", "boton secundario boton-chico", function () { formReunion(art, c); }));
   }
   acciones.appendChild(boton("Ver certificado de ejemplo", "boton secundario boton-chico", function () { certificadoEjemplo(c); }));
   acciones.appendChild(boton("Eliminar capacitación", "enlace-boton rojo", function () { eliminarConvocatoria(c, inscritos, certificados); }));
@@ -540,6 +553,99 @@ function formExtender(fila, a) {
   inputs[0].focus();
 }
 
+// ---------------------------------------------------------------------
+// CLASE EN VIVO de esta capacitación (cada empresa con su propio enlace)
+// ---------------------------------------------------------------------
+function leerReunion(inUrl, inInicio, inDur) {
+  let url = inUrl.value.trim();
+  if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+  if (/^http:\/\//i.test(url)) url = "https://" + url.slice(7);
+  inUrl.value = url;
+  const dur = parseInt(inDur.value, 10) || 60;
+  if (url) {
+    try { new URL(url); } catch (e) { return { error: "El enlace de la reunión no es válido. Cópialo tal cual de Meet, Zoom o Teams." }; }
+    if (!inInicio.value) return { error: "Escribe la fecha y hora de inicio de la reunión (sirve para la cuenta regresiva)." };
+  }
+  if (!(dur >= 10 && dur <= 600)) return { error: "La duración de la reunión debe estar entre 10 y 600 minutos." };
+  return {
+    reunion_url: url || null,
+    reunion_inicio: url && inInicio.value ? new Date(inInicio.value).toISOString() : null,
+    reunion_duracion: dur
+  };
+}
+
+function aLocalInput(iso) {
+  const d = new Date(iso);
+  return d.getFullYear() + "-" + dos(d.getMonth() + 1) + "-" + dos(d.getDate()) + "T" + dos(d.getHours()) + ":" + dos(d.getMinutes());
+}
+
+function formReunion(tarjeta, c) {
+  const previo = tarjeta.querySelector(".form-reunion");
+  if (previo) { previo.remove(); return; }
+
+  const f = document.createElement("form");
+  f.className = "mini-form form-reunion";
+  f.noValidate = true;
+  const titulo = document.createElement("strong");
+  titulo.textContent = "🎥 Clase en vivo · " + emp.actual.nombre;
+  f.appendChild(titulo);
+
+  const campo = function (texto, tipo, valor, attrs) {
+    const lab = document.createElement("label");
+    lab.className = "etiqueta";
+    lab.textContent = texto;
+    const inp = document.createElement("input");
+    inp.className = "campo";
+    inp.type = tipo;
+    inp.value = valor;
+    Object.keys(attrs || {}).forEach(function (k) { inp.setAttribute(k, attrs[k]); });
+    lab.appendChild(inp);
+    return { lab: lab, inp: inp };
+  };
+  const url = campo("Enlace de la reunión (Meet, Zoom o Teams)", "text", c.reunion_url || "", { placeholder: "https://meet.google.com/abc-defg-hij", maxlength: "500", inputmode: "url", autocomplete: "off" });
+  const propuesta = c.reunion_inicio ? aLocalInput(c.reunion_inicio) : (c.fecha_capacitacion || hoyISO()) + "T" + horaActual();
+  const inicio = campo("Fecha y hora de inicio", "datetime-local", propuesta);
+  const dur = campo("Duración (minutos)", "number", c.reunion_duracion || 60, { min: "10", max: "600", step: "5" });
+  const fila2 = document.createElement("div");
+  fila2.className = "fila-dos";
+  const d1 = document.createElement("div"); d1.appendChild(inicio.lab);
+  const d2 = document.createElement("div"); d2.appendChild(dur.lab);
+  fila2.append(d1, d2);
+  f.append(url.lab, fila2);
+
+  const acciones = document.createElement("div");
+  acciones.className = "acciones-form";
+  const guardar = boton("Guardar", "boton boton-chico", function () {});
+  guardar.type = "submit";
+  acciones.appendChild(boton("Cancelar", "boton secundario boton-chico", function () { f.remove(); }));
+  if (c.reunion_url) {
+    acciones.appendChild(boton("Quitar reunión", "enlace-boton rojo", async function () {
+      const r = await nexusDb.from("cap_convocatorias").update({ reunion_url: null, reunion_inicio: null }).eq("id", c.id);
+      if (r.error) return errorSupabase(r.error, "No se pudo quitar la reunión.");
+      avisar("Reunión quitada de esta capacitación.");
+      await cargarConvocatorias();
+    }));
+  }
+  acciones.appendChild(guardar);
+  f.appendChild(acciones);
+
+  f.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    if (!url.inp.value.trim()) return avisar("Pega el enlace de la reunión.", "error");
+    const datos = leerReunion(url.inp, inicio.inp, dur.inp);
+    if (datos.error) return avisar(datos.error, "error");
+    guardar.disabled = true;
+    const r = await nexusDb.from("cap_convocatorias").update(datos).eq("id", c.id);
+    guardar.disabled = false;
+    if (r.error) return errorSupabase(r.error, "No se pudo guardar la reunión.");
+    avisar("Clase en vivo guardada. Los trabajadores verán el botón «Unirse a la reunión» al registrarse.");
+    await cargarConvocatorias();
+  });
+
+  tarjeta.querySelector(".conv-acciones").after(f);
+  url.inp.focus();
+}
+
 function boton(texto, clase, accion) {
   const b = document.createElement("button");
   b.type = "button";
@@ -567,6 +673,7 @@ function mensajeAcceso(a, c) {
     "1. Toca este enlace para ingresar:\n" + enlacePrograma(c) + "\n\n" +
     "2. Escribe la clave de acceso: *" + a.codigo + "*\n" +
     "(válida hasta el " + fechaHora(a.valido_hasta) + ")\n\n" +
+    (c.reunion_url ? "🎥 *Clase en vivo" + (c.reunion_inicio ? " el " + fechaHora(c.reunion_inicio) : "") + "*: al registrarte verás el botón para unirte a la reunión.\n\n" : "") +
     cierre;
 }
 
@@ -996,6 +1103,10 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-horas").value = "";
   el("v-observaciones").value = "";
   el("v-clave-presencial").value = "";
+  el("v-reunion-url").value = "";
+  el("v-reunion-inicio").value = hoyISO() + "T" + horaActual();
+  el("v-reunion-duracion").value = 60;
+  el("v-reunion-bloque").hidden = emp.sinReunion === true;
   el("v-clave-virtual").value = "";
   actualizarBloquesModalidad();
 
@@ -1056,10 +1167,15 @@ el("form-conv").addEventListener("submit", async function (ev) {
     return avisar("La clave presencial y la virtual deben ser distintas.", "error");
   }
 
+  const reunion = emp.sinReunion ? {} : leerReunion(el("v-reunion-url"), el("v-reunion-inicio"), el("v-reunion-duracion"));
+  if (reunion.error) return avisar(reunion.error, "error");
+  if (!reunion.reunion_url) { delete reunion.reunion_url; delete reunion.reunion_inicio; delete reunion.reunion_duracion; }
+
   const botonGuardar = el("btn-guardar-conv");
   botonGuardar.disabled = true;
 
   const conv = await nexusDb.from("cap_convocatorias").insert({
+    ...reunion,
     empresa_id: emp.actual.id,
     curso_id: curso.id,
     modalidad: modalidad,

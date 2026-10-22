@@ -18,7 +18,7 @@
 
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css?v=9">
-  <link rel="stylesheet" href="css/empresas.css?v=4">
+  <link rel="stylesheet" href="css/empresas.css?v=5">
 </head>
 <body>
 
@@ -272,6 +272,23 @@
             </div>
           </div>
 
+          <fieldset class="bloque-acceso bloque-reunion-conv" id="v-reunion-bloque">
+            <h4>🎥 Clase en vivo por Meet, Zoom o Teams (opcional)</h4>
+            <label class="etiqueta" for="v-reunion-url">Enlace de la reunión</label>
+            <input class="campo" id="v-reunion-url" placeholder="https://meet.google.com/abc-defg-hij" maxlength="500" inputmode="url" autocomplete="off">
+            <div class="fila-dos">
+              <div>
+                <label class="etiqueta" for="v-reunion-inicio">Fecha y hora de inicio</label>
+                <input class="campo" id="v-reunion-inicio" type="datetime-local">
+              </div>
+              <div>
+                <label class="etiqueta" for="v-reunion-duracion">Duración (minutos)</label>
+                <input class="campo" id="v-reunion-duracion" type="number" min="10" max="600" step="5" value="60">
+              </div>
+            </div>
+            <p class="ayuda" id="v-reunion-ayuda">Solo para esta empresa. Los trabajadores, al registrarse con la clave, verán un botón grande «Unirse a la reunión» con la cuenta regresiva o «Reunión en curso». Déjelo vacío si la charla no es en línea.</p>
+          </fieldset>
+
           <div class="acciones-form">
             <button type="button" class="boton secundario" id="btn-cancelar-conv">Cancelar</button>
             <button type="submit" class="boton" id="btn-guardar-conv">Crear capacitación y claves</button>
@@ -325,6 +342,6 @@
   <script src="js/cartel.js"></script>
   <script src="js/reporte-empresa.js"></script>
   <script src="js/certificado.js?v=6"></script>
-  <script src="js/empresas.js?v=5"></script>
+  <script src="js/empresas.js?v=6"></script>
 </body>
 </html>

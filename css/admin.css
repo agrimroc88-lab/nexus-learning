@@ -450,3 +450,7 @@ body:not(.modo-docente) [data-solo-docente] { display: none !important; }
 .fila-version strong { display: block; font-size: 14px; }
 .fila-version small { opacity: .75; }
 .grupo-versiones .estado-clave { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; background: #fdecec; color: #a12a2a; vertical-align: middle; }
+
+/* Clase en vivo en Datos del curso */
+.bloque-reunion { margin: 14px 0 6px; padding: 12px 14px 4px; border: 1px solid var(--niebla); border-radius: 12px; background: #f7f9fd; }
+.bloque-reunion legend { padding: 0 6px; font-weight: 700; color: var(--pino); }

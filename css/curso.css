@@ -1,5 +1,5 @@
 /* =====================================================================
-   NEXUS LEARNING · ESTILOS DE LA PÁGINA DEL CURSO
+   NEXUS ACADEMY · ESTILOS DE LA PÁGINA DEL CURSO
    Carpeta: css/curso.css
    La usan curso.html y programa.html. Requiere cargar antes css/estilos.css.
    ===================================================================== */
@@ -277,3 +277,30 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
   .navegacion .boton { flex: 1 1 100%; }
   .fila-boton { flex-direction: column; }
 }
+
+/* ----- Clase en vivo: botón grande para unirse ----- */
+.bloque-reunion {
+  margin: 0 auto 28px; padding: 22px 22px 18px; text-align: center;
+  background: var(--blanco); border: 2px solid #123A7A; border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(18, 58, 122, 0.16);
+}
+.reunion-estado { margin: 0 0 4px; font-size: 18px; font-weight: 800; color: #123A7A; }
+.reunion-cuenta { margin: 0 0 16px; font-size: 15px; font-weight: 600; color: #4a5a72; }
+.reunion-cuenta:empty { display: none; }
+.btn-reunion {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 420px; min-height: 60px; padding: 14px 24px;
+  border-radius: 999px; background: #1a8f4a; color: #fff; text-decoration: none;
+  font-size: 20px; font-weight: 800; letter-spacing: .2px;
+  box-shadow: 0 8px 20px rgba(26, 143, 74, 0.35); transition: transform .15s, background .15s;
+}
+.btn-reunion:hover, .btn-reunion:focus-visible { background: #157a3e; color: #fff; transform: translateY(-2px); }
+.bloque-reunion.en-curso { border-color: #1a8f4a; }
+.bloque-reunion.en-curso .reunion-estado { color: #c0392b; }
+.bloque-reunion.en-curso .btn-reunion { animation: reunion-latido 1.6s ease-in-out infinite; }
+.bloque-reunion.terminada .btn-reunion { background: #6b7a90; box-shadow: none; animation: none; }
+@keyframes reunion-latido { 0%, 100% { box-shadow: 0 8px 20px rgba(26,143,74,.35), 0 0 0 0 rgba(26,143,74,.45); } 50% { box-shadow: 0 8px 20px rgba(26,143,74,.35), 0 0 0 12px rgba(26,143,74,0); } }
+.reunion-persona { margin: 14px 0 0; font-size: 14px; color: #4a5a72; }
+.reunion-persona button { background: none; border: 0; padding: 0; color: #123A7A; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+@media (max-width: 560px) { .btn-reunion { font-size: 18px; } .bloque-reunion { padding: 18px 14px 14px; } }
+@media (prefers-reduced-motion: reduce) { .bloque-reunion.en-curso .btn-reunion { animation: none; } }

@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css?v=3">
   <link rel="stylesheet" href="css/juegos.css?v=3">
-  <link rel="stylesheet" href="css/aula.css?v=2">
+  <link rel="stylesheet" href="css/aula.css?v=3">
 </head>
 <body>
 
@@ -62,6 +62,11 @@
       <a class="boton secundario" href="admin.html" id="btn-planificar-general">Planificación y diseño</a>
     </div>
     <div id="aviso" class="aviso" role="status" hidden></div>
+    <section id="proximas" class="proximas" hidden aria-labelledby="proximas-titulo">
+      <h2 id="proximas-titulo">Capacitaciones programadas</h2>
+      <ul id="lista-proximas" class="lista-proximas"></ul>
+    </section>
+    <h2 class="titulo-programas" id="titulo-programas" hidden>Programas</h2>
     <label class="buscador-cursos aula-buscador">
       <span class="sr-only">Buscar curso</span>
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -104,6 +109,6 @@
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/juegos-motor.js?v=3"></script>
-  <script src="js/aula.js?v=4"></script>
+  <script src="js/aula.js?v=5"></script>
 </body>
 </html>

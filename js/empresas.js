@@ -556,8 +556,54 @@ function formExtender(fila, a) {
 // ---------------------------------------------------------------------
 // CLASE EN VIVO de esta capacitación (cada empresa con su propio enlace)
 // ---------------------------------------------------------------------
+// Acepta la invitación completa de Meet/Zoom/Teams pegada tal cual:
+// toma el enlace y, si viene, la fecha y hora ("Viernes, 23 de octubre · 3:00 – 4:00pm").
+const MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+function analizarInvitacion(texto) {
+  const t = String(texto || "");
+  const m = t.match(/https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/i) ||
+            t.match(/https?:\/\/[^\s<>"'()]+/i) ||
+            t.match(/\b(?:meet\.google\.com|[\w-]+\.zoom\.us|zoom\.us|teams\.microsoft\.com|teams\.live\.com)\/[^\s<>"'()]+/i);
+  const res = { url: m ? m[0].replace(/[.,;]+$/, "") : "" };
+  const f = t.match(/(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?[^\d]{0,12}(\d{1,2})(?::(\d{2}))?\s*([ap]\.?\s?m\.?)?\s*[–—-]\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?\s?m\.?)?/i);
+  if (f) {
+    const mes = f[2].toLowerCase() === "setiembre" ? 8 : MESES_ES.indexOf(f[2].toLowerCase());
+    const hoy = new Date();
+    let anio = f[3] ? Number(f[3]) : hoy.getFullYear();
+    const sufFin = (f[9] || "").toLowerCase().charAt(0);
+    const sufIni = (f[6] || "").toLowerCase().charAt(0) || sufFin;
+    const a24 = function (h, suf) { h = Number(h); if (suf === "p" && h < 12) h += 12; if (suf === "a" && h === 12) h = 0; return h; };
+    const ini = new Date(anio, mes, Number(f[1]), a24(f[4], sufIni), Number(f[5] || 0));
+    if (!f[3] && ini < new Date(hoy.getTime() - 86400000 * 30)) ini.setFullYear(anio + 1);
+    let fin = new Date(ini.getFullYear(), mes, Number(f[1]), a24(f[7], sufFin), Number(f[8] || 0));
+    if (fin <= ini) fin = new Date(fin.getTime() + 86400000);
+    res.inicio = ini.getFullYear() + "-" + dos(ini.getMonth() + 1) + "-" + dos(ini.getDate()) + "T" + dos(ini.getHours()) + ":" + dos(ini.getMinutes());
+    res.duracion = Math.round((fin - ini) / 60000);
+  }
+  return res;
+}
+
+// Al pegar la invitación completa en el campo del enlace, se ordena sola
+function conectarPegadoReunion(inUrl, inInicio, inDur) {
+  inUrl.addEventListener("input", function () {
+    const v = inUrl.value;
+    if (!/\s/.test(v.trim()) && /^https?:\/\//i.test(v.trim())) return; // ya es solo un enlace
+    const r = analizarInvitacion(v);
+    if (!r.url) return;
+    inUrl.value = r.url;
+    let msg = "Tomé el enlace de la invitación.";
+    if (r.inicio) {
+      inInicio.value = r.inicio;
+      if (r.duracion >= 10 && r.duracion <= 600) inDur.value = r.duracion;
+      msg = "Tomé el enlace, la fecha y la hora de la invitación. Revísalas antes de guardar.";
+    }
+    avisar(msg);
+  });
+}
+
 function leerReunion(inUrl, inInicio, inDur) {
   let url = inUrl.value.trim();
+  if (/\s/.test(url)) url = analizarInvitacion(url).url || url;
   if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
   if (/^http:\/\//i.test(url)) url = "https://" + url.slice(7);
   inUrl.value = url;
@@ -602,7 +648,7 @@ function formReunion(tarjeta, c) {
     lab.appendChild(inp);
     return { lab: lab, inp: inp };
   };
-  const url = campo("Enlace de la reunión (Meet, Zoom o Teams)", "text", c.reunion_url || "", { placeholder: "https://meet.google.com/abc-defg-hij", maxlength: "500", inputmode: "url", autocomplete: "off" });
+  const url = campo("Enlace de la reunión (Meet, Zoom o Teams)", "text", c.reunion_url || "", { placeholder: "Pega el enlace o la invitación completa", maxlength: "2000", inputmode: "url", autocomplete: "off" });
   const propuesta = c.reunion_inicio ? aLocalInput(c.reunion_inicio) : (c.fecha_capacitacion || hoyISO()) + "T" + horaActual();
   const inicio = campo("Fecha y hora de inicio", "datetime-local", propuesta);
   const dur = campo("Duración (minutos)", "number", c.reunion_duracion || 60, { min: "10", max: "600", step: "5" });
@@ -612,6 +658,7 @@ function formReunion(tarjeta, c) {
   const d2 = document.createElement("div"); d2.appendChild(dur.lab);
   fila2.append(d1, d2);
   f.append(url.lab, fila2);
+  conectarPegadoReunion(url.inp, inicio.inp, dur.inp);
 
   const acciones = document.createElement("div");
   acciones.className = "acciones-form";
@@ -1115,6 +1162,7 @@ el("btn-nueva-conv").addEventListener("click", function () {
 });
 
 el("btn-cancelar-conv").addEventListener("click", function () { el("form-conv").hidden = true; });
+conectarPegadoReunion(el("v-reunion-url"), el("v-reunion-inicio"), el("v-reunion-duracion"));
 
 document.querySelectorAll('input[name="v-modalidad"]').forEach(function (r) {
   r.addEventListener("change", actualizarBloquesModalidad);

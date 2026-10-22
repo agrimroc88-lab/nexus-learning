@@ -266,12 +266,19 @@ async function cargarConvocatorias() {
     .eq("empresa_id", emp.actual.id)
     .order("creado_en", { ascending: false });
   };
-  let { data, error } = await consulta("reunion_url, reunion_inicio, reunion_duracion, ");
+  // Columnas nuevas (SQL 35: clase en vivo · SQL 36: alianza). Si falta un SQL, lo demás sigue funcionando.
   emp.sinReunion = false;
-  if (error && /reunion/i.test(error.message || "")) {
-    // Falta el SQL 35: todo funciona, menos la clase en vivo
-    emp.sinReunion = true;
-    ({ data, error } = await consulta(""));
+  emp.sinAlianza = false;
+  const extras = function () {
+    return (emp.sinReunion ? "" : "reunion_url, reunion_inicio, reunion_duracion, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ");
+  };
+  let { data, error } = await consulta(extras());
+  for (let i = 0; i < 2 && error; i++) {
+    const m = error.message || "";
+    if (/alianza/i.test(m)) emp.sinAlianza = true;
+    else if (/reunion/i.test(m)) emp.sinReunion = true;
+    else break;
+    ({ data, error } = await consulta(extras()));
   }
   if (error) return errorSupabase(error, "No se pudieron cargar las capacitaciones.");
 
@@ -378,6 +385,7 @@ function tarjetaConvocatoria(c) {
     c.fecha_capacitacion ? "Charla: " + fechaCorta(c.fecha_capacitacion + "T12:00") : null,
     c.modalidad !== "virtual" ? (c.evaluacion_presencial ? "QR con evaluación" : "QR sin evaluación") : null,
     c.observaciones,
+    c.alianza_vitalwork ? "🤝 En alianza con VitalWork" : null,
     c.reunion_url ? "🎥 En vivo" + (c.reunion_inicio ? ": " + fechaHora(c.reunion_inicio) : "") : null
   ].filter(Boolean).forEach(function (t) {
     const s = document.createElement("span");
@@ -436,6 +444,9 @@ function tarjetaConvocatoria(c) {
   }
   if (!emp.sinReunion) {
     acciones.appendChild(boton(c.reunion_url ? "🎥 Clase en vivo" : "🎥 Agregar clase en vivo", "boton secundario boton-chico", function () { formReunion(art, c); }));
+  }
+  if (!emp.sinAlianza) {
+    acciones.appendChild(boton(c.alianza_vitalwork ? "🤝 Quitar alianza VitalWork" : "🤝 En alianza con VitalWork", "boton secundario boton-chico", function () { cambiarAlianza(c); }));
   }
   acciones.appendChild(boton("Ver certificado de ejemplo", "boton secundario boton-chico", function () { certificadoEjemplo(c); }));
   acciones.appendChild(boton("Eliminar capacitación", "enlace-boton rojo", function () { eliminarConvocatoria(c, inscritos, certificados); }));
@@ -802,8 +813,20 @@ async function certificadoEjemplo(c) {
     horas: Number(c.horas || c.cap_cursos.horas),
     nota: asistencia ? null : 100,
     subtemas: curso.data ? curso.data.subtemas : [],
+    alianza: c.alianza_vitalwork === true,
     emitido_en: new Date().toISOString()
   });
+}
+
+// Capacitación en alianza con VitalWork: sus certificados llevan el logo y la segunda firma
+async function cambiarAlianza(c) {
+  const nuevo = !c.alianza_vitalwork;
+  const r = await nexusDb.from("cap_convocatorias").update({ alianza_vitalwork: nuevo }).eq("id", c.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo cambiar la alianza.");
+  avisar(nuevo
+    ? "Listo: los certificados de esta capacitación saldrán con el logo y la firma de VitalWork (también los ya emitidos, al volver a descargarlos)."
+    : "Alianza quitada: los certificados saldrán solo con Nexus Academy.");
+  await cargarConvocatorias();
 }
 
 // Formulario corto para un código adicional (por ejemplo, para rezagados)
@@ -1154,6 +1177,8 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-reunion-inicio").value = hoyISO() + "T" + horaActual();
   el("v-reunion-duracion").value = 60;
   el("v-reunion-bloque").hidden = emp.sinReunion === true;
+  el("v-alianza").checked = false;
+  el("v-alianza-caja").hidden = emp.sinAlianza === true;
   el("v-clave-virtual").value = "";
   actualizarBloquesModalidad();
 
@@ -1221,6 +1246,8 @@ el("form-conv").addEventListener("submit", async function (ev) {
 
   const botonGuardar = el("btn-guardar-conv");
   botonGuardar.disabled = true;
+
+  if (!emp.sinAlianza && el("v-alianza").checked) reunion.alianza_vitalwork = true;
 
   const conv = await nexusDb.from("cap_convocatorias").insert({
     ...reunion,

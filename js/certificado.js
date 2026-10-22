@@ -13,6 +13,16 @@ const NexusCertificado = (function () {
   const TINTA = [20, 32, 58];
   const GRIS = [85, 98, 122];
 
+  // ---------------- Capacitación EN ALIANZA CON VITALWORK ----------------
+  // Se marca en Empresas → la capacitación. Imágenes en la carpeta img:
+  //   img/logo-vitalwork.png  (logo, de preferencia con fondo transparente)
+  //   img/firma-vitalwork.png (firma de la representante, fondo transparente)
+  const ALIANZA = {
+    nombre: "VitalWork S.A.S.",
+    firmante: "Nombre de la representante",
+    cargo: "Gerente General · VitalWork"
+  };
+
   function urlVerificacion(codigo) {
     const base = location.origin + location.pathname.replace(/[^/]*$/, "");
     return base + "verificar.html?codigo=" + encodeURIComponent(codigo);
@@ -139,6 +149,9 @@ const NexusCertificado = (function () {
   let logo = null, firma = null;
   precargar("img/logo-certificado.png", function (i) { logo = i; });
   precargar("img/firma-director.png", function (i) { firma = i; });
+  let logoAliado = null, firmaAliado = null;
+  precargar("img/logo-vitalwork.png", function (i) { logoAliado = i; });
+  precargar("img/firma-vitalwork.png", function (i) { firmaAliado = i; });
 
   // Dibuja el logo con alto "h" desde (x, y); devuelve su ancho
   function marca(doc, x, y, h) {
@@ -156,7 +169,7 @@ const NexusCertificado = (function () {
   }
 
   // --- Fondo: triángulos azules y dorados en las esquinas; logo y nombre centrados ---
-  function fondo(doc, W, H) {
+  function fondo(doc, W, H, alianza) {
     doc.setFillColor(SENAL[0], SENAL[1], SENAL[2]);
     doc.triangle(W - 84, 0, W, 0, W, 54, "F");
     doc.triangle(0, H - 54, 0, H, 84, H, "F");
@@ -167,8 +180,26 @@ const NexusCertificado = (function () {
     doc.triangle(W - 40, 0, W, 0, W, 26, "F");
     doc.triangle(0, H - 26, 0, H, 40, H, "F");
     const base = { cx: W / 2, dy: 2, curso: 220, desc: 225, linea: 85, firma: 78, fecha: W / 2 + 4, qr: 238, limite: 147, col: 84 };
-    const h = 28, w = logo ? h * logo.prop : 28, tw = 66, x0 = W / 2 - (w + 4 + tw) / 2;
+    const h = 28, w = logo ? h * logo.prop : 28, tw = 66;
+    // Con alianza: logo de VitalWork a la derecha, separado por una línea
+    let ah = 0, aw = 0;
+    if (alianza) {
+      ah = 20; aw = logoAliado ? ah * logoAliado.prop : 40;
+      if (aw > 46) { aw = 46; ah = logoAliado ? aw / logoAliado.prop : ah; }
+    }
+    const total = w + 4 + tw + (alianza ? 14 + aw : 0);
+    const x0 = W / 2 - total / 2 - (alianza ? 6 : 0);
     marca(doc, x0, 9, h);
+    if (alianza) {
+      const xs = x0 + w + 4 + tw + 6;
+      doc.setDrawColor(SENAL[0], SENAL[1], SENAL[2]);
+      doc.setLineWidth(0.5);
+      doc.line(xs, 10, xs, 36);
+      const xa = xs + 8;
+      texto(doc, "EN ALIANZA CON", xa + aw / 2, 12, { tam: 6.5, estilo: "bold", color: GRIS });
+      if (logoAliado) doc.addImage(logoAliado.datos, "PNG", xa, 14 + (20 - ah) / 2, aw, ah, "logoAliado", "FAST");
+      else texto(doc, ALIANZA.nombre, xa + aw / 2, 26, { tam: 11, estilo: "bold", color: PINO });
+    }
     texto(doc, "NEXUS ACADEMY", x0 + w + 4, 22, { tam: 17, estilo: "bold", color: PINO, alinear: "left" });
     doc.setFillColor(SENAL[0], SENAL[1], SENAL[2]);
     doc.rect(x0 + w + 4, 25.5, 26, 1.3, "F");
@@ -238,7 +269,8 @@ const NexusCertificado = (function () {
     const W = 297, H = 210;
 
     // --- Fondo y marca ---
-    const L = fondo(doc, W, H);
+    const alianza = d.alianza === true;
+    const L = fondo(doc, W, H, alianza);
     const CX = L.cx, Y = L.dy;
 
     const esAsistencia = d.tipo === "asistencia";
@@ -257,7 +289,7 @@ const NexusCertificado = (function () {
     let linea = "con cédula o pasaporte N.º " + d.cedula;
     if (d.empresa) linea += ", de la empresa " + d.empresa + ",";
     texto(doc, linea, CX, 82 + Y, { tam: 11.5, color: GRIS });
-    texto(doc, esAsistencia ? "asistió a la capacitación" : "aprobó el curso", CX, 88.5 + Y, { tam: 11.5, color: GRIS });
+    texto(doc, (esAsistencia ? "asistió a la capacitación" : "aprobó el curso") + (alianza ? (esAsistencia ? " dictada" : " dictado") + " en alianza con " + ALIANZA.nombre : ""), CX, 88.5 + Y, { tam: 11.5, color: GRIS });
 
     // --- Curso (puede ocupar dos líneas) ---
     doc.setFont("helvetica", "bold");
@@ -286,9 +318,26 @@ const NexusCertificado = (function () {
     texto(doc, "Dr. Leonardo Arias E.", L.firma, 180 + Y, { tam: 10, estilo: "bold" });
     texto(doc, "Director de Nexus Academy", L.firma, 185 + Y, { tam: 9.5, color: GRIS });
 
-    // --- Fecha (centro) ---
-    texto(doc, "Fecha de emisión", L.fecha, 174 + Y, { tam: 10, color: GRIS });
-    texto(doc, fechaLarga(d.emitido_en || d.fecha), L.fecha, 180 + Y, { tam: 12, estilo: "bold" });
+    if (alianza) {
+      // --- Segunda firma: representante de VitalWork (centro) ---
+      const fx = 150;
+      if (firmaAliado) {
+        let fh = 22, fw = fh * firmaAliado.prop;
+        if (fw > 54) { fw = 54; fh = fw / firmaAliado.prop; }
+        doc.addImage(firmaAliado.datos, "PNG", fx - fw / 2, 173 + Y - fh, fw, fh, "firmaAliado", "FAST");
+      }
+      doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]);
+      doc.setLineWidth(0.3);
+      doc.line(fx - 24, 174 + Y, fx + 24, 174 + Y);
+      texto(doc, ALIANZA.firmante, fx, 180 + Y, { tam: 10, estilo: "bold" });
+      texto(doc, ALIANZA.cargo, fx, 185 + Y, { tam: 9.5, color: GRIS });
+      // La fecha pasa debajo del código QR
+      texto(doc, "Emitido el " + fechaLarga(d.emitido_en || d.fecha), L.qr - 6, 186 + Y, { tam: 8.5, estilo: "bold", color: TINTA, alinear: "right" });
+    } else {
+      // --- Fecha (centro) ---
+      texto(doc, "Fecha de emisión", L.fecha, 174 + Y, { tam: 10, color: GRIS });
+      texto(doc, fechaLarga(d.emitido_en || d.fecha), L.fecha, 180 + Y, { tam: 12, estilo: "bold" });
+    }
 
     // --- QR y código (derecha) ---
     const url = urlVerificacion(d.codigo);
@@ -347,8 +396,15 @@ const NexusCertificado = (function () {
       alert("No se pudo generar el certificado de ejemplo. Revisa tu conexión e inténtalo de nuevo.");
     });
   }
+  // ¿El certificado es de una capacitación en alianza? (si no se sabe, se consulta)
+  function revisarAlianza(d) {
+    if (typeof d.alianza === "boolean" || !d.codigo || typeof nexusDb === "undefined") return Promise.resolve(d);
+    return Promise.resolve(nexusDb.rpc("cap_certificado_alianza", { p_codigo: d.codigo }))
+      .then(function (r) { return Object.assign({}, d, { alianza: !r.error && r.data === true }); })
+      .catch(function () { return d; });
+  }
   function generar(d) {
-    return librerias().then(function () { dibujar(d); }).catch(function (e) {
+    return Promise.all([librerias(), revisarAlianza(d)]).then(function (r) { dibujar(r[1]); }).catch(function (e) {
       console.error(e);
       alert("No se pudo generar el certificado. Revisa tu conexión e inténtalo de nuevo.");
     });

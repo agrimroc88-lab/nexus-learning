@@ -179,3 +179,17 @@
 .en-curso .btn-unirse { animation: reunion-latido-aula 1.6s ease-in-out infinite; }
 @keyframes reunion-latido-aula { 0%, 100% { box-shadow: 0 0 0 0 rgba(26,143,74,.45); } 50% { box-shadow: 0 0 0 10px rgba(26,143,74,0); } }
 @media (prefers-reduced-motion: reduce) { .en-curso .btn-unirse { animation: none; } }
+
+/* ----- 📷 Capturas de la charla ----- */
+.captura-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 9999; padding: 12px 20px; border-radius: 999px; background: #123A7A; color: #fff; font-weight: 700; box-shadow: 0 10px 30px rgba(10, 30, 70, .35); animation: captura-entra .25s ease-out; }
+@keyframes captura-entra { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.salon .salon-barra .btn-captura { display: inline-flex; align-items: center; gap: 6px; background: #E3B341; border-color: #E3B341; color: #0d2a5c; font-weight: 800; border-radius: 999px; padding: 6px 14px; }
+.salon .salon-barra .btn-captura:hover, .salon .salon-barra .btn-captura:focus-visible { background: #f0c45a; border-color: #f0c45a; color: #0d2a5c; }
+.salon .salon-barra .btn-captura:disabled { opacity: .7; }
+.captura-flash { position: fixed; inset: 0; background: #fff; opacity: .7; z-index: 9998; pointer-events: none; animation: captura-flash .35s ease-out forwards; }
+@keyframes captura-flash { to { opacity: 0; } }
+.presentacion-foto { position: fixed; right: 18px; bottom: 18px; z-index: 5; width: 52px; height: 52px; border-radius: 50%; border: 0; display: grid; place-items: center; background: rgba(227, 179, 65, .9); color: #0d2a5c; cursor: pointer; opacity: .45; transition: opacity .2s, transform .2s; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.presentacion-foto svg { width: 26px; height: 26px; }
+.presentacion-foto:hover, .presentacion-foto:focus-visible { opacity: 1; transform: scale(1.06); }
+.capturando .presentacion-foto, .capturando .captura-toast { visibility: hidden; }
+.captura-toast { max-width: min(90vw, 640px); text-align: center; }

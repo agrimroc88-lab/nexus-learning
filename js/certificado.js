@@ -19,8 +19,8 @@ const NexusCertificado = (function () {
   //   img/firma-vitalwork.png (firma de la representante, fondo transparente)
   const ALIANZA = {
     nombre: "VitalWork S.A.S.",
-    firmante: "Nombre de la representante",
-    cargo: "Gerente General · VitalWork"
+    firmante: "Lcda. Elenymar Morales M.",
+    cargo: "Representante Legal · VitalWork"
   };
 
   function urlVerificacion(codigo) {

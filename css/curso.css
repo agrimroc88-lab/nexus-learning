@@ -304,3 +304,8 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
 .reunion-persona button { background: none; border: 0; padding: 0; color: #123A7A; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 @media (max-width: 560px) { .btn-reunion { font-size: 18px; } .bloque-reunion { padding: 18px 14px 14px; } }
 @media (prefers-reduced-motion: reduce) { .bloque-reunion.en-curso .btn-reunion { animation: none; } }
+.reunion-lista { list-style: none; margin: 14px auto 0; padding: 0; max-width: 420px; text-align: left; display: grid; gap: 4px; }
+.reunion-lista li { font-size: 14px; color: #4a5a72; padding: 6px 10px; border-radius: 8px; background: #f3f6fb; }
+.reunion-lista li.actual { background: #e7f4ec; color: #14532d; font-weight: 700; }
+.reunion-lista li.pasado { opacity: .65; }
+.reunion-lista li::first-letter { text-transform: uppercase; }

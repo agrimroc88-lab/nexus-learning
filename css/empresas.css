@@ -197,3 +197,9 @@
 .btn-todos-grupos { background: #b07f14; border-color: #b07f14; }
 .btn-todos-grupos:hover { background: #946a10; border-color: #946a10; }
 .celda-grupo { white-space: pre-line; font-size: 13px; font-weight: 600; color: #123A7A; }
+.lista-encuentros { display: grid; gap: 10px; margin-top: 10px; }
+.encuentros-filas { display: grid; gap: 10px; }
+.encuentro-fila { padding: 12px 14px; border-radius: 10px; background: #fff; border: 1px solid #c9d6ee; }
+.encuentro-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.encuentro-n { color: #123A7A; }
+.lista-encuentros > .boton { justify-self: start; }

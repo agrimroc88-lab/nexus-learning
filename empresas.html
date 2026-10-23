@@ -18,7 +18,7 @@
 
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css?v=9">
-  <link rel="stylesheet" href="css/empresas.css?v=7">
+  <link rel="stylesheet" href="css/empresas.css?v=8">
 </head>
 <body>
 
@@ -278,20 +278,9 @@
           </label>
 
           <fieldset class="bloque-acceso bloque-reunion-conv" id="v-reunion-bloque">
-            <h4>🎥 Clase en vivo por Meet, Zoom o Teams (opcional)</h4>
-            <label class="etiqueta" for="v-reunion-url">Enlace de la reunión</label>
-            <input class="campo" id="v-reunion-url" placeholder="Pega el enlace o la invitación completa de Meet" maxlength="2000" inputmode="url" autocomplete="off">
-            <div class="fila-dos">
-              <div>
-                <label class="etiqueta" for="v-reunion-inicio">Fecha y hora de inicio</label>
-                <input class="campo" id="v-reunion-inicio" type="datetime-local">
-              </div>
-              <div>
-                <label class="etiqueta" for="v-reunion-duracion">Duración (minutos)</label>
-                <input class="campo" id="v-reunion-duracion" type="number" min="10" max="600" step="5" value="60">
-              </div>
-            </div>
-            <p class="ayuda" id="v-reunion-ayuda">Solo para esta empresa. Los trabajadores, al registrarse con la clave, verán un botón grande «Unirse a la reunión» con la cuenta regresiva o «Reunión en curso». Déjelo vacío si la charla no es en línea.</p>
+            <h4>🎥 Encuentros en vivo por Meet, Zoom o Teams (opcional)</h4>
+            <p class="ayuda">Una sola clave y un solo QR para todos los encuentros (por ejemplo, grupo 1 hoy y grupo 2 el lunes): todos quedan en la misma nómina. Pega en cada enlace la invitación completa de Meet y la fecha y hora se llenan solas.</p>
+            <div id="v-encuentros" class="lista-encuentros"></div>
           </fieldset>
 
           <div class="acciones-form">
@@ -348,6 +337,6 @@
   <script src="js/cartel.js"></script>
   <script src="js/reporte-empresa.js"></script>
   <script src="js/certificado.js?v=7"></script>
-  <script src="js/empresas.js?v=9"></script>
+  <script src="js/empresas.js?v=10"></script>
 </body>
 </html>

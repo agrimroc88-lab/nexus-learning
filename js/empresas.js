@@ -904,7 +904,7 @@ async function eliminarConvocatoria(c, inscritos, certificados) {
 
 // Certificado de ejemplo con los datos reales de la capacitación (marca MUESTRA)
 async function certificadoEjemplo(c) {
-  if (!window.NexusCertificado) return avisar("Recarga la página para ver el certificado de ejemplo.", "error");
+  if (typeof NexusCertificado === "undefined") return avisar("No se cargó el generador de certificados. Recarga la página con Ctrl + F5.", "error");
   const curso = await nexusDb.from("cap_cursos").select("subtemas").eq("id", c.cap_cursos.id).maybeSingle();
   const asistencia = c.modalidad === "presencial" && !c.evaluacion_presencial;
   NexusCertificado.muestra({

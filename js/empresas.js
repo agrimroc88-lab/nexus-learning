@@ -436,6 +436,10 @@ function tarjetaConvocatoria(c) {
   const acciones = document.createElement("div");
   acciones.className = "conv-acciones";
   acciones.appendChild(boton("Ver nómina", "boton boton-chico", function () { abrirNomina(c); }));
+  const mismoTema = emp.convs.filter(function (x) { return x.cap_cursos.id === c.cap_cursos.id; }).length;
+  if (mismoTema > 1) {
+    acciones.appendChild(boton("👥 Nómina de todos los grupos (" + mismoTema + ")", "boton boton-chico btn-todos-grupos", function () { abrirNomina(c, true); }));
+  }
   if (c.modalidad !== "presencial") {
     acciones.appendChild(boton("Nueva clave virtual", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "virtual"); }));
   }
@@ -1323,25 +1327,46 @@ function rangoVirtual(desde, hasta) {
 // ---------------------------------------------------------------------
 // Nómina
 // ---------------------------------------------------------------------
-async function abrirNomina(c) {
+// Grupos: capacitaciones de esta empresa con el mismo curso, de la más antigua a la más reciente
+function gruposDe(c) {
+  const cuando = function (x) {
+    return new Date(x.reunion_inicio || (x.fecha_capacitacion ? x.fecha_capacitacion + "T12:00" : x.creado_en)).getTime();
+  };
+  return (emp.convs || [])
+    .filter(function (x) { return x.cap_cursos.id === c.cap_cursos.id; })
+    .sort(function (a, b) { return cuando(a) - cuando(b); })
+    .map(function (x, i) {
+      const f = x.reunion_inicio ? fechaHora(x.reunion_inicio) : (x.fecha_capacitacion ? fechaCorta(x.fecha_capacitacion + "T12:00") : fechaCorta(x.creado_en));
+      return { conv: x, nombre: "Grupo " + (i + 1) + " · " + f };
+    });
+}
+
+// todos = true: un solo listado con todos los grupos del mismo tema en la empresa
+async function abrirNomina(c, todos) {
+  const grupos = todos ? gruposDe(c) : null;
+  const ids = grupos ? grupos.map(function (g) { return g.conv.id; }) : [c.id];
   mostrar("vista-nomina");
-  el("nomina-titulo").textContent = c.cap_cursos.titulo;
-  el("nomina-sub").textContent = emp.actual.nombre + " · " + NOMBRE_MODALIDAD[c.modalidad] + " · " + formatearHoras(c.horas || c.cap_cursos.horas);
+  el("nomina-titulo").textContent = c.cap_cursos.titulo + (grupos ? " · todos los grupos" : "");
+  el("nomina-sub").textContent = emp.actual.nombre + " · " + (grupos
+    ? grupos.length + " grupos: " + grupos.map(function (g) { return g.nombre.replace(/^Grupo \d+ · /, ""); }).join(", ")
+    : NOMBRE_MODALIDAD[c.modalidad]) + " · " + formatearHoras(c.horas || c.cap_cursos.horas);
+  el("th-grupo").hidden = !grupos;
   el("nomina-filas").innerHTML = "";
   el("nomina-cifras").innerHTML = "";
   el("buscar-nomina").value = "";
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   const [insc, certs, intentos] = await Promise.all([
-    nexusDb.from("cap_inscripciones").select("id, cedula, nombres, correo, modalidad, creado_en, sexo, fecha_nacimiento, etnia").eq("convocatoria_id", c.id).order("nombres"),
-    nexusDb.from("cap_certificados").select("id, codigo, cedula, inscripcion_id, tipo, nota, emitido_en").eq("convocatoria_id", c.id),
-    nexusDb.from("cap_intentos").select("inscripcion_id, nota, aprobado").eq("convocatoria_id", c.id)
+    nexusDb.from("cap_inscripciones").select("id, convocatoria_id, cedula, nombres, correo, modalidad, creado_en, sexo, fecha_nacimiento, etnia").in("convocatoria_id", ids).order("nombres"),
+    nexusDb.from("cap_certificados").select("id, codigo, cedula, inscripcion_id, convocatoria_id, tipo, nota, emitido_en").in("convocatoria_id", ids),
+    nexusDb.from("cap_intentos").select("inscripcion_id, nota, aprobado").in("convocatoria_id", ids)
   ]);
   const fallo = insc.error || certs.error || intentos.error;
   if (fallo) return errorSupabase(fallo, "No se pudo cargar la nómina.");
 
   const filas = insc.data.map(function (i) {
-    const cert = certs.data.find(function (x) { return x.inscripcion_id === i.id || x.cedula === i.cedula; });
+    const cert = certs.data.find(function (x) { return x.inscripcion_id === i.id || (x.cedula === i.cedula && x.convocatoria_id === i.convocatoria_id); });
+    const grupo = grupos ? grupos.find(function (g) { return g.conv.id === i.convocatoria_id; }) : null;
     const suyos = intentos.data.filter(function (x) { return x.inscripcion_id === i.id; });
     const mejor = suyos.reduce(function (m, x) { return Math.max(m, Number(x.nota)); }, -1);
     let estado, clase;
@@ -1357,6 +1382,7 @@ async function abrirNomina(c) {
     }
     return {
       id: i.id, nombres: i.nombres, cedula: i.cedula, correo: i.correo || "",
+      grupo: grupo ? grupo.nombre : "",
       sexo: i.sexo || "", edad: i.fecha_nacimiento ? edadEn(i.fecha_nacimiento, i.creado_en) : null,
       etnia: ETNIAS[i.etnia] || "",
       modalidad: i.modalidad === "presencial" ? "Presencial" : "Virtual",
@@ -1369,7 +1395,7 @@ async function abrirNomina(c) {
     };
   });
 
-  emp.nomina = { conv: c, filas: filas };
+  emp.nomina = { conv: c, filas: filas, grupos: grupos };
   pintarCifras(filas, c);
   pintarFilasNomina();
 }
@@ -1418,7 +1444,7 @@ function pintarFilasNomina() {
   if (filas.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 10;
+    td.colSpan = emp.nomina.grupos ? 11 : 10;
     td.className = "vacio-lista";
     td.textContent = emp.nomina.filas.length ? "Nadie coincide con la búsqueda." : "Todavía nadie se ha registrado en esta capacitación.";
     tr.appendChild(td);
@@ -1429,9 +1455,12 @@ function pintarFilasNomina() {
   filas.forEach(function (f) {
     const tr = document.createElement("tr");
     const celdas = [f.nombres, f.cedula, f.sexo || "—", f.edad ?? "—", f.etnia || "—", f.modalidad, null, f.nota === null ? "—" : formatearNota(f.nota) + " %", f.certificado || "—"];
+    if (emp.nomina.grupos) celdas.splice(1, 0, f.grupo.replace(" · ", "\n"));
+    const iEstado = emp.nomina.grupos ? 7 : 6;
     celdas.forEach(function (valor, i) {
       const td = document.createElement("td");
-      if (i === 6) {
+      if (emp.nomina.grupos && i === 1) td.className = "celda-grupo";
+      if (i === iEstado) {
         const s = document.createElement("span");
         s.className = "estado-acceso " + f.clase;
         s.textContent = f.estado;
@@ -1453,7 +1482,7 @@ async function anularCertificado(f) {
   const r = await nexusDb.from("cap_certificados").delete().eq("id", f.certId);
   if (r.error) return errorSupabase(r.error, "No se pudo anular el certificado.");
   avisar("Certificado anulado.");
-  await abrirNomina(emp.nomina.conv);
+  await abrirNomina(emp.nomina.conv, Boolean(emp.nomina.grupos));
 }
 
 el("btn-volver").addEventListener("click", async function () {
@@ -1479,8 +1508,9 @@ el("btn-excel").addEventListener("click", async function () {
   if (!emp.nomina) return;
   const c = emp.nomina.conv;
   const filas = emp.nomina.filas.map(function (f) {
-    return {
-      "Nombres": f.nombres,
+    const fila = { "Nombres": f.nombres };
+    if (emp.nomina.grupos) fila["Grupo"] = f.grupo;
+    return Object.assign(fila, {
       "Cédula": f.cedula,
       "Correo": f.correo,
       "Sexo": f.sexo,
@@ -1493,7 +1523,7 @@ el("btn-excel").addEventListener("click", async function () {
       "Intentos": f.intentos,
       "Código de certificado": f.certificado,
       "Fecha del certificado": f.emitido ? fechaHora(f.emitido) : ""
-    };
+    });
   });
   const certificados = emp.nomina.filas.filter(function (f) { return f.certificado; }).length;
   const total = emp.actual.num_trabajadores;
@@ -1503,6 +1533,10 @@ el("btn-excel").addEventListener("click", async function () {
     ["Empresa", emp.actual.nombre],
     ["RUC", emp.actual.ruc || ""],
     ["Capacitación", c.cap_cursos.titulo],
+    ...(emp.nomina.grupos ? emp.nomina.grupos.map(function (g) {
+      const n = emp.nomina.filas.filter(function (f) { return f.grupo === g.nombre; });
+      return [g.nombre, n.length + " inscritos · " + n.filter(function (f) { return f.certificado; }).length + " con certificado"];
+    }) : []),
     ["Modalidad", NOMBRE_MODALIDAD[c.modalidad]],
     ["Horas", Number(c.horas || c.cap_cursos.horas)],
     ["Inscritos", emp.nomina.filas.length],
@@ -1516,14 +1550,14 @@ el("btn-excel").addEventListener("click", async function () {
 
   const libro = XLSX.utils.book_new();
   const hoja = XLSX.utils.json_to_sheet(filas.length ? filas : [{ "Nombres": "Sin registros" }]);
-  hoja["!cols"] = [{ wch: 34 }, { wch: 14 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 9 }, { wch: 9 }, { wch: 20 }, { wch: 18 }];
+  hoja["!cols"] = [{ wch: 34 }].concat(emp.nomina.grupos ? [{ wch: 30 }] : []).concat([{ wch: 14 }, { wch: 28 }, { wch: 6 }, { wch: 6 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 9 }, { wch: 9 }, { wch: 20 }, { wch: 18 }]);
   XLSX.utils.book_append_sheet(libro, hoja, "Nómina");
   const hojaRes = XLSX.utils.aoa_to_sheet(resumen);
   hojaRes["!cols"] = [{ wch: 28 }, { wch: 50 }];
   XLSX.utils.book_append_sheet(libro, hojaRes, "Resumen");
 
-  const nombre = ("Nomina_" + emp.actual.nombre + "_" + c.cap_cursos.titulo)
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 80);
+  const nombre = ("Nomina_" + emp.actual.nombre + "_" + c.cap_cursos.titulo + (emp.nomina.grupos ? "_todos_los_grupos" : ""))
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 110);
   XLSX.writeFile(libro, nombre + ".xlsx");
 });
 

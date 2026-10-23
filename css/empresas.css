@@ -209,3 +209,15 @@
 .btn-unirse-admin.en-curso { animation: unirse-latido 1.6s ease-in-out infinite; }
 @keyframes unirse-latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(26,143,74,.45); } 50% { box-shadow: 0 0 0 8px rgba(26,143,74,0); } }
 @media (prefers-reduced-motion: reduce) { .btn-unirse-admin.en-curso { animation: none; } }
+
+/* ----- Nómina a todo lo ancho ----- */
+body.modo-nomina .panel { max-width: min(1600px, calc(100vw - 32px)); grid-template-columns: minmax(0, 1fr); }
+body.modo-nomina .panel > .lista-cursos { display: none; }
+body.modo-nomina .cifras { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+/* La tabla se desplaza dentro de su propio cuadro: la barra horizontal queda siempre a la vista */
+body.modo-nomina .tabla-caja { max-height: calc(100vh - 160px); overflow: auto; }
+body.modo-nomina .tabla thead th { position: sticky; top: 0; z-index: 1; }
+body.modo-nomina .tabla { font-size: 14px; }
+body.modo-nomina .tabla td { padding: 8px 10px; }
+body.modo-nomina .tabla td:first-child { min-width: 210px; }
+.tabla td.celda-grupo { white-space: nowrap; }

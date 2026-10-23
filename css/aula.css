@@ -193,3 +193,5 @@
 .presentacion-foto:hover, .presentacion-foto:focus-visible { opacity: 1; transform: scale(1.06); }
 .capturando .presentacion-foto, .capturando .captura-toast { visibility: hidden; }
 .captura-toast { max-width: min(90vw, 640px); text-align: center; }
+.proxima-cuando { min-height: 2.6em; }
+.proxima-acciones { align-items: center; }

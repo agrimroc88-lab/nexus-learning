@@ -670,9 +670,11 @@ $a("btn-pantalla").addEventListener("click", alternarPantalla);
 // ---------------------------------------------------------------------
 const cap = { ocupada: false };
 
-function nombreArchivo(t) {
+// Nombres cortos: Windows corta el nombre si la carpeta tiene una ruta larga
+function nombreArchivo(t, max) {
   return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "Sin-nombre";
+    .replace(/\b(S\.?\s?A\.?\s?S|S\.?\s?A|CIA\.?\s?LTDA|C\.?\s?LTDA|LTDA)\.?\s*$/i, "")
+    .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, max || 30).replace(/-+$/, "") || "Sin-nombre";
 }
 
 function empresaCaptura() {
@@ -733,8 +735,8 @@ async function tomarCaptura() {
   }
   const hoy = new Date();
   const fecha = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0") + "-" + String(hoy.getDate()).padStart(2, "0");
-  const empresa = nombreArchivo(empresaCaptura());
-  const charla = nombreArchivo(au.curso && au.curso.titulo);
+  const empresa = nombreArchivo(empresaCaptura(), 28);
+  const charla = nombreArchivo(au.curso && au.curso.titulo, 32);
   lienzo.toBlob(function (blob) {
     cap.ocupada = false;
     boton.disabled = false;

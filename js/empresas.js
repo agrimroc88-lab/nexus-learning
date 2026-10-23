@@ -270,13 +270,13 @@ async function cargarConvocatorias() {
   emp.sinReunion = false;
   emp.sinAlianza = false;
   const extras = function () {
-    return (emp.sinReunion ? "" : "reunion_url, reunion_inicio, reunion_duracion, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ");
+    return (emp.sinReunion ? "" : "encuentros, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ");
   };
   let { data, error } = await consulta(extras());
   for (let i = 0; i < 2 && error; i++) {
     const m = error.message || "";
     if (/alianza/i.test(m)) emp.sinAlianza = true;
-    else if (/reunion/i.test(m)) emp.sinReunion = true;
+    else if (/encuentros/i.test(m)) emp.sinReunion = true;
     else break;
     ({ data, error } = await consulta(extras()));
   }
@@ -386,7 +386,7 @@ function tarjetaConvocatoria(c) {
     c.modalidad !== "virtual" ? (c.evaluacion_presencial ? "QR con evaluación" : "QR sin evaluación") : null,
     c.observaciones,
     c.alianza_vitalwork ? "🤝 En alianza con VitalWork" : null,
-    c.reunion_url ? "🎥 En vivo" + (c.reunion_inicio ? ": " + fechaHora(c.reunion_inicio) : "") : null
+    ...encuentrosDe(c).map(function (e, i, t) { return "🎥 " + (t.length > 1 ? "Encuentro " + (i + 1) + ": " : "En vivo: ") + fechaHora(e.inicio); })
   ].filter(Boolean).forEach(function (t) {
     const s = document.createElement("span");
     s.className = "chip";
@@ -447,7 +447,7 @@ function tarjetaConvocatoria(c) {
     acciones.appendChild(boton("Nueva clave presencial", "boton secundario boton-chico", function () { formNuevoCodigo(art, c, "presencial"); }));
   }
   if (!emp.sinReunion) {
-    acciones.appendChild(boton(c.reunion_url ? "🎥 Clase en vivo" : "🎥 Agregar clase en vivo", "boton secundario boton-chico", function () { formReunion(art, c); }));
+    acciones.appendChild(boton(encuentrosDe(c).length ? "🎥 Encuentros en vivo" : "🎥 Agregar encuentros en vivo", "boton secundario boton-chico", function () { formReunion(art, c); }));
   }
   if (!emp.sinAlianza) {
     acciones.appendChild(boton(c.alianza_vitalwork ? "🤝 Quitar alianza VitalWork" : "🤝 En alianza con VitalWork", "boton secundario boton-chico", function () { cambiarAlianza(c); }));
@@ -616,28 +616,117 @@ function conectarPegadoReunion(inUrl, inInicio, inDur) {
   });
 }
 
-function leerReunion(inUrl, inInicio, inDur) {
-  let url = inUrl.value.trim();
-  if (/\s/.test(url)) url = analizarInvitacion(url).url || url;
-  if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
-  if (/^http:\/\//i.test(url)) url = "https://" + url.slice(7);
-  inUrl.value = url;
-  const dur = parseInt(inDur.value, 10) || 60;
-  if (url) {
-    try { new URL(url); } catch (e) { return { error: "El enlace de la reunión no es válido. Cópialo tal cual de Meet, Zoom o Teams." }; }
-    if (!inInicio.value) return { error: "Escribe la fecha y hora de inicio de la reunión (sirve para la cuenta regresiva)." };
-  }
-  if (!(dur >= 10 && dur <= 600)) return { error: "La duración de la reunión debe estar entre 10 y 600 minutos." };
-  return {
-    reunion_url: url || null,
-    reunion_inicio: url && inInicio.value ? new Date(inInicio.value).toISOString() : null,
-    reunion_duracion: dur
-  };
-}
-
 function aLocalInput(iso) {
   const d = new Date(iso);
   return d.getFullYear() + "-" + dos(d.getMonth() + 1) + "-" + dos(d.getDate()) + "T" + dos(d.getHours()) + ":" + dos(d.getMinutes());
+}
+
+// ---- Encuentros (varias fechas con una sola clave) ----
+function encuentrosDe(c) {
+  return (Array.isArray(c.encuentros) ? c.encuentros : [])
+    .filter(function (e) { return e && e.url; })
+    .slice()
+    .sort(function (a, b) { return new Date(a.inicio) - new Date(b.inicio); });
+}
+
+// "VIERNES 23 DE OCTUBRE · 15:00"
+function fechaGrande(iso) {
+  const d = new Date(iso);
+  const dia = d.toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
+  const hora = d.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return (dia + " · " + hora).toUpperCase();
+}
+
+// Editor de filas: enlace (o invitación pegada), fecha y hora, duración
+function editorEncuentros(caja, lista) {
+  caja.innerHTML = "";
+  const filas = crearEl("div", "encuentros-filas");
+  const agregar = boton("+ Agregar encuentro", "boton secundario boton-chico", function () { nuevaFila(); });
+  caja.append(filas, agregar);
+
+  function numerar() {
+    filas.querySelectorAll(".encuentro-fila").forEach(function (f, i) { f.querySelector(".encuentro-n").textContent = "Encuentro " + (i + 1); });
+  }
+  function nuevaFila(e) {
+    const f = crearEl("div", "encuentro-fila");
+    const cab = crearEl("div", "encuentro-cab");
+    const n = crearEl("strong", "encuentro-n", "");
+    const quitar = boton("✕ Quitar", "enlace-boton rojo", function () { f.remove(); numerar(); });
+    cab.append(n, quitar);
+    const url = crearInput("text", e ? e.url : "", { placeholder: "Pega el enlace o la invitación completa de Meet", maxlength: "2000", inputmode: "url", autocomplete: "off" });
+    const ultimo = filas.lastElementChild ? filas.lastElementChild._leer() : null;
+    const propuesta = e && e.inicio ? aLocalInput(e.inicio)
+      : (ultimo && ultimo.ini ? aLocalInput(new Date(new Date(ultimo.ini).getTime() + 3 * 86400000).toISOString()) : hoyISO() + "T" + horaActual());
+    const inicio = crearInput("datetime-local", propuesta);
+    const dur = crearInput("number", e ? (e.duracion || 60) : (ultimo ? ultimo.dur : 60), { min: "10", max: "600", step: "5" });
+    const fila2 = crearEl("div", "fila-dos");
+    fila2.append(envolver("Fecha y hora de inicio", inicio), envolver("Duración (minutos)", dur));
+    f.append(cab, envolver("Enlace de la reunión", url), fila2);
+    conectarPegadoReunion(url, inicio, dur);
+    f._leer = function () { return { url: url.value.trim(), ini: inicio.value ? new Date(inicio.value).toISOString() : null, dur: parseInt(dur.value, 10) || 60, inpUrl: url }; };
+    filas.appendChild(f);
+    numerar();
+    if (!e) url.focus();
+  }
+  lista.forEach(nuevaFila);
+
+  return {
+    vacio: function () { return !filas.children.length; },
+    agregarSiVacio: function () { if (!filas.children.length) nuevaFila(); },
+    leer: function () {
+      const res = [];
+      const filasEl = Array.from(filas.children);
+      for (let i = 0; i < filasEl.length; i++) {
+        const d = filasEl[i]._leer();
+        let url = d.url;
+        if (!url) continue; // fila vacía: se ignora
+        if (/\s/.test(url)) url = analizarInvitacion(url).url || url;
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+        if (/^http:\/\//i.test(url)) url = "https://" + url.slice(7);
+        d.inpUrl.value = url;
+        try { new URL(url); } catch (e) { return { error: "El enlace del encuentro " + (i + 1) + " no es válido. Cópialo tal cual de Meet, Zoom o Teams." }; }
+        if (!d.ini) return { error: "Escribe la fecha y hora del encuentro " + (i + 1) + " (sirve para la cuenta regresiva)." };
+        if (!(d.dur >= 10 && d.dur <= 600)) return { error: "La duración del encuentro " + (i + 1) + " debe estar entre 10 y 600 minutos." };
+        res.push({ inicio: d.ini, duracion: d.dur, url: url });
+      }
+      res.sort(function (a, b) { return new Date(a.inicio) - new Date(b.inicio); });
+      return { lista: res };
+    }
+  };
+}
+
+function crearEl(etiqueta, clase, texto) {
+  const e = document.createElement(etiqueta);
+  if (clase) e.className = clase;
+  if (texto !== undefined) e.textContent = texto;
+  return e;
+}
+function crearInput(tipo, valor, attrs) {
+  const inp = document.createElement("input");
+  inp.className = "campo";
+  inp.type = tipo;
+  inp.value = valor;
+  Object.keys(attrs || {}).forEach(function (k) { inp.setAttribute(k, attrs[k]); });
+  return inp;
+}
+function envolver(texto, inp) {
+  const lab = crearEl("label", "etiqueta", texto);
+  lab.appendChild(inp);
+  const d = document.createElement("div");
+  d.appendChild(lab);
+  return d;
+}
+
+// La clave debe servir hasta el último encuentro (y desde antes del primero)
+function ajustarVigencia(acceso, encuentros) {
+  if (!encuentros.length) return acceso;
+  const primero = new Date(encuentros[0].inicio).getTime() - 30 * 60000;
+  const ult = encuentros[encuentros.length - 1];
+  const fin = new Date(ult.inicio).getTime() + (ult.duracion + 60) * 60000;
+  const a = Object.assign({}, acceso);
+  if (new Date(a.valido_hasta).getTime() < fin) a.valido_hasta = new Date(fin).toISOString();
+  if (new Date(a.valido_desde).getTime() > primero) a.valido_desde = new Date(Math.max(primero, Date.now() - 60000)).toISOString();
+  return a;
 }
 
 function formReunion(tarjeta, c) {
@@ -647,65 +736,44 @@ function formReunion(tarjeta, c) {
   const f = document.createElement("form");
   f.className = "mini-form form-reunion";
   f.noValidate = true;
-  const titulo = document.createElement("strong");
-  titulo.textContent = "🎥 Clase en vivo · " + emp.actual.nombre;
-  f.appendChild(titulo);
-
-  const campo = function (texto, tipo, valor, attrs) {
-    const lab = document.createElement("label");
-    lab.className = "etiqueta";
-    lab.textContent = texto;
-    const inp = document.createElement("input");
-    inp.className = "campo";
-    inp.type = tipo;
-    inp.value = valor;
-    Object.keys(attrs || {}).forEach(function (k) { inp.setAttribute(k, attrs[k]); });
-    lab.appendChild(inp);
-    return { lab: lab, inp: inp };
-  };
-  const url = campo("Enlace de la reunión (Meet, Zoom o Teams)", "text", c.reunion_url || "", { placeholder: "Pega el enlace o la invitación completa", maxlength: "2000", inputmode: "url", autocomplete: "off" });
-  const propuesta = c.reunion_inicio ? aLocalInput(c.reunion_inicio) : (c.fecha_capacitacion || hoyISO()) + "T" + horaActual();
-  const inicio = campo("Fecha y hora de inicio", "datetime-local", propuesta);
-  const dur = campo("Duración (minutos)", "number", c.reunion_duracion || 60, { min: "10", max: "600", step: "5" });
-  const fila2 = document.createElement("div");
-  fila2.className = "fila-dos";
-  const d1 = document.createElement("div"); d1.appendChild(inicio.lab);
-  const d2 = document.createElement("div"); d2.appendChild(dur.lab);
-  fila2.append(d1, d2);
-  f.append(url.lab, fila2);
-  conectarPegadoReunion(url.inp, inicio.inp, dur.inp);
+  f.appendChild(crearEl("strong", "", "🎥 Encuentros en vivo · " + emp.actual.nombre));
+  f.appendChild(crearEl("p", "ayuda", "Misma clave y mismo QR para todos los encuentros. Si un encuentro es después del fin de la clave, la clave se extiende sola."));
+  const caja = crearEl("div", "lista-encuentros");
+  f.appendChild(caja);
+  const ed = editorEncuentros(caja, encuentrosDe(c));
+  ed.agregarSiVacio();
 
   const acciones = document.createElement("div");
   acciones.className = "acciones-form";
-  const guardar = boton("Guardar", "boton boton-chico", function () {});
+  const guardar = boton("Guardar encuentros", "boton boton-chico", function () {});
   guardar.type = "submit";
-  acciones.appendChild(boton("Cancelar", "boton secundario boton-chico", function () { f.remove(); }));
-  if (c.reunion_url) {
-    acciones.appendChild(boton("Quitar reunión", "enlace-boton rojo", async function () {
-      const r = await nexusDb.from("cap_convocatorias").update({ reunion_url: null, reunion_inicio: null }).eq("id", c.id);
-      if (r.error) return errorSupabase(r.error, "No se pudo quitar la reunión.");
-      avisar("Reunión quitada de esta capacitación.");
-      await cargarConvocatorias();
-    }));
-  }
-  acciones.appendChild(guardar);
+  acciones.append(boton("Cancelar", "boton secundario boton-chico", function () { f.remove(); }), guardar);
   f.appendChild(acciones);
 
   f.addEventListener("submit", async function (ev) {
     ev.preventDefault();
-    if (!url.inp.value.trim()) return avisar("Pega el enlace de la reunión.", "error");
-    const datos = leerReunion(url.inp, inicio.inp, dur.inp);
-    if (datos.error) return avisar(datos.error, "error");
+    const r0 = ed.leer();
+    if (r0.error) return avisar(r0.error, "error");
     guardar.disabled = true;
-    const r = await nexusDb.from("cap_convocatorias").update(datos).eq("id", c.id);
+    const r = await nexusDb.from("cap_convocatorias").update({ encuentros: r0.lista }).eq("id", c.id);
+    if (r.error) { guardar.disabled = false; return errorSupabase(r.error, "No se pudieron guardar los encuentros."); }
+    // Extiende las claves vigentes si algún encuentro queda fuera de su vigencia
+    let extendidas = 0;
+    for (const a of (c.cap_accesos || []).filter(function (x) { return !x.anulado; })) {
+      const nuevo = ajustarVigencia(a, r0.lista);
+      if (nuevo.valido_hasta !== a.valido_hasta) {
+        const u = await nexusDb.from("cap_accesos").update({ valido_hasta: nuevo.valido_hasta }).eq("id", a.id);
+        if (!u.error) extendidas++;
+      }
+    }
     guardar.disabled = false;
-    if (r.error) return errorSupabase(r.error, "No se pudo guardar la reunión.");
-    avisar("Clase en vivo guardada. Los trabajadores verán el botón «Unirse a la reunión» al registrarse.");
+    avisar(r0.lista.length
+      ? r0.lista.length + (r0.lista.length === 1 ? " encuentro guardado." : " encuentros guardados.") + (extendidas ? " La clave se extendió hasta el último encuentro." : "")
+      : "Se quitaron los encuentros en vivo de esta capacitación.");
     await cargarConvocatorias();
   });
 
   tarjeta.querySelector(".conv-acciones").after(f);
-  url.inp.focus();
 }
 
 function boton(texto, clase, accion) {
@@ -735,7 +803,9 @@ function mensajeAcceso(a, c) {
     "1. Toca este enlace para ingresar:\n" + enlacePrograma(c) + "\n\n" +
     "2. Escribe la clave de acceso: *" + a.codigo + "*\n" +
     "(válida hasta el " + fechaHora(a.valido_hasta) + ")\n\n" +
-    (c.reunion_url ? "🎥 *Clase en vivo" + (c.reunion_inicio ? " el " + fechaHora(c.reunion_inicio) : "") + "*: al registrarte verás el botón para unirte a la reunión.\n\n" : "") +
+    encuentrosDe(c).map(function (e, i, t) {
+      return "📅 *" + (t.length > 1 ? "ENCUENTRO " + (i + 1) + " — " : "CLASE EN VIVO — ") + fechaGrande(e.inicio) + "*\n" + e.url + "\n\n";
+    }).join("") +
     cierre;
 }
 
@@ -1177,9 +1247,7 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-horas").value = "";
   el("v-observaciones").value = "";
   el("v-clave-presencial").value = "";
-  el("v-reunion-url").value = "";
-  el("v-reunion-inicio").value = hoyISO() + "T" + horaActual();
-  el("v-reunion-duracion").value = 60;
+  emp.edEncuentros = editorEncuentros(el("v-encuentros"), []);
   el("v-reunion-bloque").hidden = emp.sinReunion === true;
   el("v-alianza").checked = false;
   el("v-alianza-caja").hidden = emp.sinAlianza === true;
@@ -1191,7 +1259,6 @@ el("btn-nueva-conv").addEventListener("click", function () {
 });
 
 el("btn-cancelar-conv").addEventListener("click", function () { el("form-conv").hidden = true; });
-conectarPegadoReunion(el("v-reunion-url"), el("v-reunion-inicio"), el("v-reunion-duracion"));
 
 document.querySelectorAll('input[name="v-modalidad"]').forEach(function (r) {
   r.addEventListener("change", actualizarBloquesModalidad);
@@ -1244,9 +1311,16 @@ el("form-conv").addEventListener("submit", async function (ev) {
     return avisar("La clave presencial y la virtual deben ser distintas.", "error");
   }
 
-  const reunion = emp.sinReunion ? {} : leerReunion(el("v-reunion-url"), el("v-reunion-inicio"), el("v-reunion-duracion"));
-  if (reunion.error) return avisar(reunion.error, "error");
-  if (!reunion.reunion_url) { delete reunion.reunion_url; delete reunion.reunion_inicio; delete reunion.reunion_duracion; }
+  const reunion = {};
+  if (!emp.sinReunion && emp.edEncuentros) {
+    const r0 = emp.edEncuentros.leer();
+    if (r0.error) return avisar(r0.error, "error");
+    if (r0.lista.length) {
+      reunion.encuentros = r0.lista;
+      // la clave debe servir para todos los encuentros
+      for (let i = 0; i < accesos.length; i++) accesos[i] = ajustarVigencia(accesos[i], r0.lista);
+    }
+  }
 
   const botonGuardar = el("btn-guardar-conv");
   botonGuardar.disabled = true;
@@ -1330,13 +1404,15 @@ function rangoVirtual(desde, hasta) {
 // Grupos: capacitaciones de esta empresa con el mismo curso, de la más antigua a la más reciente
 function gruposDe(c) {
   const cuando = function (x) {
-    return new Date(x.reunion_inicio || (x.fecha_capacitacion ? x.fecha_capacitacion + "T12:00" : x.creado_en)).getTime();
+    const e = encuentrosDe(x)[0];
+    return new Date(e ? e.inicio : (x.fecha_capacitacion ? x.fecha_capacitacion + "T12:00" : x.creado_en)).getTime();
   };
   return (emp.convs || [])
     .filter(function (x) { return x.cap_cursos.id === c.cap_cursos.id; })
     .sort(function (a, b) { return cuando(a) - cuando(b); })
     .map(function (x, i) {
-      const f = x.reunion_inicio ? fechaHora(x.reunion_inicio) : (x.fecha_capacitacion ? fechaCorta(x.fecha_capacitacion + "T12:00") : fechaCorta(x.creado_en));
+      const e = encuentrosDe(x)[0];
+      const f = e ? fechaHora(e.inicio) : (x.fecha_capacitacion ? fechaCorta(x.fecha_capacitacion + "T12:00") : fechaCorta(x.creado_en));
       return { conv: x, nombre: "Grupo " + (i + 1) + " · " + f };
     });
 }

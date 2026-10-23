@@ -688,11 +688,15 @@ const reu = { datos: null, desfase: 0, reloj: null };
 async function mostrarReunion() {
   if (reu.datos) return pintarReunion();
   const { data, error } = await nexusDb.rpc("cap_reunion", { p_codigo: st.codigo });
-  if (error || !data || !data.url) return; // sin SQL 35 o sin reunión: no se muestra nada
+  if (error || !data) return; // sin SQL o sin encuentros: no se muestra nada
+  // SQL 38: varios encuentros · SQL 35: una sola reunión
+  const lista = Array.isArray(data.encuentros) ? data.encuentros
+    : (data.url ? [{ url: data.url, inicio: data.inicio, duracion: data.duracion }] : []);
+  reu.lista = lista.filter(function (e) { return e && e.url; })
+    .sort(function (a, b) { return new Date(a.inicio || 0) - new Date(b.inicio || 0); });
+  if (!reu.lista.length) return;
   reu.datos = data;
-  // Corrige el reloj del teléfono con la hora del servidor
   if (data.ahora) reu.desfase = new Date(data.ahora).getTime() - Date.now();
-  $("btn-reunion").href = data.url;
   const nombre = (st.persona && st.persona.nombres || "").split(" ").slice(0, 2).join(" ");
   const p = $("reunion-persona");
   p.textContent = nombre ? "Registrado como " + nombre + ". " : "";
@@ -710,36 +714,65 @@ async function mostrarReunion() {
   reu.reloj = setInterval(pintarReunion, 15000);
 }
 
+function fechaEncuentro(ms, ahora) {
+  const f = new Date(ms);
+  const hora = f.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" });
+  if (f.toDateString() === new Date(ahora).toDateString()) return "hoy a las " + hora;
+  if (f.toDateString() === new Date(ahora + 86400000).toDateString()) return "mañana a las " + hora;
+  return "el " + f.toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" }) + " a las " + hora;
+}
+
 function pintarReunion() {
-  const d = reu.datos;
-  if (!d) return;
+  if (!reu.lista) return;
   const bloque = $("bloque-reunion");
   const ahora = Date.now() + reu.desfase;
-  const inicio = d.inicio ? new Date(d.inicio).getTime() : null;
-  const fin = inicio ? inicio + (d.duracion || 60) * 60000 : null;
+  const tramos = reu.lista.map(function (e, i) {
+    const ini = e.inicio ? new Date(e.inicio).getTime() : null;
+    return { e: e, n: i + 1, ini: ini, fin: ini ? ini + (e.duracion || 60) * 60000 : null };
+  });
+  const varios = tramos.length > 1;
+  const enCurso = tramos.find(function (t) { return t.ini && ahora >= t.ini && ahora < t.fin; });
+  const proximo = tramos.find(function (t) { return t.ini && ahora < t.ini; });
+  const sinHora = tramos.find(function (t) { return !t.ini; });
+  const t = enCurso || proximo || sinHora || tramos[tramos.length - 1];
+  const nombre = varios ? "El encuentro " + t.n : "La reunión";
+  $("btn-reunion").href = t.e.url;
   bloque.classList.remove("en-curso", "terminada");
 
-  if (!inicio) {
+  if (!t.ini) {
     $("reunion-estado").textContent = "Clase en vivo";
     $("reunion-cuenta").textContent = "Toca el botón para entrar a la reunión.";
-  } else if (ahora < inicio) {
-    const f = new Date(inicio);
-    const hoy = new Date(ahora);
-    const mismoDia = f.toDateString() === hoy.toDateString();
-    const manana = new Date(ahora + 86400000).toDateString() === f.toDateString();
-    const hora = f.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" });
-    const dia = mismoDia ? "hoy" : manana ? "mañana" : "el " + f.toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
-    $("reunion-estado").textContent = "La reunión empezará " + dia + " a las " + hora;
-    $("reunion-cuenta").textContent = "(faltan " + textoFalta(inicio - ahora) + ")";
-  } else if (ahora < fin) {
+  } else if (t === enCurso) {
     bloque.classList.add("en-curso");
-    $("reunion-estado").textContent = "🔴 Reunión en curso";
+    $("reunion-estado").textContent = "🔴 " + (varios ? "Encuentro " + t.n + " en curso" : "Reunión en curso");
     $("reunion-cuenta").textContent = "Entra ahora, ya empezó.";
+  } else if (t === proximo) {
+    $("reunion-estado").textContent = nombre + " empezará " + fechaEncuentro(t.ini, ahora);
+    $("reunion-cuenta").textContent = "(faltan " + textoFalta(t.ini - ahora) + ")";
   } else {
     bloque.classList.add("terminada");
-    $("reunion-estado").textContent = "La reunión ya terminó";
+    $("reunion-estado").textContent = varios ? "Los encuentros ya terminaron" : "La reunión ya terminó";
     $("reunion-cuenta").textContent = "Si todavía siguen conectados, puedes intentar entrar.";
   }
+
+  // Con varios encuentros: la lista completa debajo del botón
+  let lista = $("reunion-lista");
+  if (!lista) {
+    lista = document.createElement("ul");
+    lista.id = "reunion-lista";
+    lista.className = "reunion-lista";
+    $("btn-reunion").after(lista);
+  }
+  lista.hidden = !varios;
+  lista.innerHTML = "";
+  if (varios) tramos.forEach(function (x) {
+    const li = document.createElement("li");
+    const estado = !x.ini ? "" : ahora >= x.fin ? " ✓" : (ahora >= x.ini ? " · en curso" : "");
+    li.textContent = "Encuentro " + x.n + ": " + (x.ini ? fechaEncuentro(x.ini, ahora) : "sin hora") + estado;
+    if (x === t) li.className = "actual";
+    if (x.ini && ahora >= x.fin) li.classList.add("pasado");
+    lista.appendChild(li);
+  });
 }
 
 function textoFalta(ms) {

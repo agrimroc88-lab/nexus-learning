@@ -111,9 +111,11 @@ function pintarProximas() {
       li.appendChild(claves);
     }
     const acciones = crear("div", "proxima-acciones");
-    if (c.reunion_url) {
+    const enc = encuentroActual(c, ahora);
+    if (enc) {
       const unirse = crear("a", "boton btn-unirse", "🎥 Unirse a la reunión");
-      unirse.href = c.reunion_url;
+      unirse.href = enc.e.url;
+      li._unirse = unirse;
       unirse.target = "_blank";
       unirse.rel = "noopener";
       acciones.appendChild(unirse);
@@ -135,7 +137,23 @@ function actualizarProximas() {
     if (t.textContent !== e.texto) t.textContent = e.texto;
     li.classList.toggle("en-curso", e.clase === "en-curso");
     li.classList.toggle("terminada", e.clase === "terminada");
+    const enc = encuentroActual(li._datos, ahora);
+    if (li._unirse && enc && li._unirse.href !== enc.e.url) li._unirse.href = enc.e.url;
   });
+}
+
+// Encuentros (SQL 38) o la reunión única (SQL 35): el que está en curso, si no el próximo, si no el último
+function encuentroActual(c, ahora) {
+  const lista = (Array.isArray(c.encuentros) ? c.encuentros
+    : (c.reunion_url ? [{ url: c.reunion_url, inicio: c.reunion_inicio, duracion: c.reunion_duracion }] : []))
+    .filter(function (e) { return e && e.url; })
+    .map(function (e) { const ini = e.inicio ? new Date(e.inicio).getTime() : null; return { e: e, ini: ini, fin: ini ? ini + (e.duracion || 60) * 60000 : null }; })
+    .sort(function (a, b) { return (a.ini || 0) - (b.ini || 0); });
+  if (!lista.length) return null;
+  lista.forEach(function (x, i) { x.n = i + 1; x.total = lista.length; });
+  return lista.find(function (x) { return x.ini && ahora >= x.ini && ahora < x.fin; })
+    || lista.find(function (x) { return x.ini && ahora < x.ini; })
+    || lista[lista.length - 1];
 }
 
 function estadoProxima(c, ahora) {
@@ -146,12 +164,14 @@ function estadoProxima(c, ahora) {
     if (d.toDateString() === new Date(ahora + 86400000).toDateString()) return "Mañana";
     return d.toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
   };
-  if (c.reunion_inicio) {
-    const ini = new Date(c.reunion_inicio), fin = ini.getTime() + (c.reunion_duracion || 60) * 60000;
+  const enc = encuentroActual(c, ahora);
+  if (enc && enc.ini) {
+    const ini = new Date(enc.ini), fin = enc.fin;
     const base = fmtDia(ini) + " a las " + fmtHora(ini);
-    if (ahora < ini.getTime()) return { texto: "🎥 " + base + " (faltan " + faltaTexto(ini.getTime() - ahora) + ")", clase: "" };
-    if (ahora < fin) return { texto: "🔴 Reunión en curso · empezó a las " + fmtHora(ini), clase: "en-curso" };
-    return { texto: "Reunión terminada · " + base, clase: "terminada" };
+    const cual = enc.total > 1 ? "Encuentro " + enc.n + " de " + enc.total + " · " : "";
+    if (ahora < enc.ini) return { texto: "🎥 " + cual + base + " (faltan " + faltaTexto(enc.ini - ahora) + ")", clase: "" };
+    if (ahora < fin) return { texto: "🔴 " + cual + "En curso · empezó a las " + fmtHora(ini), clase: "en-curso" };
+    return { texto: (enc.total > 1 ? "Encuentros terminados" : "Reunión terminada") + " · " + base, clase: "terminada" };
   }
   if (c.fecha) return { texto: "📅 " + fmtDia(new Date(c.fecha + "T12:00")), clase: "" };
   return { texto: "Clave vigente", clase: "" };

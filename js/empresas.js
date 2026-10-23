@@ -164,6 +164,8 @@ function pintarCabeceraEmpresa() {
 }
 
 function mostrar(vista) {
+  // La nómina usa todo el ancho de la pantalla (se oculta la lista de empresas)
+  document.body.classList.toggle("modo-nomina", vista === "vista-nomina");
   el("editor-vacio").hidden = true;
   el("vista-empresa").hidden = vista !== "vista-empresa";
   el("vista-nomina").hidden = vista !== "vista-nomina";
@@ -398,9 +400,25 @@ function tarjetaConvocatoria(c) {
   entrar.className = "boton boton-chico btn-entrar-curso";
   entrar.href = "aula.html?c=" + encodeURIComponent(c.cap_cursos.id);
   entrar.textContent = "Entrar al curso ▸";
+  entrar.href += "&emp=" + encodeURIComponent(emp.actual.nombre);
   const fila = document.createElement("div");
   fila.className = "conv-fila-chips";
-  fila.append(chips, entrar);
+  // Unirse directo al encuentro que toca (en curso, si no el próximo), sin registrarse
+  const enc = encuentroQueToca(c);
+  const botones = document.createElement("div");
+  botones.className = "conv-botones-cab";
+  if (enc) {
+    const unirse = document.createElement("a");
+    unirse.className = "boton boton-chico btn-unirse-admin" + (enc.enCurso ? " en-curso" : "");
+    unirse.href = enc.e.url;
+    unirse.target = "_blank";
+    unirse.rel = "noopener";
+    unirse.textContent = "🎥 Unirse" + (enc.total > 1 ? " al encuentro " + enc.n : " a la reunión") + (enc.enCurso ? " · en curso" : "");
+    unirse.title = "Entrar a la reunión como organizador, sin registrarse";
+    botones.appendChild(unirse);
+  }
+  botones.appendChild(entrar);
+  fila.append(chips, botones);
   cab.append(h3, fila);
 
   // Avance
@@ -622,6 +640,17 @@ function aLocalInput(iso) {
 }
 
 // ---- Encuentros (varias fechas con una sola clave) ----
+function encuentroQueToca(c) {
+  const ahora = Date.now();
+  const t = encuentrosDe(c).map(function (e, i, l) {
+    const ini = new Date(e.inicio).getTime();
+    return { e: e, n: i + 1, total: l.length, ini: ini, fin: ini + (e.duracion || 60) * 60000 };
+  });
+  if (!t.length) return null;
+  const enCurso = t.find(function (x) { return ahora >= x.ini && ahora < x.fin; });
+  if (enCurso) return Object.assign(enCurso, { enCurso: true });
+  return t.find(function (x) { return ahora < x.ini; }) || null; // si ya pasaron todos, no se muestra
+}
 function encuentrosDe(c) {
   return (Array.isArray(c.encuentros) ? c.encuentros : [])
     .filter(function (e) { return e && e.url; })
@@ -1531,7 +1560,7 @@ function pintarFilasNomina() {
   filas.forEach(function (f) {
     const tr = document.createElement("tr");
     const celdas = [f.nombres, f.cedula, f.sexo || "—", f.edad ?? "—", f.etnia || "—", f.modalidad, null, f.nota === null ? "—" : formatearNota(f.nota) + " %", f.certificado || "—"];
-    if (emp.nomina.grupos) celdas.splice(1, 0, f.grupo.replace(" · ", "\n"));
+    if (emp.nomina.grupos) celdas.splice(1, 0, f.grupo);
     const iEstado = emp.nomina.grupos ? 7 : 6;
     celdas.forEach(function (valor, i) {
       const td = document.createElement("td");

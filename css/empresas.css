@@ -203,3 +203,9 @@
 .encuentro-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .encuentro-n { color: #123A7A; }
 .lista-encuentros > .boton { justify-self: start; }
+.conv-botones-cab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn-unirse-admin { background: #1a8f4a; border-color: #1a8f4a; color: #fff; text-decoration: none; }
+.btn-unirse-admin:hover { background: #157a3e; border-color: #157a3e; color: #fff; }
+.btn-unirse-admin.en-curso { animation: unirse-latido 1.6s ease-in-out infinite; }
+@keyframes unirse-latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(26,143,74,.45); } 50% { box-shadow: 0 0 0 8px rgba(26,143,74,0); } }
+@media (prefers-reduced-motion: reduce) { .btn-unirse-admin.en-curso { animation: none; } }

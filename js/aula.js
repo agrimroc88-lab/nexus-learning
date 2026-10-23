@@ -29,7 +29,10 @@ const au = { papel: null, cursos: [], curso: null, pasos: [], i: 0, claves: [] }
 
   const id = new URLSearchParams(location.search).get("c");
   if (id) await abrirSalon(id);
-  else { await listarCursos(); cargarProximas(); }
+  else {
+    const pedido = Promise.resolve(nexusDb.rpc("cap_mis_capacitaciones")).catch(function () { return {}; });
+    await listarCursos(pedido);
+  }
 })();
 
 $a("btn-salir").addEventListener("click", cerrarSesion);
@@ -55,18 +58,20 @@ function urlPublica(espacio, ruta) {
 // ---------------------------------------------------------------------
 // 1. Lista de cursos (tarjetas con portada)
 // ---------------------------------------------------------------------
-async function listarCursos() {
-  $a("panel").hidden = false;
+async function listarCursos(pedidoProximas) {
   const { data, error } = await nexusDb
     .from("cap_cursos")
     .select("id, titulo, descripcion, imagen, publicado, cap_lecciones(count)")
     .order("titulo");
   if (error) {
     console.error(error);
+    $a("panel").hidden = false;
     return avisar("No se pudieron cargar los cursos. Detalle: " + (error.message || "error desconocido"), "error");
   }
   au.cursos = data || [];
+  if (pedidoProximas) cargarProximas(await pedidoProximas);
   pintarCursos();
+  $a("panel").hidden = false;
 }
 
 // ---------------------------------------------------------------------
@@ -74,14 +79,14 @@ async function listarCursos() {
 // ---------------------------------------------------------------------
 const prox = { lista: [], desfase: 0, reloj: null };
 
-async function cargarProximas() {
-  const { data, error } = await nexusDb.rpc("cap_mis_capacitaciones");
+function cargarProximas(r) {
+  const data = r && r.data, error = r && r.error;
   if (error || !data) return; // sin el SQL 37: la página sigue como antes
   prox.lista = data.lista || [];
   if (data.ahora) prox.desfase = new Date(data.ahora).getTime() - Date.now();
   pintarProximas();
   clearInterval(prox.reloj);
-  if (prox.lista.length) prox.reloj = setInterval(pintarProximas, 30000);
+  if (prox.lista.length) prox.reloj = setInterval(actualizarProximas, 30000);
 }
 
 function pintarProximas() {
@@ -92,6 +97,7 @@ function pintarProximas() {
   const ahora = Date.now() + prox.desfase;
   prox.lista.forEach(function (c) {
     const li = crear("li", "tarjeta-proxima");
+    li._datos = c;
     const estado = estadoProxima(c, ahora);
     if (estado.clase) li.classList.add(estado.clase);
     li.append(crear("span", "proxima-empresa", c.empresa),
@@ -117,6 +123,18 @@ function pintarProximas() {
     acciones.appendChild(salon);
     li.appendChild(acciones);
     ul.appendChild(li);
+  });
+}
+
+// Cada 30 s solo cambian el texto de la hora y el color (las tarjetas no se rehacen)
+function actualizarProximas() {
+  const ahora = Date.now() + prox.desfase;
+  document.querySelectorAll("#lista-proximas .tarjeta-proxima").forEach(function (li) {
+    const e = estadoProxima(li._datos, ahora);
+    const t = li.querySelector(".proxima-cuando");
+    if (t.textContent !== e.texto) t.textContent = e.texto;
+    li.classList.toggle("en-curso", e.clase === "en-curso");
+    li.classList.toggle("terminada", e.clase === "terminada");
   });
 }
 

@@ -924,7 +924,6 @@ function imprimirAsistencia(conv, modo) {
     mostrarGlobal(registro ? 'Todavía nadie se ha registrado en esta capacitación.' : 'Esta capacitación todavía no tiene certificados emitidos.');
     return;
   }
-  const RESULTADO = { aprobacion: 'Aprobado', asistencia: 'Asistencia' };
 
   const e = estado.empresa;
   const v = estado.vinculos.get(conv.id);
@@ -959,7 +958,6 @@ function imprimirAsistencia(conv, modo) {
       const nacimiento = (insc && insc.fecha_nacimiento) || (ficha && ficha.fecha_nacimiento) || null;
       return {
         nombres: String(c.nombres).toUpperCase(), cedula: c.cedula, codigo: c.codigo || '—',
-        resultado: c.codigo ? (RESULTADO[c.tipo] || 'Certificado') : 'Sin certificado',
         modalidad: c.modalidad === 'presencial' ? 'Presencial' : 'Virtual',
         registro: fechaLocal(registro),
         sexo: sexo === 'M' || sexo === 'F' ? sexo : '',
@@ -972,7 +970,6 @@ function imprimirAsistencia(conv, modo) {
     '</td><td class="m">' + escapar(x.cedula) + '</td><td class="c">' + (x.sexo || '—') +
     '</td><td class="c">' + (x.edad ?? '—') + '</td><td>' + escapar(ETNIAS[x.etnia] || '—') +
     '</td><td class="m">' + escapar(formatearFecha(x.registro)) + '</td><td>' + x.modalidad +
-    (registro ? '</td><td>' + escapar(x.resultado) : '') +
     '</td><td class="m">' + escapar(x.codigo) + '</td></tr>').join('');
 
   // Resumen: sexo, edad y etnia
@@ -982,9 +979,8 @@ function imprimirAsistencia(conv, modo) {
   const promedio = edades.length ? Math.round(edades.reduce((a, b) => a + b, 0) / edades.length) : null;
   const porEtnia = {};
   personas.forEach((x) => { const k = ETNIAS[x.etnia] || 'Sin dato'; porEtnia[k] = (porEtnia[k] || 0) + 1; });
-  const conCert = personas.filter((x) => x.codigo !== '—').length;
   const resumen = '<div class="resumen"><b>Resumen:</b> ' + personas.length + ' participantes' +
-    (registro ? ' (' + conCert + ' con certificado · ' + (personas.length - conCert) + ' sin certificado)' : '') + ' · Hombres: ' + hombres +
+ ' · Hombres: ' + hombres +
     ' · Mujeres: ' + mujeres + (personas.length - hombres - mujeres ? ' · Sin dato de sexo: ' + (personas.length - hombres - mujeres) : '') +
     ' · Edad promedio: ' + (promedio ?? '—') + (edades.length ? ' (de ' + Math.min(...edades) + ' a ' + Math.max(...edades) + ' años)' : '') +
     '<br><b>Autoidentificación étnica:</b> ' +
@@ -1042,7 +1038,7 @@ function imprimirAsistencia(conv, modo) {
     '</div>' +
 
     '<table><thead><tr><th class="c">N.º</th><th>Nombres y apellidos</th><th>Cédula</th><th class="c">Sexo</th>' +
-    '<th class="c">Edad</th><th>Etnia</th><th>Fecha de registro</th><th>Modalidad</th>' + (registro ? '<th>Resultado</th>' : '') + '<th>Código de certificado</th></tr></thead>' +
+    '<th class="c">Edad</th><th>Etnia</th><th>Fecha de registro</th><th>Modalidad</th><th>Código de certificado</th></tr></thead>' +
     '<tbody>' + filas + '</tbody></table>' + resumen +
 
     '<div class="firmas">' + FORMATO.firmas.map((f) => '<div>' + escapar(f) + '</div>').join('') + '</div>' +

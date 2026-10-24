@@ -692,13 +692,15 @@ function seccionRegistro(conv) {
       (v.url_registro ? '' : ' · <em>falta el enlace de Drive</em>');
     $botones.append(
       botonPequeno('Actualizar', () => actualizarRegistro(conv, v)),
-      botonPequeno('Registro de asistencia (PDF)', () => imprimirAsistencia(conv))
+      botonPequeno('Registro de asistencia (PDF)', () => imprimirAsistencia(conv, 'registro')),
+      botonPequeno('Certificados emitidos (PDF)', () => imprimirAsistencia(conv, 'certificados'))
     );
   } else {
     $texto.textContent = 'Aún no está registrada en Seguridad industrial ni en Salud ocupacional.';
     $botones.append(
       botonPequeno('Registrar en Seguridad o Salud', () => abrirRegistro(conv), true),
-      botonPequeno('Registro de asistencia (PDF)', () => imprimirAsistencia(conv))
+      botonPequeno('Registro de asistencia (PDF)', () => imprimirAsistencia(conv, 'registro')),
+      botonPequeno('Certificados emitidos (PDF)', () => imprimirAsistencia(conv, 'certificados'))
     );
   }
   div.append($texto, $botones);
@@ -896,9 +898,33 @@ function avisoOk(texto) {
 /* Registro de asistencia: formato fijo (control documental).
    Cambian solo los datos de la empresa y de la capacitación.
    Se abre en una ventana lista para imprimir o "Guardar como PDF". */
-function imprimirAsistencia(conv) {
+/* modo 'registro': todas las personas que se registraron (con o sin certificado).
+   modo 'certificados': solo quienes ya tienen certificado emitido. */
+function imprimirAsistencia(conv, modo) {
+  const registro = modo !== 'certificados';
   const d = datosRegistro(conv);
-  if (d.asistentes === 0) { mostrarGlobal('Esta capacitación todavía no tiene certificados emitidos.'); return; }
+  const certPorCedula = new Map(d.certs.map((c) => [normalizar(c.cedula), c]));
+  let base;
+  if (registro) {
+    const vistos = new Set();
+    base = [];
+    estado.inscripciones.filter((i) => i.convocatoria_id === conv.id).forEach((i) => {
+      const k = normalizar(i.cedula);
+      if (vistos.has(k)) return;
+      vistos.add(k);
+      const c = certPorCedula.get(k);
+      base.push({ cedula: i.cedula, nombres: i.nombres, modalidad: i.modalidad, emitido_en: c ? c.emitido_en : i.creado_en, codigo: c ? c.codigo : '', tipo: c ? c.tipo : '' });
+    });
+    // Certificados sin registro guardado (casos antiguos)
+    d.certs.forEach((c) => { if (!vistos.has(normalizar(c.cedula))) { vistos.add(normalizar(c.cedula)); base.push(c); } });
+  } else {
+    base = d.certs;
+  }
+  if (base.length === 0) {
+    mostrarGlobal(registro ? 'Todavía nadie se ha registrado en esta capacitación.' : 'Esta capacitación todavía no tiene certificados emitidos.');
+    return;
+  }
+  const RESULTADO = { aprobacion: 'Aprobado', asistencia: 'Asistencia' };
 
   const e = estado.empresa;
   const v = estado.vinculos.get(conv.id);
@@ -921,8 +947,8 @@ function imprimirAsistencia(conv) {
     ? '<img src="' + escapar(urlProveedor) + '" alt="' + escapar(FORMATO.nombreProveedor) + '">'
     : '';
 
-  // Una fila por persona certificada, con sus datos de registro
-  const personas = d.certs
+  // Una fila por persona, con sus datos de registro
+  const personas = base
     .slice()
     .sort((a, b) => String(a.nombres).localeCompare(String(b.nombres), 'es'))
     .map((c) => {
@@ -932,7 +958,8 @@ function imprimirAsistencia(conv) {
       const sexo = (insc && insc.sexo) || (ficha && ficha.sexo) || '';
       const nacimiento = (insc && insc.fecha_nacimiento) || (ficha && ficha.fecha_nacimiento) || null;
       return {
-        nombres: String(c.nombres).toUpperCase(), cedula: c.cedula, codigo: c.codigo,
+        nombres: String(c.nombres).toUpperCase(), cedula: c.cedula, codigo: c.codigo || '—',
+        resultado: c.codigo ? (RESULTADO[c.tipo] || 'Certificado') : 'Sin certificado',
         modalidad: c.modalidad === 'presencial' ? 'Presencial' : 'Virtual',
         registro: fechaLocal(registro),
         sexo: sexo === 'M' || sexo === 'F' ? sexo : '',
@@ -945,6 +972,7 @@ function imprimirAsistencia(conv) {
     '</td><td class="m">' + escapar(x.cedula) + '</td><td class="c">' + (x.sexo || '—') +
     '</td><td class="c">' + (x.edad ?? '—') + '</td><td>' + escapar(ETNIAS[x.etnia] || '—') +
     '</td><td class="m">' + escapar(formatearFecha(x.registro)) + '</td><td>' + x.modalidad +
+    (registro ? '</td><td>' + escapar(x.resultado) : '') +
     '</td><td class="m">' + escapar(x.codigo) + '</td></tr>').join('');
 
   // Resumen: sexo, edad y etnia
@@ -954,7 +982,9 @@ function imprimirAsistencia(conv) {
   const promedio = edades.length ? Math.round(edades.reduce((a, b) => a + b, 0) / edades.length) : null;
   const porEtnia = {};
   personas.forEach((x) => { const k = ETNIAS[x.etnia] || 'Sin dato'; porEtnia[k] = (porEtnia[k] || 0) + 1; });
-  const resumen = '<div class="resumen"><b>Resumen:</b> ' + personas.length + ' participantes · Hombres: ' + hombres +
+  const conCert = personas.filter((x) => x.codigo !== '—').length;
+  const resumen = '<div class="resumen"><b>Resumen:</b> ' + personas.length + ' participantes' +
+    (registro ? ' (' + conCert + ' con certificado · ' + (personas.length - conCert) + ' sin certificado)' : '') + ' · Hombres: ' + hombres +
     ' · Mujeres: ' + mujeres + (personas.length - hombres - mujeres ? ' · Sin dato de sexo: ' + (personas.length - hombres - mujeres) : '') +
     ' · Edad promedio: ' + (promedio ?? '—') + (edades.length ? ' (de ' + Math.min(...edades) + ' a ' + Math.max(...edades) + ' años)' : '') +
     '<br><b>Autoidentificación étnica:</b> ' +
@@ -963,7 +993,7 @@ function imprimirAsistencia(conv) {
   const dato = (etiqueta, valor) => '<div><span>' + etiqueta + ':</span> ' + valor + '</div>';
 
   const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
-    '<title>Registro de asistencia · ' + escapar(conv.cap_cursos.titulo) + '</title><style>' +
+    '<title>' + (registro ? 'Registro de asistencia' : 'Certificados emitidos') + ' · ' + escapar(conv.cap_cursos.titulo) + '</title><style>' +
     '@page{size:A4;margin:12mm}' +
     'body{font-family:Arial,Helvetica,sans-serif;color:#1f2937;margin:0;font-size:11px}' +
     '.cab{display:grid;grid-template-columns:34mm 1fr 46mm;border:1px solid #8c97a3}' +
@@ -991,7 +1021,7 @@ function imprimirAsistencia(conv) {
 
     '<div class="cab">' +
       '<div class="logo">' + logoEmpresa + '</div>' +
-      '<div class="tit"><b>REGISTRO DE ASISTENCIA A CAPACITACIÓN</b><span>' + escapar(e.razon_social) +
+      '<div class="tit"><b>' + (registro ? 'REGISTRO DE ASISTENCIA A CAPACITACIÓN' : 'REGISTRO DE CERTIFICADOS EMITIDOS') + '</b><span>' + escapar(e.razon_social) +
         '</span><span>RUC ' + escapar(e.ruc || '—') + '</span></div>' +
       '<div class="ctl"><div>Código: <b>' + escapar(FORMATO.codigo) + '</b></div><div>Versión: <b>' +
         escapar(FORMATO.version) + '</b></div><div>Fecha de emisión: ' +
@@ -1012,12 +1042,12 @@ function imprimirAsistencia(conv) {
     '</div>' +
 
     '<table><thead><tr><th class="c">N.º</th><th>Nombres y apellidos</th><th>Cédula</th><th class="c">Sexo</th>' +
-    '<th class="c">Edad</th><th>Etnia</th><th>Fecha de registro</th><th>Modalidad</th><th>Código de certificado</th></tr></thead>' +
+    '<th class="c">Edad</th><th>Etnia</th><th>Fecha de registro</th><th>Modalidad</th>' + (registro ? '<th>Resultado</th>' : '') + '<th>Código de certificado</th></tr></thead>' +
     '<tbody>' + filas + '</tbody></table>' + resumen +
 
     '<div class="firmas">' + FORMATO.firmas.map((f) => '<div>' + escapar(f) + '</div>').join('') + '</div>' +
 
-    '<div class="pie"><span>Total de participantes: ' + d.asistentes + '. Registro generado electrónicamente desde Nexus Academy el ' +
+    '<div class="pie"><span>Total de participantes: ' + personas.length + '. Registro generado electrónicamente desde Nexus Academy el ' +
       escapar(fechaHora(new Date().toISOString())) + '. Cada certificado puede verificarse en ' + verificar + '</span>' +
       logoProveedor + '</div>' +
 

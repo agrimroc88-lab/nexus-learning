@@ -1501,6 +1501,9 @@ async function abrirNomina(c, todos) {
   });
 
   emp.nomina = { conv: c, filas: filas, grupos: grupos };
+  const sinCert = filas.filter(function (f) { return !f.certificado; }).length;
+  el("btn-asistencia-todos").hidden = !sinCert;
+  el("btn-asistencia-todos").textContent = "Emitir certificados de asistencia (" + sinCert + ")";
   pintarCifras(filas, c);
   pintarFilasNomina();
 }
@@ -1577,10 +1580,32 @@ function pintarFilasNomina() {
     });
     const tdAcc = document.createElement("td");
     if (f.certId) tdAcc.appendChild(boton("Anular certificado", "enlace-boton rojo", function () { anularCertificado(f); }));
+    else tdAcc.appendChild(boton("Emitir asistencia", "enlace-boton", function () { emitirAsistencia([f]); }));
     tr.appendChild(tdAcc);
     tbody.appendChild(tr);
   });
 }
+
+// Certificado de ASISTENCIA para quien se registró pero no rindió o no aprobó la evaluación
+async function emitirAsistencia(filas) {
+  filas = filas.filter(function (f) { return !f.certificado; });
+  if (!filas.length) return avisar("Todas las personas de esta lista ya tienen certificado.");
+  const texto = filas.length === 1
+    ? "¿Emitir el certificado de ASISTENCIA a " + filas[0].nombres + "?"
+    : "¿Emitir el certificado de ASISTENCIA a " + filas.length + " personas que se registraron pero no rindieron o no aprobaron la evaluación?";
+  if (!confirm(texto + "\n\nQuien ya aprobó conserva su certificado de aprobación. Después de esto, la persona ya no podrá obtener el de aprobación en esta capacitación (salvo que anules el de asistencia).")) return;
+  const r = await nexusDb.rpc("cap_emitir_asistencia", { p_inscripciones: filas.map(function (f) { return f.id; }) });
+  if (r.error) {
+    if (/cap_emitir_asistencia|schema cache|function/i.test(r.error.message || "")) return avisar("Para emitir certificados de asistencia, ejecuta el SQL 39 en Supabase.", "error");
+    return errorSupabase(r.error, "No se pudieron emitir los certificados.");
+  }
+  avisar((r.data || 0) + ((r.data === 1) ? " certificado de asistencia emitido." : " certificados de asistencia emitidos.") + " Las personas los descargan en «Mis certificados» con su cédula y fecha de nacimiento.");
+  await abrirNomina(emp.nomina.conv, Boolean(emp.nomina.grupos));
+}
+
+el("btn-asistencia-todos").addEventListener("click", function () {
+  if (emp.nomina) emitirAsistencia(emp.nomina.filas);
+});
 
 async function anularCertificado(f) {
   if (!confirm("¿Anular el certificado " + f.certificado + " de " + f.nombres + "? Dejará de ser válido en la página de verificación. La persona podrá volver a obtenerlo solo con un código vigente.")) return;

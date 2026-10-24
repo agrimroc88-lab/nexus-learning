@@ -134,17 +134,27 @@ const NexusCertificado = (function () {
   }
 
   // Imágenes del certificado, precargadas: logo y firma del director
+  // Devuelve una promesa que se cumple al cargar (o al fallar) la imagen
+  const pendientesImg = [];
   function precargar(src, listo) {
-    const im = new Image();
-    im.onload = function () {
-      try {
-        const c = document.createElement("canvas");
-        c.width = im.naturalWidth; c.height = im.naturalHeight;
-        c.getContext("2d").drawImage(im, 0, 0);
-        listo({ datos: c.toDataURL("image/png"), prop: im.naturalWidth / im.naturalHeight });
-      } catch (e) { /* sin imagen: se usa el respaldo */ }
-    };
-    im.src = src;
+    pendientesImg.push(new Promise(function (fin) {
+      const im = new Image();
+      im.onload = function () {
+        try {
+          const c = document.createElement("canvas");
+          c.width = im.naturalWidth; c.height = im.naturalHeight;
+          c.getContext("2d").drawImage(im, 0, 0);
+          listo({ datos: c.toDataURL("image/png"), prop: im.naturalWidth / im.naturalHeight });
+        } catch (e) { /* sin imagen: se usa el respaldo */ }
+        fin();
+      };
+      im.onerror = function () { console.warn("No se encontró " + src); fin(); };
+      im.src = src;
+    }));
+  }
+  // Espera el logo y las firmas antes de dibujar (máximo 6 s)
+  function imagenesListas() {
+    return Promise.race([Promise.all(pendientesImg), new Promise(function (ok) { setTimeout(ok, 6000); })]);
   }
   let logo = null, firma = null;
   precargar("img/logo-certificado.png", function (i) { logo = i; });
@@ -185,10 +195,10 @@ const NexusCertificado = (function () {
     let ah = 0, aw = 0;
     if (alianza) {
       ah = 25; aw = logoAliado ? ah * logoAliado.prop : 40;
-      if (aw > 46) { aw = 46; ah = logoAliado ? aw / logoAliado.prop : ah; }
+      if (aw > 68) { aw = 68; ah = logoAliado ? aw / logoAliado.prop : ah; }
     }
     const total = w + 4 + tw + (alianza ? 14 + aw : 0);
-    const x0 = W / 2 - total / 2 - (alianza ? 6 : 0);
+    const x0 = W / 2 - total / 2 - (alianza ? 8 : 0);
     marca(doc, x0, 9, h);
     if (alianza) {
       const xs = x0 + w + 4 + tw + 6;
@@ -385,7 +395,7 @@ const NexusCertificado = (function () {
   function muestra(d) {
     const ventana = window.open("", "_blank");
     if (ventana) ventana.document.write("<p style='font:16px sans-serif;padding:24px'>Preparando el certificado de ejemplo…</p>");
-    return librerias().then(function () {
+    return Promise.all([librerias(), imagenesListas()]).then(function () {
       const doc = dibujar(Object.assign({ codigo: "VW-" + new Date().getFullYear() + "-MUESTRA0", cedula: "0000000000", nombres: "Nombre del participante" }, d, { muestra: true }));
       const url = doc.output("bloburl");
       if (ventana) ventana.location.href = url;
@@ -404,7 +414,7 @@ const NexusCertificado = (function () {
       .catch(function () { return d; });
   }
   function generar(d) {
-    return Promise.all([librerias(), revisarAlianza(d)]).then(function (r) { dibujar(r[1]); }).catch(function (e) {
+    return Promise.all([librerias(), revisarAlianza(d), imagenesListas()]).then(function (r) { dibujar(r[1]); }).catch(function (e) {
       console.error(e);
       alert("No se pudo generar el certificado. Revisa tu conexión e inténtalo de nuevo.");
     });

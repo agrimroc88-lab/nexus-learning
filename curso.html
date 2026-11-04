@@ -18,7 +18,7 @@
 
   <!-- Estilos: generales + propios de esta página -->
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/curso.css?v=3">
+  <link rel="stylesheet" href="css/curso.css?v=4">
 </head>
 <body class="fondo-zona">
 
@@ -105,6 +105,23 @@
       <section id="vista-registro" class="vista vista-angosta" hidden>
         <h2 id="registro-titulo">Regístrate para comenzar</h2>
         <p class="nota-intro" id="registro-intro"></p>
+
+        <!-- ¿Ya se registró en este tema (este encuentro u otro grupo)? Solo la cédula → «Unirse» -->
+        <div class="ya-registrado" id="ya-registrado">
+          <form id="form-ya" novalidate>
+            <label class="etiqueta" for="ya-cedula">¿Ya te registraste antes en esta capacitación? Escribe solo tu cédula</label>
+            <div class="ya-fila">
+              <input class="campo" id="ya-cedula" inputmode="numeric" maxlength="20" autocomplete="off">
+              <button class="boton secundario" id="btn-ya" type="submit">Buscar</button>
+            </div>
+          </form>
+          <div id="ya-encontrado" hidden>
+            <p class="ya-texto" id="ya-texto"></p>
+            <button class="boton boton-unirse" id="btn-unirse" type="button">Unirse</button>
+            <button class="enlace-chico" id="btn-no-soy" type="button">No soy yo</button>
+          </div>
+          <p class="error-campo" id="ya-msg"></p>
+        </div>
 
         <form id="form-registro" novalidate>
           <div class="fila-campos">
@@ -218,6 +235,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/certificado.js?v=9"></script>
-  <script src="js/curso.js?v=4"></script>
+  <script src="js/curso.js?v=5"></script>
 </body>
 </html>

@@ -223,6 +223,16 @@ function llenarFormEmpresa(e) {
   el("e-telefono").value = e.telefono || "";
   el("e-trabajadores").value = (e.num_trabajadores === null || e.num_trabajadores === undefined) ? "" : e.num_trabajadores;
   el("e-activa").checked = e.activa !== false;
+  // Logo (SQL 41): solo si la tabla ya tiene la columna
+  el("logo-empresa-caja").hidden = !("logo" in (emp.lista[0] || e));
+  el("e-logo").value = "";
+  const vista = el("e-logo-vista");
+  vista.hidden = !e.logo;
+  if (e.logo) vista.src = urlLogoEmpresa(e.logo);
+}
+
+function urlLogoEmpresa(ruta) {
+  return ruta ? nexusDb.storage.from("portadas").getPublicUrl(ruta).data.publicUrl : "";
 }
 
 el("form-empresa").addEventListener("submit", async function (ev) {
@@ -240,11 +250,25 @@ el("form-empresa").addEventListener("submit", async function (ev) {
   if (datos.nombre.length < 3) return avisar("Escribe el nombre de la empresa.", "error");
   if (datos.ruc && datos.ruc.length !== 13) return avisar("El RUC debe tener 13 dígitos.", "error");
   if (datos.num_trabajadores !== null && !(datos.num_trabajadores >= 0)) return avisar("Revisa el número de trabajadores.", "error");
+  const logo = el("logo-empresa-caja").hidden ? null : (el("e-logo").files[0] || null);
+  if (logo && !/^image\/(png|jpeg|webp)$/.test(logo.type)) return avisar("El logo debe ser PNG, JPG o WEBP.", "error");
+  if (logo && logo.size > 2 * 1024 * 1024) return avisar("El logo pesa más de 2 MB. Redúcelo e inténtalo de nuevo.", "error");
 
   const r = emp.actual
     ? await nexusDb.from("cap_empresas").update(datos).eq("id", emp.actual.id).select().single()
     : await nexusDb.from("cap_empresas").insert(datos).select().single();
   if (r.error) return errorSupabase(r.error, "No se pudo guardar la empresa.");
+
+  if (logo) {
+    const ext = logo.type === "image/png" ? "png" : logo.type === "image/webp" ? "webp" : "jpg";
+    const ruta = "logos/" + r.data.id + "-" + Date.now() + "." + ext;
+    const sub = await nexusDb.storage.from("portadas").upload(ruta, logo, { contentType: logo.type, upsert: false });
+    if (sub.error) return errorSupabase(sub.error, "Se guardó la empresa, pero no se pudo subir el logo.");
+    const u = await nexusDb.from("cap_empresas").update({ logo: ruta }).eq("id", r.data.id).select().single();
+    if (u.error) return errorSupabase(u.error, "Se guardó la empresa, pero no se pudo guardar el logo.");
+    if (r.data.logo) await nexusDb.storage.from("portadas").remove([r.data.logo]);
+    r.data = u.data;
+  }
 
   const nueva = !emp.actual;
   emp.actual = r.data;
@@ -271,13 +295,15 @@ async function cargarConvocatorias() {
   // Columnas nuevas (SQL 35: clase en vivo · SQL 36: alianza). Si falta un SQL, lo demás sigue funcionando.
   emp.sinReunion = false;
   emp.sinAlianza = false;
+  emp.sinCuestionario = false;
   const extras = function () {
-    return (emp.sinReunion ? "" : "encuentros, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ");
+    return (emp.sinReunion ? "" : "encuentros, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ") + (emp.sinCuestionario ? "" : "cuestionario, ");
   };
   let { data, error } = await consulta(extras());
-  for (let i = 0; i < 2 && error; i++) {
+  for (let i = 0; i < 3 && error; i++) {
     const m = error.message || "";
-    if (/alianza/i.test(m)) emp.sinAlianza = true;
+    if (/cuestionario/i.test(m)) emp.sinCuestionario = true;
+    else if (/alianza/i.test(m)) emp.sinAlianza = true;
     else if (/encuentros/i.test(m)) emp.sinReunion = true;
     else break;
     ({ data, error } = await consulta(extras()));
@@ -388,6 +414,7 @@ function tarjetaConvocatoria(c) {
     c.modalidad !== "virtual" ? (c.evaluacion_presencial ? "QR con evaluación" : "QR sin evaluación") : null,
     c.observaciones,
     c.alianza_vitalwork ? "🤝 En alianza con VitalWork" : null,
+    c.cuestionario === "atd" ? "📋 Test A-T-D en línea" : null,
     ...encuentrosDe(c).map(function (e, i, t) { return "🎥 " + (t.length > 1 ? "Encuentro " + (i + 1) + ": " : "En vivo: ") + fechaHora(e.inicio); })
   ].filter(Boolean).forEach(function (t) {
     const s = document.createElement("span");
@@ -469,6 +496,9 @@ function tarjetaConvocatoria(c) {
   }
   if (!emp.sinAlianza) {
     acciones.appendChild(boton(c.alianza_vitalwork ? "🤝 Quitar alianza VitalWork" : "🤝 En alianza con VitalWork", "boton secundario boton-chico", function () { cambiarAlianza(c); }));
+  }
+  if (!emp.sinCuestionario) {
+    acciones.appendChild(boton(c.cuestionario === "atd" ? "📋 Quitar test A-T-D en línea" : "📋 Test A-T-D en línea", "boton secundario boton-chico", function () { cambiarCuestionario(c); }));
   }
   acciones.appendChild(boton("Ver certificado de ejemplo", "boton secundario boton-chico", function () { certificadoEjemplo(c); }));
   acciones.appendChild(boton("Eliminar capacitación", "enlace-boton rojo", function () { eliminarConvocatoria(c, inscritos, certificados); }));
@@ -932,6 +962,19 @@ async function cambiarAlianza(c) {
   await cargarConvocatorias();
 }
 
+// Cuestionario en línea de la capacitación (SQL 41). En papel = sin cuestionario.
+async function cambiarCuestionario(c) {
+  const activar = c.cuestionario !== "atd";
+  const texto = activar
+    ? "¿Activar el Test A-T-D en línea en esta capacitación?\n\nCada participante lo llenará con el mismo link y clave, una sola vez, y recibirá su certificado al guardarlo. Quien ya tiene certificado no está obligado."
+    : "¿Quitar el Test A-T-D en línea de esta capacitación?\n\nLas respuestas que ya llegaron se conservan y siguen en la nómina.";
+  if (!confirm(texto)) return;
+  const r = await nexusDb.from("cap_convocatorias").update({ cuestionario: activar ? "atd" : null }).eq("id", c.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo cambiar el cuestionario.");
+  avisar(activar ? "Listo: el Test A-T-D se pedirá en línea en esta capacitación." : "Listo: esta capacitación ya no pide el Test A-T-D en línea.");
+  await cargarConvocatorias();
+}
+
 // Formulario corto para un código adicional (por ejemplo, para rezagados)
 function formNuevoCodigo(tarjeta, c, tipo) {
   const previo = tarjeta.querySelector(".mini-form");
@@ -1280,6 +1323,8 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-reunion-bloque").hidden = emp.sinReunion === true;
   el("v-alianza").checked = false;
   el("v-alianza-caja").hidden = emp.sinAlianza === true;
+  el("v-cuestionario").value = "";
+  el("v-cuestionario-caja").hidden = emp.sinCuestionario === true;
   el("v-clave-virtual").value = "";
   actualizarBloquesModalidad();
 
@@ -1355,6 +1400,7 @@ el("form-conv").addEventListener("submit", async function (ev) {
   botonGuardar.disabled = true;
 
   if (!emp.sinAlianza && el("v-alianza").checked) reunion.alianza_vitalwork = true;
+  if (!emp.sinCuestionario && el("v-cuestionario").value) reunion.cuestionario = el("v-cuestionario").value;
 
   const conv = await nexusDb.from("cap_convocatorias").insert({
     ...reunion,
@@ -1506,6 +1552,8 @@ async function abrirNomina(c, todos) {
   el("btn-asistencia-todos").textContent = "Emitir certificados de asistencia (" + sinCert + ")";
   pintarCifras(filas, c);
   pintarFilasNomina();
+  // Cuestionario A-T-D del curso: pestañas Respuestas e Informe
+  if (window.NexusAtdAdmin) NexusAtdAdmin.montar(c, ids, emp.actual, insc.data);
 }
 
 function pintarCifras(filas, c) {

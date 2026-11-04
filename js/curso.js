@@ -224,6 +224,17 @@ async function registrar(persona, silencioso) {
     return;
   }
 
+  // El curso lleva cuestionario (A-T-D) y falta llenarlo: va primero
+  if (data.estado === "cuestionario") {
+    st.vueltasAtd = (st.vueltasAtd || 0) + 1;
+    if (st.vueltasAtd > 3 || !window.NexusAtd) return;
+    await NexusAtd.mostrar({
+      db: nexusDb, codigo: st.codigo, cedula: persona.cedula, caja: $("vista-atd"),
+      alTerminar: function () { registrar(persona, true); }
+    });
+    return;
+  }
+
   // Requiere evaluación
   if (st.acceso.tipo === "virtual" && st.acceso.lecciones > 0) {
     await cargarLecciones();
@@ -308,11 +319,30 @@ async function unirse(d, cedula) {
   $("vista-registro").hidden = true;
   await mostrarReunion();
 
+  if (d.estado === "cuestionario" && window.NexusAtd) {
+    // Registrado aquí, con el cuestionario pendiente: primero el cuestionario
+    st.vueltasAtd = (st.vueltasAtd || 0) + 1;
+    if (st.vueltasAtd > 3) return;
+    await NexusAtd.mostrar({
+      db: nexusDb, codigo: st.codigo, cedula: cedula, caja: $("vista-atd"),
+      alTerminar: async function () {
+        const otra = await consultarYaRegistrado(cedula);
+        if (otra) unirse(otra, cedula);
+      }
+    });
+    return;
+  }
   if (d.estado === "certificado" && d.certificado) {
     mostrarCertificado(d.certificado, true);
   } else if (d.misma && d.estado === "evaluacion") {
     if (st.acceso.tipo === "virtual" && st.acceso.lecciones > 0) await cargarLecciones();
     else { prepararSinLecciones(); await mostrarEvaluacion(); }
+  } else if (window.NexusAtd) {
+    // Registrado en otro grupo: si el tema lleva cuestionario y no lo ha llenado, aquí mismo
+    await NexusAtd.mostrar({
+      db: nexusDb, codigo: st.codigo, cedula: cedula, caja: $("vista-atd"),
+      alTerminar: function () { mostrarUnido(d); }
+    });
   } else {
     mostrarUnido(d);
   }
@@ -1020,11 +1050,12 @@ function pintarJornada(resultados, persona) {
       accion.append(estado, b);
     } else {
       estado.className = "estado-jornada pendiente";
-      estado.textContent = "Falta la evaluación";
+      const falta = r.data && r.data.estado === "cuestionario";
+      estado.textContent = falta ? "Falta el cuestionario" : "Falta la evaluación";
       const a = document.createElement("a");
       a.className = "boton boton-chico";
       a.href = "curso.html?codigo=" + encodeURIComponent(r.cap.codigo);
-      a.textContent = "Rendir evaluación";
+      a.textContent = falta ? "Llenar cuestionario" : "Rendir evaluación";
       accion.append(estado, a);
     }
     li.append(info, accion);

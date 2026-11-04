@@ -18,7 +18,7 @@
 
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css?v=9">
-  <link rel="stylesheet" href="css/empresas.css?v=10">
+  <link rel="stylesheet" href="css/empresas.css?v=12">
 </head>
 <body>
 
@@ -143,6 +143,14 @@
                 <span>Empresa activa (sus códigos funcionan)</span>
               </label>
             </div>
+          </div>
+          <div class="logo-empresa-caja" id="logo-empresa-caja">
+            <label class="etiqueta" for="e-logo">Logo de la empresa (para la carátula y el membrete de los informes)</label>
+            <div class="logo-empresa-fila">
+              <img id="e-logo-vista" class="logo-empresa-vista" alt="" hidden>
+              <input class="campo" id="e-logo" type="file" accept="image/png,image/jpeg,image/webp">
+            </div>
+            <p class="ayuda">PNG o JPG de hasta 2 MB. Mejor con fondo blanco o transparente.</p>
           </div>
           <div class="acciones-form">
             <button type="button" class="boton secundario" id="btn-cancelar-empresa">Cancelar</button>
@@ -272,6 +280,15 @@
             </div>
           </div>
 
+          <div class="caja-cuestionario" id="v-cuestionario-caja">
+            <label class="etiqueta" for="v-cuestionario">📋 Cuestionario en línea (opcional)</label>
+            <select class="campo" id="v-cuestionario">
+              <option value="">Ninguno (o se aplica en papel)</option>
+              <option value="atd">Test A-T-D · alcohol, tabaco y otras drogas</option>
+            </select>
+            <p class="ayuda">Si eliges un cuestionario, cada participante lo llena con el mismo link y clave, una sola vez, y recibe su certificado al guardarlo. Las respuestas y el informe salen en la nómina. Si lo aplicas en papel, deja «Ninguno».</p>
+          </div>
+
           <label class="interruptor caja-alianza" id="v-alianza-caja">
             <input type="checkbox" id="v-alianza">
             <span>🤝 Capacitación <strong>en alianza con VitalWork</strong> (el certificado lleva su logo y la firma de su representante)</span>
@@ -298,15 +315,22 @@
         <h1 id="nomina-titulo"></h1>
         <p id="nomina-sub" class="empresa-resumen"></p>
 
+        <!-- Solo si el curso lleva cuestionario A-T-D (SQL 41) -->
+        <div class="pestanas" id="nomina-pestanas" hidden>
+          <button type="button" class="pestana activa" data-tab="asistencia">Asistencia</button>
+          <button type="button" class="pestana" data-tab="respuestas" id="tab-atd-respuestas">Respuestas A-T-D</button>
+          <button type="button" class="pestana" data-tab="informe">Informe</button>
+        </div>
+
         <div class="cifras" id="nomina-cifras"></div>
 
-        <div class="nomina-herramientas">
+        <div class="nomina-herramientas" id="nomina-herramientas">
           <input class="campo" id="buscar-nomina" placeholder="Buscar por nombre o cédula">
           <button type="button" class="boton" id="btn-excel">Descargar Excel</button>
           <button type="button" class="boton secundario" id="btn-asistencia-todos" hidden title="Certificado de asistencia para quienes se registraron pero no rindieron o no aprobaron la evaluación">Emitir certificados de asistencia</button>
         </div>
 
-        <div class="tabla-caja">
+        <div class="tabla-caja" id="nomina-tabla-caja">
           <table class="tabla">
             <thead>
               <tr>
@@ -326,6 +350,54 @@
             <tbody id="nomina-filas"></tbody>
           </table>
         </div>
+
+        <!-- Respuestas del cuestionario A-T-D (confidencial: solo administradores) -->
+        <div id="panel-atd-respuestas" hidden>
+          <div class="cifras" id="atd-cifras"></div>
+          <p class="ayuda atd-pendientes" id="atd-pendientes" hidden></p>
+          <div class="nomina-herramientas">
+            <input class="campo" id="buscar-atd" placeholder="Buscar por nombre, cédula o cargo">
+            <button type="button" class="boton" id="btn-excel-atd">Descargar Excel</button>
+          </div>
+          <div class="tabla-caja">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Nombres</th><th>Cédula</th><th>Cargo</th><th>Género</th><th>Edad</th>
+                  <th>Droga principal</th><th>Frecuencia</th><th>Reconoce problema</th><th>Factor psicosocial</th>
+                  <th>Desea tratamiento</th><th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="atd-filas"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Informe «Diagnóstico inicial · Test A-T-D» con el nombre y logo de la empresa -->
+        <div id="panel-atd-informe" class="panel-atd-informe" hidden>
+          <p class="ayuda">El informe sale con el nombre y el logo de la empresa (el logo se sube en «Editar datos» de la empresa) y con las respuestas de esta lista.</p>
+          <p class="aviso" id="atd-sin-logo" hidden>Esta empresa aún no tiene logo: la carátula saldrá sin logo.</p>
+          <div class="fila-tres">
+            <div>
+              <label class="etiqueta" for="atd-quien">Elaborado por (responsable)</label>
+              <input class="campo" id="atd-quien" maxlength="120" placeholder="Nombre y apellido">
+            </div>
+            <div>
+              <label class="etiqueta" for="atd-cargo">Cargo</label>
+              <input class="campo" id="atd-cargo" maxlength="120" placeholder="Médico ocupacional">
+            </div>
+            <div>
+              <label class="etiqueta" for="atd-registro">N.° de registro (opcional)</label>
+              <input class="campo" id="atd-registro" maxlength="40">
+            </div>
+          </div>
+          <label class="etiqueta" for="atd-anio">Año del diagnóstico</label>
+          <select class="campo campo-corto" id="atd-anio"></select>
+          <label class="etiqueta" for="atd-recomendaciones">Recomendaciones (puedes editarlas)</label>
+          <textarea class="campo" id="atd-recomendaciones" rows="10"></textarea>
+          <button type="button" class="boton" id="btn-informe-atd">Generar informe (PDF)</button>
+          <p class="ayuda">Se abre el informe listo para imprimir: en el cuadro de impresión elige «Guardar como PDF» y activa «Gráficos de fondo».</p>
+        </div>
       </div>
     </section>
   </main>
@@ -338,6 +410,7 @@
   <script src="js/cartel.js"></script>
   <script src="js/reporte-empresa.js"></script>
   <script src="js/certificado.js?v=9"></script>
-  <script src="js/empresas.js?v=14"></script>
+  <script src="js/atd-admin.js?v=2"></script>
+  <script src="js/empresas.js?v=15"></script>
 </body>
 </html>

@@ -324,3 +324,13 @@ legend { font-family: var(--fuente-titulo); font-weight: 700; font-size: 20px; c
 .ya-texto { margin: 0 0 12px; font-size: 16px; }
 .boton-unirse { min-width: 180px; font-size: 18px; }
 .enlace-chico { margin-left: 12px; background: none; border: 0; color: var(--gris); text-decoration: underline; cursor: pointer; font: inherit; font-size: 14px; }
+
+/* ---------- Cuestionario A-T-D (dentro de la capacitación) ---------- */
+.vista-atd { margin-top: 18px; }
+.atd-bloque { margin-top: 26px; }
+.atd-bloque-titulo { margin: 0 0 4px; padding: 10px 14px; border-radius: 10px; background: #EEF3FB; color: var(--pino); font-size: 18px; }
+.atd-etiqueta { display: block; margin-bottom: 8px; font-size: 17px; color: var(--tinta); }
+.atd-ayuda { margin: 6px 0 0; font-size: 14px; color: var(--gris); }
+.vista-atd .pregunta.sin-responder legend,
+.vista-atd .pregunta.sin-responder .atd-etiqueta { color: var(--error); }
+.atd-guardar { width: 100%; margin-top: 22px; min-height: 54px; font-size: 18px; }

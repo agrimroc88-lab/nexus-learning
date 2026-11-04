@@ -221,3 +221,16 @@ body.modo-nomina .tabla { font-size: 14px; }
 body.modo-nomina .tabla td { padding: 8px 10px; }
 body.modo-nomina .tabla td:first-child { min-width: 210px; }
 .tabla td.celda-grupo { white-space: nowrap; }
+
+/* ---------- Logo de la empresa ---------- */
+.logo-empresa-caja { margin-top: 8px; }
+.logo-empresa-fila { display: flex; gap: 14px; align-items: center; }
+.logo-empresa-vista { max-height: 56px; max-width: 160px; border: 1px solid var(--niebla); border-radius: 8px; padding: 4px; background: #fff; }
+
+/* ---------- Cuestionario A-T-D en la nómina ---------- */
+#nomina-pestanas { margin: 10px 0 18px; }
+.atd-pendientes { margin: -6px 0 14px; }
+.panel-atd-informe { max-width: 860px; }
+.panel-atd-informe textarea { min-height: 220px; }
+.panel-atd-informe #btn-informe-atd { margin-top: 14px; }
+.caja-cuestionario { margin: 14px 0; }

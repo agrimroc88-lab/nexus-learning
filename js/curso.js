@@ -57,7 +57,13 @@ const CLAVE_SESION = "nexus_" + st.codigo;
 
   // Si la persona ya se registró con este código en esta pestaña, continuar
   const guardado = leerSesion() || leerRecordado();
-  if (guardado && guardado.persona) {
+  if (guardado && guardado.persona && guardado.persona.unido) {
+    // Entró con «Unirse» (ya registrado en este tema): se revisa de nuevo con su cédula
+    st.vistas = new Set(guardado.vistas || []);
+    const d = await consultarYaRegistrado(guardado.persona.cedula);
+    if (d) await unirse(d, guardado.persona.cedula);
+    else { borrarSesion(); mostrarRegistro(); }
+  } else if (guardado && guardado.persona) {
     st.vistas = new Set(guardado.vistas || []);
     await registrar(guardado.persona, true);
   } else {
@@ -172,6 +178,9 @@ $("form-registro").addEventListener("submit", async function (ev) {
   if (!acepta) { $("e-acepta").textContent = "Debes aceptar el tratamiento de datos para continuar."; valido = false; }
   if (!valido) return;
 
+  // Si esa cédula ya está registrada en este tema, no se registra otra vez: «Unirse»
+  if (!st.jornada && await mostrarYaRegistrado(persona.cedula)) return;
+
   if (st.jornada) await registrarJornada(persona, false);
   else await registrar(persona, false);
 });
@@ -222,6 +231,123 @@ async function registrar(persona, silencioso) {
     prepararSinLecciones();
     await mostrarEvaluacion();
   }
+}
+
+// ---------------------------------------------------------------------
+// YA REGISTRADO en este tema (este encuentro u otro grupo del mismo curso
+// en la misma empresa): solo con la cédula aparece «Unirse», sin llenar el
+// formulario ni duplicar la inscripción. Requiere el SQL 40; sin él, el
+// recuadro no encuentra a nadie y el registro normal sigue igual.
+// ---------------------------------------------------------------------
+const ya = { res: null, cedula: "", reloj: null };
+
+async function consultarYaRegistrado(cedula) {
+  cedula = String(cedula || "").replace(/\s/g, "");
+  if (cedula.length < 5) return null;
+  const { data, error } = await nexusDb.rpc("cap_ya_registrado", { p_codigo: st.codigo, p_cedula: cedula });
+  if (error) { console.warn("cap_ya_registrado:", error.message); return null; }
+  return data && data.encontrado ? data : null;
+}
+
+async function mostrarYaRegistrado(cedula, avisarSiNo) {
+  const d = await consultarYaRegistrado(cedula);
+  if (!d) {
+    if (avisarSiNo) $("ya-msg").textContent = "No encontramos un registro con esa cédula. Llena el formulario de abajo.";
+    return null;
+  }
+  ya.res = d;
+  ya.cedula = String(cedula).replace(/\s/g, "");
+  $("ya-msg").textContent = "";
+  $("ya-texto").textContent = "Ya estás registrado(a) como " + d.nombres +
+    (d.misma ? " en esta capacitación." : " en un encuentro anterior de este mismo tema.") +
+    " No necesitas registrarte otra vez.";
+  $("form-ya").hidden = true;
+  $("ya-encontrado").hidden = false;
+  $("ya-registrado").classList.add("encontrado");
+  $("form-registro").hidden = true;
+  $("ya-registrado").scrollIntoView({ behavior: "smooth", block: "center" });
+  return d;
+}
+
+function olvidarYaRegistrado() {
+  ya.res = null;
+  $("ya-encontrado").hidden = true;
+  $("form-ya").hidden = false;
+  $("ya-registrado").classList.remove("encontrado");
+  $("form-registro").hidden = false;
+  $("ya-cedula").value = "";
+  $("p-cedula").value = "";
+  $("ya-msg").textContent = "";
+}
+
+$("form-ya").addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  const cedula = $("ya-cedula").value.replace(/\s/g, "");
+  $("ya-msg").textContent = "";
+  if (cedula.length < 5) { $("ya-msg").textContent = "Escribe tu número de cédula o pasaporte."; return; }
+  $("btn-ya").disabled = true;
+  await mostrarYaRegistrado(cedula, true);
+  $("btn-ya").disabled = false;
+});
+
+// Al escribir la cédula en el formulario completo también se revisa
+$("p-cedula").addEventListener("input", function () {
+  clearTimeout(ya.reloj);
+  const cedula = this.value.replace(/\s/g, "");
+  if (st.jornada || cedula.length < 10) return;
+  ya.reloj = setTimeout(function () { mostrarYaRegistrado(cedula); }, 600);
+});
+
+$("btn-no-soy").addEventListener("click", olvidarYaRegistrado);
+$("btn-unirse").addEventListener("click", function () { if (ya.res) unirse(ya.res, ya.cedula); });
+
+async function unirse(d, cedula) {
+  st.persona = { cedula: cedula, nombres: d.nombres, unido: true };
+  guardarSesion();
+  recordarPersona();
+  $("vista-registro").hidden = true;
+  await mostrarReunion();
+
+  if (d.estado === "certificado" && d.certificado) {
+    mostrarCertificado(d.certificado, true);
+  } else if (d.misma && d.estado === "evaluacion") {
+    if (st.acceso.tipo === "virtual" && st.acceso.lecciones > 0) await cargarLecciones();
+    else { prepararSinLecciones(); await mostrarEvaluacion(); }
+  } else {
+    mostrarUnido(d);
+  }
+  const btn = $("btn-reunion");
+  if (!$("bloque-reunion").hidden && btn) btn.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// Registrado en otro grupo del tema, sin certificado todavía
+function mostrarUnido(d) {
+  $("curso-cuerpo").hidden = false;
+  $("curso-cuerpo").classList.add("sin-temario");
+  $("temario-caja").hidden = true;
+  const cont = $("resultado");
+  cont.innerHTML = "";
+  const paso = document.createElement("p");
+  paso.className = "vista-paso";
+  paso.textContent = "Ya estás registrado";
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Hola, " + primerNombre(d.nombres);
+  const texto = document.createElement("p");
+  texto.textContent = $("bloque-reunion").hidden
+    ? "Tu registro de este tema ya está guardado. No necesitas registrarte otra vez."
+    : "Tu registro de este tema ya está guardado. Usa el botón «Unirse a la reunión» de arriba para entrar al encuentro.";
+  cont.append(paso, titulo, texto);
+  if (!d.misma && st.acceso.requiere_evaluacion && d.codigo_original) {
+    const acciones = document.createElement("div");
+    acciones.className = "acciones";
+    const a = document.createElement("a");
+    a.className = "boton secundario";
+    a.href = "curso.html?codigo=" + encodeURIComponent(d.codigo_original);
+    a.textContent = "Rendir la evaluación";
+    acciones.appendChild(a);
+    cont.appendChild(acciones);
+  }
+  mostrarVista("vista-resultado");
 }
 
 // ---------------------------------------------------------------------
@@ -797,6 +923,7 @@ const CLAVE_VOLVER_JORNADA = "nexus_jornada_volver";
 
 function iniciarJornada(j) {
   st.jornada = j;
+  $("ya-registrado").hidden = true;
   document.title = j.nombre + " · Nexus Academy";
   $("curso-empresa").textContent = j.empresa;
   $("curso-titulo").textContent = j.nombre;

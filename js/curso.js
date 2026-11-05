@@ -882,7 +882,10 @@ const reu = { datos: null, desfase: 0, reloj: null };
 
 async function mostrarReunion() {
   if (reu.datos) return pintarReunion();
-  const { data, error } = await nexusDb.rpc("cap_reunion", { p_codigo: st.codigo });
+  // Jornada (SQL 44): el enlace de la reunión viene con la jornada
+  const { data, error } = st.jornada
+    ? { data: { encuentros: st.jornada.encuentros || [], ahora: st.jornada.ahora }, error: null }
+    : await nexusDb.rpc("cap_reunion", { p_codigo: st.codigo });
   if (error || !data) return; // sin SQL o sin encuentros: no se muestra nada
   // SQL 38: varios encuentros · SQL 35: una sola reunión
   const lista = Array.isArray(data.encuentros) ? data.encuentros
@@ -997,7 +1000,9 @@ function iniciarJornada(j) {
   $("curso-empresa").textContent = j.empresa;
   $("curso-titulo").textContent = j.nombre;
   const n = j.capacitaciones.length;
-  $("curso-datos").textContent = n + (n === 1 ? " capacitación" : " capacitaciones") + " · " + fechaJornada(j.fecha);
+  const MOD = { presencial: "Presencial", virtual: "Virtual", mixta: "Presencial y virtual" };
+  $("curso-datos").textContent = n + (n === 1 ? " capacitación" : " capacitaciones") + " · " + fechaJornada(j.fecha) +
+    (j.modalidad ? " · " + MOD[j.modalidad] : "");
   pintarPortada($("curso-portada"), j.nombre, null);
   $("estado").hidden = true;
   $("curso").hidden = false;
@@ -1052,6 +1057,7 @@ async function registrarJornada(persona, silencioso) {
 
   $("vista-registro").hidden = true;
   pintarJornada(resultados, persona);
+  mostrarReunion();
 }
 
 function pintarJornada(resultados, persona) {

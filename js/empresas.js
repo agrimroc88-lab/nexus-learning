@@ -795,7 +795,8 @@ function ajustarVigencia(acceso, encuentros) {
   return a;
 }
 
-function formReunion(tarjeta, c) {
+// esJornada = true: los encuentros son de la jornada (SQL 44) y se extienden la jornada y sus claves
+function formReunion(tarjeta, c, esJornada) {
   const previo = tarjeta.querySelector(".form-reunion");
   if (previo) { previo.remove(); return; }
 
@@ -821,11 +822,21 @@ function formReunion(tarjeta, c) {
     const r0 = ed.leer();
     if (r0.error) return avisar(r0.error, "error");
     guardar.disabled = true;
-    const r = await nexusDb.from("cap_convocatorias").update({ encuentros: r0.lista }).eq("id", c.id);
+    const r = await nexusDb.from(esJornada ? "cap_jornadas" : "cap_convocatorias").update({ encuentros: r0.lista }).eq("id", c.id);
     if (r.error) { guardar.disabled = false; return errorSupabase(r.error, "No se pudieron guardar los encuentros."); }
     // Extiende las claves vigentes si algún encuentro queda fuera de su vigencia
     let extendidas = 0;
-    for (const a of (c.cap_accesos || []).filter(function (x) { return !x.anulado; })) {
+    let accesos = c.cap_accesos || [];
+    if (esJornada) {
+      const nj = ajustarVigencia(c, r0.lista);
+      if (nj.valido_hasta !== c.valido_hasta) {
+        const u = await nexusDb.from("cap_jornadas").update({ valido_hasta: nj.valido_hasta }).eq("id", c.id);
+        if (!u.error) extendidas++;
+      }
+      accesos = [];
+      (c.cap_convocatorias || []).forEach(function (cv) { accesos = accesos.concat(cv.cap_accesos || []); });
+    }
+    for (const a of accesos.filter(function (x) { return !x.anulado && x.valido_hasta; })) {
       const nuevo = ajustarVigencia(a, r0.lista);
       if (nuevo.valido_hasta !== a.valido_hasta) {
         const u = await nexusDb.from("cap_accesos").update({ valido_hasta: nuevo.valido_hasta }).eq("id", a.id);
@@ -835,8 +846,9 @@ function formReunion(tarjeta, c) {
     guardar.disabled = false;
     avisar(r0.lista.length
       ? r0.lista.length + (r0.lista.length === 1 ? " encuentro guardado." : " encuentros guardados.") + (extendidas ? " La clave se extendió hasta el último encuentro." : "")
-      : "Se quitaron los encuentros en vivo de esta capacitación.");
-    await cargarConvocatorias();
+      : "Se quitaron los encuentros en vivo de esta " + (esJornada ? "jornada." : "capacitación."));
+    if (esJornada) await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+    else await cargarConvocatorias();
   });
 
   tarjeta.querySelector(".conv-acciones").after(f);
@@ -1069,12 +1081,21 @@ function formNuevoCodigo(tarjeta, c, tipo) {
 async function cargarJornadas() {
   const cont = el("lista-jornadas");
   cont.innerHTML = "";
-  const { data, error } = await nexusDb
-    .from("cap_jornadas")
-    .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " +
-            "cap_convocatorias(id, cap_cursos(titulo), cap_accesos(id, tipo, anulado), cap_certificados(count))")
-    .eq("empresa_id", emp.actual.id)
-    .order("fecha", { ascending: false });
+  const consulta = function (extra) {
+    return nexusDb
+      .from("cap_jornadas")
+      .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " + extra +
+              "cap_convocatorias(id, cap_cursos(titulo), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count))")
+      .eq("empresa_id", emp.actual.id)
+      .order("fecha", { ascending: false });
+  };
+  // SQL 44: modalidad y enlace de la reunión de la jornada
+  let { data, error } = await consulta("modalidad, encuentros, ");
+  emp.sinModJornada = false;
+  if (error && /modalidad|encuentros/i.test(error.message || "")) {
+    emp.sinModJornada = true;
+    ({ data, error } = await consulta(""));
+  }
   if (error) {
     // Si aún no se ejecutó el SQL 18, la sección queda oculta sin romper el resto
     console.warn("Jornadas no disponibles", error);
@@ -1096,7 +1117,10 @@ function tarjetaJornada(j) {
   const chips = document.createElement("div");
   chips.className = "chips";
   const certificados = j.cap_convocatorias.reduce(function (n, c) { return n + (c.cap_certificados[0] ? c.cap_certificados[0].count : 0); }, 0);
-  ["Jornada", fechaCorta(j.fecha + "T12:00"), j.cap_convocatorias.length + " capacitaciones", certificados + " certificados emitidos"]
+  const MOD_J = { presencial: "Presencial", virtual: "Virtual", mixta: "Mixta" };
+  ["Jornada", j.modalidad ? MOD_J[j.modalidad] : null, fechaCorta(j.fecha + "T12:00"), j.cap_convocatorias.length + " capacitaciones", certificados + " certificados emitidos"]
+    .concat(encuentrosDe(j).map(function (e, i, t) { return "🎥 " + (t.length > 1 ? "Encuentro " + (i + 1) + ": " : "En vivo: ") + fechaHora(e.inicio); }))
+    .filter(Boolean)
     .forEach(function (t) {
       const s = document.createElement("span");
       s.className = "chip";
@@ -1149,7 +1173,24 @@ function tarjetaJornada(j) {
   nota.className = "ayuda";
   nota.textContent = "La nómina y el registro de asistencia de cada capacitación están abajo, en Capacitaciones.";
 
-  art.append(cab, temas, fila, nota);
+  // Enlace de la reunión de la jornada (SQL 44)
+  const acciones = document.createElement("div");
+  acciones.className = "conv-acciones";
+  if (!emp.sinModJornada) {
+    const toca = encuentroQueToca(j);
+    if (toca) {
+      const ir = document.createElement("a");
+      ir.className = "boton boton-chico";
+      ir.href = toca.e.url;
+      ir.target = "_blank";
+      ir.rel = "noopener";
+      ir.textContent = "🎥 Unirse " + (toca.total > 1 ? "al encuentro " + toca.n : "a la reunión") + (toca.enCurso ? " (en curso)" : "");
+      acciones.appendChild(ir);
+    }
+    acciones.appendChild(boton(encuentrosDe(j).length ? "🎥 Enlace de la reunión" : "🎥 Agregar enlace de la reunión", "boton secundario boton-chico", function () { formReunion(art, j, true); }));
+  }
+
+  art.append(cab, temas, fila, acciones, nota);
   return art;
 }
 
@@ -1163,6 +1204,9 @@ function mensajeJornada(j) {
     "1. Toca este enlace para ingresar:\n" + ENLACE_INGRESO + "\n\n" +
     "2. Escribe la clave de acceso: *" + j.codigo + "*\n" +
     "(válida hasta el " + fechaHora(j.valido_hasta) + ")\n\n" +
+    encuentrosDe(j).map(function (e, i, t) {
+      return "📅 *" + (t.length > 1 ? "ENCUENTRO " + (i + 1) + " — " : "CLASE EN VIVO — ") + fechaGrande(e.inicio) + "*\n" + e.url + "\n\n";
+    }).join("") +
     "Regístrate una sola vez y descarga un certificado por cada capacitación.";
 }
 
@@ -1253,11 +1297,32 @@ el("btn-nueva-jornada").addEventListener("click", function () {
   el("j-desde").value = horaActual();
   el("j-hasta").value = horaMas(6);
   el("j-clave").value = "";
+  document.querySelector('input[name="j-modalidad"][value="presencial"]').checked = true;
+  el("j-modalidad-caja").hidden = emp.sinModJornada === true;
+  emp.edEncJornada = editorEncuentros(el("j-encuentros"), []);
+  el("j-reunion-bloque").hidden = true;
   el("form-jornada").hidden = false;
   el("form-jornada").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 el("btn-cancelar-jornada").addEventListener("click", function () { el("form-jornada").hidden = true; });
+
+function modalidadJornada() {
+  const r = document.querySelector('input[name="j-modalidad"]:checked');
+  return r ? r.value : "presencial";
+}
+document.querySelectorAll('input[name="j-modalidad"]').forEach(function (r) {
+  r.addEventListener("change", function () {
+    const enLinea = modalidadJornada() !== "presencial";
+    el("j-reunion-bloque").hidden = !enLinea;
+    if (enLinea && emp.edEncJornada) {
+      emp.edEncJornada.agregarSiVacio();
+      // propone la fecha y hora de inicio de la jornada
+      const fila = el("j-encuentros").querySelector('input[type="datetime-local"]');
+      if (fila && el("j-fecha").value && el("j-desde").value && !fila.dataset.tocado) fila.value = el("j-fecha").value + "T" + el("j-desde").value;
+    }
+  });
+});
 
 el("form-jornada").addEventListener("submit", async function (ev) {
   ev.preventDefault();
@@ -1268,6 +1333,21 @@ el("form-jornada").addEventListener("submit", async function (ev) {
   const clave = normalizarClave(el("j-clave").value);
   if (clave && !claveValida(clave)) return avisar("La clave debe tener de 4 a 12 letras o números, sin espacios ni símbolos.", "error");
 
+  // Modalidad y enlace de la reunión (SQL 44)
+  const extra = {};
+  if (!emp.sinModJornada) {
+    extra.modalidad = modalidadJornada();
+    if (extra.modalidad !== "presencial") {
+      const e0 = emp.edEncJornada ? emp.edEncJornada.leer() : { lista: [] };
+      if (e0.error) return avisar(e0.error, "error");
+      if (extra.modalidad === "virtual" && !e0.lista.length) return avisar("Para una jornada virtual, pega el enlace de la reunión (Meet, Zoom o Teams).", "error");
+      extra.encuentros = e0.lista;
+      const aj = ajustarVigencia({ valido_desde: r.desde, valido_hasta: r.hasta }, e0.lista);
+      r.desde = aj.valido_desde;
+      r.hasta = aj.valido_hasta;
+    }
+  }
+
   const botonGuardar = el("btn-guardar-jornada");
   botonGuardar.disabled = true;
 
@@ -1277,7 +1357,7 @@ el("form-jornada").addEventListener("submit", async function (ev) {
     fecha: el("j-fecha").value,
     valido_desde: r.desde,
     valido_hasta: r.hasta
-  }, clave ? { codigo: clave } : {})).select().single();
+  }, extra, clave ? { codigo: clave } : {})).select().single();
   if (jr.error) {
     botonGuardar.disabled = false;
     return errorSupabase(jr.error, "No se pudo crear la jornada.");

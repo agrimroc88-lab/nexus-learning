@@ -197,3 +197,10 @@
 .proxima-acciones { align-items: center; }
 
 .presentacion-fin .presentacion-fin-tema { display: block; max-width: 80vw; margin: 6px auto 4px; color: #F2C14E; font-size: clamp(26px, 4vw, 54px); line-height: 1.2; }
+
+/* ---------- Jornada en «Capacitaciones programadas» ---------- */
+.tarjeta-jornada-proxima { grid-column: span 2; }
+.tarjeta-jornada-proxima .proxima-detalle { font-size: 13px; color: var(--gris); }
+.tarjeta-jornada-proxima .proxima-temas { margin: 6px 0 4px; padding-left: 20px; font-size: 14px; line-height: 1.35; }
+.tarjeta-jornada-proxima .proxima-temas li { margin-bottom: 2px; }
+@media (max-width: 700px) { .tarjeta-jornada-proxima { grid-column: auto; } }

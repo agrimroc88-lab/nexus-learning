@@ -184,6 +184,19 @@
                 <input class="campo" id="j-hasta" type="time">
               </div>
             </div>
+            <div id="j-modalidad-caja">
+              <fieldset class="grupo-modalidad">
+                <legend class="etiqueta">Modalidad</legend>
+                <label class="opcion-modalidad"><input type="radio" name="j-modalidad" value="presencial" checked><span><strong>Presencial</strong><small>Cartel QR en la sala</small></span></label>
+                <label class="opcion-modalidad"><input type="radio" name="j-modalidad" value="virtual"><span><strong>Virtual</strong><small>Todos por Meet, Zoom o Teams</small></span></label>
+                <label class="opcion-modalidad"><input type="radio" name="j-modalidad" value="mixta"><span><strong>Mixta</strong><small>En la sala y por la reunión</small></span></label>
+              </fieldset>
+              <fieldset class="bloque-acceso bloque-reunion-conv" id="j-reunion-bloque" hidden>
+                <h4>🎥 Enlace de la reunión</h4>
+                <p class="ayuda">Pega la invitación completa de Meet y la fecha y hora se llenan solas. Quien entre con la clave verá el botón «Unirse a la reunión». La clave se extiende sola hasta el último encuentro.</p>
+                <div id="j-encuentros" class="lista-encuentros"></div>
+              </fieldset>
+            </div>
             <fieldset class="grupo-cursos-jornada">
               <legend class="etiqueta">Capacitaciones del día (elige 2 o más)</legend>
               <div id="j-cursos"></div>
@@ -414,6 +427,6 @@
   <script src="js/reporte-empresa.js"></script>
   <script src="js/certificado.js?v=9"></script>
   <script src="js/atd-admin.js?v=2"></script>
-  <script src="js/empresas.js?v=16"></script>
+  <script src="js/empresas.js?v=17"></script>
 </body>
 </html>

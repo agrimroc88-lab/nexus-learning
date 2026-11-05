@@ -87,8 +87,46 @@ async function listarCursos(pedidoProximas) {
   au.cursos = data || [];
   if (pedidoProximas) cargarProximas(await pedidoProximas);
   pintarCursos();
+  prepararPestanas();
   $a("panel").hidden = false;
 }
+
+// ---------------------------------------------------------------------
+// Pestañas de la página: «Capacitaciones programadas» y «Programas».
+// Se recuerda la última elegida; aula.html#programadas o #programas abre esa.
+// ---------------------------------------------------------------------
+const CLAVE_PESTANA = "nexus_aula_pestana";
+
+function prepararPestanas() {
+  const hay = prox.lista.length > 0;
+  $a("aula-pestanas").hidden = !hay;
+  if (!hay) return mostrarVista("programas");
+  $a("n-programadas").textContent = "(" + agruparJornadas(prox.lista).length + ")";
+  $a("n-programas").textContent = "(" + au.cursos.length + ")";
+  $a("proximas-titulo").hidden = true;
+  $a("titulo-programas").hidden = true;
+  let elegida = (location.hash.match(/^#(programadas|programas)$/) || [])[1];
+  if (!elegida) { try { elegida = localStorage.getItem(CLAVE_PESTANA); } catch (e) { /* nada */ } }
+  mostrarVista(elegida === "programas" ? "programas" : "programadas");
+}
+
+function mostrarVista(vista) {
+  const hay = prox.lista.length > 0;
+  $a("proximas").hidden = !(hay && vista === "programadas");
+  $a("vista-programas").hidden = hay && vista !== "programas";
+  document.querySelectorAll("#aula-pestanas .pestana").forEach(function (b) {
+    const activa = b.dataset.vista === vista;
+    b.classList.toggle("activa", activa);
+    b.setAttribute("aria-selected", activa ? "true" : "false");
+  });
+}
+
+$a("aula-pestanas").addEventListener("click", function (ev) {
+  const b = ev.target.closest(".pestana");
+  if (!b) return;
+  mostrarVista(b.dataset.vista);
+  try { localStorage.setItem(CLAVE_PESTANA, b.dataset.vista); } catch (e) { /* nada */ }
+});
 
 // ---------------------------------------------------------------------
 // Capacitaciones programadas (empresa, fecha, clave y clase en vivo)

@@ -57,12 +57,14 @@ function prepararModoDocente() {
   document.body.classList.add("modo-docente");
   document.title = "Mis programas · Nexus Academy";
   el("marca-texto").textContent = "Mis programas";
-  ["btn-nuevo-curso", "btn-eliminar-curso", "bloque-qr", "btn-guardar-curso"].forEach(function (id) {
+  // SQL 42: el docente crea cursos y edita los datos de los suyos (eliminar y QR, solo el administrador)
+  ["btn-eliminar-curso", "bloque-qr"].forEach(function (id) {
     el(id).setAttribute("data-solo-admin", "");
   });
-  el("form-curso").querySelectorAll("input, textarea").forEach(function (c) { c.disabled = true; });
-  el("editor-vacio").querySelector("h2").textContent = "Elige uno de tus programas";
-  el("editor-vacio").querySelector("p").textContent = "Puedes editar sus lecciones, diapositivas y preguntas.";
+  const portada = document.querySelector(".bloque-portada");
+  if (portada) portada.removeAttribute("data-solo-admin");
+  el("editor-vacio").querySelector("h2").textContent = "Elige uno de tus programas o crea uno nuevo";
+  el("editor-vacio").querySelector("p").textContent = "Puedes crear cursos y editar sus datos, lecciones, diapositivas y preguntas.";
   adm.pestana = "lecciones";
 }
 
@@ -245,7 +247,7 @@ function llenarFormularioCurso(c) {
   el("c-imagen-quitar-caja").hidden = !c.imagen;
   el("c-video").value = c.video_url || "";
   el("c-enlaces").value = (Array.isArray(c.enlaces) ? c.enlaces : []).map(function (e) { return (e.titulo ? e.titulo + " | " : "") + e.url; }).join("\n");
-  el("c-enlaces").disabled = Boolean(adm.sinMaterialCurso) || adm.sinEnlaces === true || esDocente();
+  el("c-enlaces").disabled = Boolean(adm.sinMaterialCurso) || adm.sinEnlaces === true;
   el("btn-abrir-salon").hidden = !c.id;
   el("btn-guardar-version").hidden = !c.id || esDocente();
   mostrarPdfCurso(c.archivo_pdf || null);
@@ -299,7 +301,6 @@ el("c-imagen").addEventListener("change", function () {
 
 el("form-curso").addEventListener("submit", async function (ev) {
   ev.preventDefault();
-  if (esDocente()) return;
   const datos = {
     titulo: el("c-titulo").value.trim(),
     descripcion: el("c-descripcion").value.trim(),
@@ -362,6 +363,18 @@ el("form-curso").addEventListener("submit", async function (ev) {
   let resp;
   if (adm.curso) {
     resp = await nexusDb.from("cap_cursos").update(datos).eq("id", adm.curso.id).select().single();
+  } else if (esDocente()) {
+    // El docente crea el curso por una función que se lo asigna (SQL 42); luego se guardan los demás datos
+    const r = await nexusDb.rpc("cap_docente_crear_curso", {
+      p_titulo: datos.titulo, p_descripcion: datos.descripcion, p_subtemas: datos.subtemas, p_horas: datos.horas,
+      p_nota_minima: datos.nota_minima, p_publicado: datos.publicado, p_preguntas_por_evaluacion: datos.preguntas_por_evaluacion
+    });
+    if (r.error && /cap_docente_crear_curso|schema cache|function/i.test(r.error.message || "")) {
+      boton.disabled = false;
+      boton.textContent = "Guardar curso";
+      return avisar("Para que los docentes creen cursos, ejecuta el SQL 42 en Supabase.", "error");
+    }
+    resp = r.error ? r : await nexusDb.from("cap_cursos").update(datos).eq("id", r.data).select().single();
   } else {
     resp = await nexusDb.from("cap_cursos").insert(datos).select().single();
   }

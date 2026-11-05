@@ -111,7 +111,8 @@ function pintarProximas() {
   $a("proximas").hidden = !prox.lista.length;
   $a("titulo-programas").hidden = !prox.lista.length;
   const ahora = Date.now() + prox.desfase;
-  prox.lista.forEach(function (c) {
+  agruparJornadas(prox.lista).forEach(function (c) {
+    if (c.esJornada) return ul.appendChild(tarjetaJornadaProxima(c, ahora));
     const li = crear("li", "tarjeta-proxima");
     li._datos = c;
     const estado = estadoProxima(c, ahora);
@@ -128,7 +129,7 @@ function pintarProximas() {
     }
     const acciones = crear("div", "proxima-acciones");
     const enc = encuentroActual(c, ahora);
-    if (enc) {
+    if (enc && !(enc.fin && ahora >= enc.fin)) {   // si ya terminó, no se ofrece «Unirse»
       const unirse = crear("a", "boton btn-unirse", "🎥 Unirse a la reunión");
       unirse.href = enc.e.url;
       li._unirse = unirse;
@@ -144,6 +145,68 @@ function pintarProximas() {
   });
 }
 
+// Las capacitaciones de una misma JORNADA (SQL 46) se muestran en una sola tarjeta
+function agruparJornadas(lista) {
+  const salida = [], jornadas = {};
+  lista.forEach(function (c) {
+    if (!c.jornada || !c.jornada.id) return salida.push(c);
+    let g = jornadas[c.jornada.id];
+    if (!g) {
+      g = jornadas[c.jornada.id] = {
+        esJornada: true, empresa: c.empresa, jornada: c.jornada, curso: c.jornada.nombre,
+        fecha: c.jornada.fecha, encuentros: c.jornada.encuentros || [], temas: []
+      };
+      salida.push(g);
+    }
+    g.temas.push(c);
+  });
+  Object.keys(jornadas).forEach(function (k) {
+    jornadas[k].temas.sort(function (a, b) {
+      return (a.orden_jornada == null ? 1e9 : a.orden_jornada) - (b.orden_jornada == null ? 1e9 : b.orden_jornada);
+    });
+  });
+  return salida;
+}
+
+function tarjetaJornadaProxima(g, ahora) {
+  const li = crear("li", "tarjeta-proxima tarjeta-jornada-proxima");
+  li._datos = g;
+  const estado = estadoProxima(g, ahora);
+  if (estado.clase) li.classList.add(estado.clase);
+  const MOD = { presencial: "Presencial", virtual: "Virtual", mixta: "Mixta" };
+  li.append(crear("span", "proxima-empresa", g.empresa),
+    crear("strong", "proxima-curso", "📚 " + (g.curso || "Jornada de capacitación")),
+    crear("span", "proxima-cuando", estado.texto),
+    crear("span", "proxima-detalle", "Jornada · " + g.temas.length + (g.temas.length === 1 ? " tema" : " temas") +
+      (g.jornada.modalidad ? " · " + MOD[g.jornada.modalidad] : "")));
+  const ol = crear("ol", "proxima-temas");
+  g.temas.forEach(function (t) { ol.appendChild(crear("li", "", t.curso)); });
+  li.appendChild(ol);
+  if (g.jornada.codigo) {
+    const claves = crear("div", "proxima-claves");
+    claves.appendChild(crear("span", "proxima-clave", "Clave de la jornada: " + g.jornada.codigo));
+    li.appendChild(claves);
+  }
+  const acciones = crear("div", "proxima-acciones");
+  const enc = encuentroActual(g, ahora);
+  if (enc && !(enc.fin && ahora >= enc.fin)) {
+    const unirse = crear("a", "boton btn-unirse", "🎥 Unirse a la reunión");
+    unirse.href = enc.e.url;
+    unirse.target = "_blank";
+    unirse.rel = "noopener";
+    li._unirse = unirse;
+    acciones.appendChild(unirse);
+  }
+  const ids = g.temas.map(function (t) { return t.curso_id; });
+  const entrar = crear("a", "boton", "Entrar a la jornada ▸");
+  entrar.href = "aula.html?c=" + encodeURIComponent(ids[0]) + "&temas=" + encodeURIComponent(ids.join(",")) +
+    "&jc=" + encodeURIComponent(g.jornada.codigo || "") + "&jn=" + encodeURIComponent(g.curso || "Jornada de capacitación") +
+    "&emp=" + encodeURIComponent(g.empresa || "");
+  acciones.appendChild(entrar);
+  li.appendChild(acciones);
+  return li;
+}
+
 // Cada 30 s solo cambian el texto de la hora y el color (las tarjetas no se rehacen)
 function actualizarProximas() {
   const ahora = Date.now() + prox.desfase;
@@ -155,6 +218,7 @@ function actualizarProximas() {
     li.classList.toggle("terminada", e.clase === "terminada");
     const enc = encuentroActual(li._datos, ahora);
     if (li._unirse && enc && li._unirse.href !== enc.e.url) li._unirse.href = enc.e.url;
+    if (li._unirse) li._unirse.hidden = Boolean(enc && enc.fin && ahora >= enc.fin);
   });
 }
 

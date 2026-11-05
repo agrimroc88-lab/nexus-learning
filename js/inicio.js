@@ -66,7 +66,8 @@ async function entrarConClave(campoAcceso, errorAcceso, boton) {
 conectarAcceso("form-acceso", "codigo-acceso", "error-acceso", "btn-acceso");
 
 // Enlace permanente de ingreso (QR de jornadas y mensajes de WhatsApp): index.html#clave
-if (location.hash === "#clave") {
+if (location.hash === "#clave" && !(document.getElementById("ventana-sesion") || {}).showModal) {
+  // Navegadores muy antiguos sin ventanas: se usa el campo de la portada
   const campo = document.getElementById("codigo-acceso");
   campo.scrollIntoView({ block: "center" });
   campo.focus();
@@ -94,6 +95,18 @@ document.getElementById("btn-volver-sesion").addEventListener("click", function 
 document.getElementById("btn-cerrar-sesion").addEventListener("click", function () { ventana.close(); });
 // Clic fuera del cuadro: cerrar
 ventana.addEventListener("click", function (ev) { if (ev.target === ventana) ventana.close(); });
+
+// Entrada por el enlace o el QR (index.html#clave): se abre directo el cuadro
+// para escribir la clave. Se cierra con Esc, con la × o tocando fuera.
+if (location.hash === "#clave" && ventana && typeof ventana.showModal === "function") {
+  mostrarPaso(true);
+  ventana.showModal();
+  document.getElementById("clave-ventana").focus();
+  ventana.addEventListener("close", function () {
+    // Que al recargar no vuelva a abrirse
+    history.replaceState(null, "", location.pathname + location.search);
+  }, { once: true });
+}
 
 // =====================================================================
 // CATÁLOGO PÚBLICO DE PROGRAMAS (tarjetas, filtros y búsqueda)

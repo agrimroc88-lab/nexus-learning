@@ -196,3 +196,4 @@
 .proxima-cuando { min-height: 2.6em; }
 .proxima-acciones { align-items: center; }
 
+.presentacion-fin .presentacion-fin-tema { display: block; max-width: 80vw; margin: 6px auto 4px; color: #F2C14E; font-size: clamp(26px, 4vw, 54px); line-height: 1.2; }

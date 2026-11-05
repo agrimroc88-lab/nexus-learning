@@ -501,21 +501,46 @@ function escenaPdf(caja, paso) {
   const visor = { doc: null, pagina: 1, total: 0, lienzo: lienzo, caja: lienzoCaja, tarea: null };
   pdfActivo = visor;
 
+  // Nitidez: la diapositiva se dibuja con MÁS píxeles de los que ocupa en pantalla
+  // (el doble como mínimo) y el navegador la reduce; así el texto y las imágenes no se
+  // ven pixelados en proyectores, pantallas con escala de Windows (125 %, 150 %)
+  // ni en pantalla completa. Se limita a ~16 millones de píxeles por diapositiva.
   visor.dibujar = async function (destino, contenedor) {
     if (!visor.doc) return;
+    const turno = (destino._turno || 0) + 1;
+    destino._turno = turno;
     const pag = await visor.doc.getPage(visor.pagina);
+    if (destino._turno !== turno) return;          // llegó otra orden de dibujo más nueva
     const base = pag.getViewport({ scale: 1 });
     const ancho = contenedor.clientWidth || 800, alto = contenedor.clientHeight || 450;
     const escala = Math.min(ancho / base.width, alto / base.height);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const vista = pag.getViewport({ scale: escala * dpr });
-    destino.width = Math.floor(vista.width);
-    destino.height = Math.floor(vista.height);
-    destino.style.width = Math.floor(vista.width / dpr) + "px";
-    destino.style.height = Math.floor(vista.height / dpr) + "px";
+    // Tamaño en pantalla (px enteros) y resolución real del lienzo
+    const cssW = Math.max(1, Math.floor(base.width * escala));
+    const cssH = Math.max(1, Math.floor(base.height * escala));
+    let factor = Math.max(2, window.devicePixelRatio || 1);
+    const maxPix = 16000000;
+    if (cssW * cssH * factor * factor > maxPix) factor = Math.sqrt(maxPix / (cssW * cssH));
+    const pxW = Math.round(cssW * factor), pxH = Math.round(cssH * factor);
+    const vista = pag.getViewport({ scale: pxW / base.width });
     if (destino._tarea) { try { destino._tarea.cancel(); } catch (e) { /* nada */ } }
-    destino._tarea = pag.render({ canvasContext: destino.getContext("2d"), viewport: vista });
-    try { await destino._tarea.promise; } catch (e) { /* render cancelado */ }
+    // Se dibuja aparte y se copia al final: la diapositiva anterior no parpadea
+    const temp = document.createElement("canvas");
+    temp.width = pxW;
+    temp.height = pxH;
+    const ctxTemp = temp.getContext("2d", { alpha: false });
+    ctxTemp.fillStyle = "#FFFFFF";
+    ctxTemp.fillRect(0, 0, pxW, pxH);
+    destino._tarea = pag.render({ canvasContext: ctxTemp, viewport: vista });
+    try { await destino._tarea.promise; } catch (e) { return; /* render cancelado */ }
+    if (destino._turno !== turno) return;
+    destino.width = pxW;
+    destino.height = pxH;
+    destino.style.width = cssW + "px";
+    destino.style.height = cssH + "px";
+    const ctx = destino.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(temp, 0, 0);
   };
   visor.irPagina = function (n) {
     if (!visor.doc) return;

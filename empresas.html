@@ -18,7 +18,7 @@
 
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css?v=9">
-  <link rel="stylesheet" href="css/empresas.css?v=14">
+  <link rel="stylesheet" href="css/empresas.css?v=15">
 </head>
 <body>
 
@@ -157,6 +157,25 @@
             <button type="submit" class="boton" id="btn-guardar-empresa">Guardar empresa</button>
           </div>
         </form>
+
+        <!-- Buscar un trabajador en todas las capacitaciones de la empresa -->
+        <div class="buscar-trabajador">
+          <label class="etiqueta" for="buscar-trabajador">🔎 Buscar trabajador (nombre, apellido o cédula)</label>
+          <input class="campo" id="buscar-trabajador" placeholder="Ej.: Pérez, Juan o 0701234567" autocomplete="off">
+          <div id="resultado-trabajador" hidden>
+            <div class="nomina-herramientas">
+              <span id="resultado-trabajador-texto" class="ayuda"></span>
+              <button type="button" class="boton boton-chico" id="btn-trab-zip">📦 Certificados en ZIP</button>
+              <button type="button" class="boton secundario boton-chico" id="btn-trab-pdf">🖨️ Certificados en un PDF</button>
+            </div>
+            <div class="tabla-caja">
+              <table class="tabla">
+                <thead><tr><th>Nombres</th><th>Cédula</th><th>Capacitación</th><th>Fecha</th><th>Estado</th><th>Certificado</th></tr></thead>
+                <tbody id="filas-trabajador"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
         <!-- Jornadas: varias capacitaciones el mismo día con una sola clave -->
         <div id="bloque-jornadas">
@@ -343,6 +362,8 @@
         <div class="nomina-herramientas" id="nomina-herramientas">
           <input class="campo" id="buscar-nomina" placeholder="Buscar por nombre o cédula">
           <button type="button" class="boton" id="btn-excel">Descargar Excel</button>
+          <button type="button" class="boton secundario" id="btn-cert-zip" title="Un PDF por persona, en un archivo ZIP (respeta la búsqueda)">📦 Certificados en ZIP</button>
+          <button type="button" class="boton secundario" id="btn-cert-pdf" title="Todos los certificados en un solo PDF, uno por página (respeta la búsqueda)">🖨️ Certificados en un PDF</button>
           <button type="button" class="boton secundario" id="btn-asistencia-todos" hidden title="Certificado de asistencia para quienes se registraron pero no rindieron o no aprobaron la evaluación">Emitir certificados de asistencia</button>
         </div>
 
@@ -425,8 +446,8 @@
   <script src="js/sesion.js"></script>
   <script src="js/cartel.js"></script>
   <script src="js/reporte-empresa.js"></script>
-  <script src="js/certificado.js?v=9"></script>
+  <script src="js/certificado.js?v=10"></script>
   <script src="js/atd-admin.js?v=2"></script>
-  <script src="js/empresas.js?v=22"></script>
+  <script src="js/empresas.js?v=23"></script>
 </body>
 </html>

@@ -244,3 +244,9 @@ body.modo-nomina .tabla td:first-child { min-width: 210px; }
 .tema-num { font-weight: 700; color: var(--pino); min-width: 2ch; }
 .tema-titulo { flex: 1; }
 .tema-mover { padding: 2px 6px; font-size: 13px; }
+
+/* ---------- Buscar trabajador (todas las capacitaciones de la empresa) ---------- */
+.buscar-trabajador { margin: 18px 0 26px; padding: 16px; border: 1px solid var(--niebla); border-radius: 12px; background: #fff; }
+.buscar-trabajador .campo { max-width: 520px; }
+#resultado-trabajador { margin-top: 12px; }
+#resultado-trabajador .nomina-herramientas { align-items: center; }

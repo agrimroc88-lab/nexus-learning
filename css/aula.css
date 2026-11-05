@@ -196,8 +196,3 @@
 .proxima-cuando { min-height: 2.6em; }
 .proxima-acciones { align-items: center; }
 
-/* ---------- Jornada: fin de un tema y paso al siguiente ---------- */
-.salon .fin-tema { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; min-height: 100%; padding: 30px; }
-.salon .fin-tema-sig { margin: 18px 0 0; font-size: 20px; color: var(--gris); }
-.salon .fin-tema-titulo { margin: 0; font-size: clamp(26px, 3.4vw, 44px); color: var(--pino); max-width: 900px; }
-.salon .fin-tema-boton { margin-top: 22px; min-height: 60px; padding: 0 34px; font-size: 22px; }

@@ -9,7 +9,8 @@ const emp = {
   cursos: [],
   convs: [],
   jornadas: [],
-  nomina: null      // { conv, filas }
+  nomina: null,     // { conv, filas }
+  nominaSel: new Set()   // certificados marcados en la nómina
 };
 
 const el = (id) => document.getElementById(id);
@@ -1883,6 +1884,7 @@ async function abrirNomina(c, todos, jornada) {
   });
 
   emp.nomina = { conv: c, filas: filas, grupos: grupos, jornada: jornada || null };
+  emp.nominaSel = new Set();
   const sinCert = filas.filter(function (f) { return !f.certificado; }).length;
   el("btn-asistencia-todos").hidden = !sinCert;
   el("btn-asistencia-todos").textContent = "Emitir certificados de asistencia (" + sinCert + ")";
@@ -1940,7 +1942,7 @@ function pintarFilasNomina() {
   if (filas.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = emp.nomina.grupos ? 11 : 10;
+    td.colSpan = emp.nomina.grupos ? 12 : 11;
     td.className = "vacio-lista";
     td.textContent = emp.nomina.filas.length ? "Nadie coincide con la búsqueda." : "Todavía nadie se ha registrado en esta capacitación.";
     tr.appendChild(td);
@@ -1950,6 +1952,22 @@ function pintarFilasNomina() {
 
   filas.forEach(function (f) {
     const tr = document.createElement("tr");
+    // Casilla para descargar solo algunos certificados
+    const tdSel = document.createElement("td");
+    tdSel.className = "col-sel";
+    if (f.certId) {
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.className = "sel-cert";
+      chk.checked = emp.nominaSel.has(f.certId);
+      chk.setAttribute("aria-label", "Elegir el certificado de " + f.nombres);
+      chk.addEventListener("change", function () {
+        if (chk.checked) emp.nominaSel.add(f.certId); else emp.nominaSel.delete(f.certId);
+        actualizarBotonesCert();
+      });
+      tdSel.appendChild(chk);
+    }
+    tr.appendChild(tdSel);
     const celdas = [f.nombres, f.cedula, f.sexo || "—", f.edad ?? "—", f.etnia || "—", f.modalidad, null, f.nota === null ? "—" : formatearNota(f.nota) + " %", f.certificado || "—"];
     if (emp.nomina.grupos) celdas.splice(1, 0, f.grupo);
     const iEstado = emp.nomina.grupos ? 7 : 6;
@@ -1967,12 +1985,44 @@ function pintarFilasNomina() {
       tr.appendChild(td);
     });
     const tdAcc = document.createElement("td");
-    if (f.certId) tdAcc.appendChild(boton("Anular certificado", "enlace-boton rojo", function () { anularCertificado(f); }));
+    tdAcc.className = "celda-acciones";
+    if (f.certId) {
+      tdAcc.appendChild(boton("Descargar", "enlace-boton", function () {
+        descargarCertificados([f.certId], "pdf", "Certificado_" + nombreArchivo(f.nombres, 50) + (f.grupo ? "_" + nombreArchivo(f.grupo, 40) : ""), this);
+      }));
+      tdAcc.appendChild(boton("Anular certificado", "enlace-boton rojo", function () { anularCertificado(f); }));
+    }
     else tdAcc.appendChild(boton("Emitir asistencia", "enlace-boton", function () { emitirAsistencia([f]); }));
     tr.appendChild(tdAcc);
     tbody.appendChild(tr);
   });
+  actualizarBotonesCert();
 }
+
+// Si hay certificados marcados, los botones descargan solo esos; si no, todos los de la lista
+function certsElegidos() {
+  const visibles = filasNominaVisibles().map(function (f) { return f.certId; }).filter(Boolean);
+  const marcados = visibles.filter(function (id) { return emp.nominaSel.has(id); });
+  return marcados.length ? marcados : visibles;
+}
+function actualizarBotonesCert() {
+  const visibles = filasNominaVisibles().filter(function (f) { return f.certId; });
+  const marcados = visibles.filter(function (f) { return emp.nominaSel.has(f.certId); }).length;
+  const extra = marcados ? " (" + marcados + (marcados === 1 ? " marcado)" : " marcados)") : "";
+  el("btn-cert-zip").textContent = "📦 Certificados en ZIP" + extra;
+  el("btn-cert-pdf").textContent = "🖨️ Certificados en un PDF" + extra;
+  const todos = el("sel-todos-nomina");
+  todos.checked = visibles.length > 0 && marcados === visibles.length;
+  todos.indeterminate = marcados > 0 && marcados < visibles.length;
+}
+el("sel-todos-nomina").addEventListener("change", function () {
+  const marcar = this.checked;
+  filasNominaVisibles().forEach(function (f) {
+    if (!f.certId) return;
+    if (marcar) emp.nominaSel.add(f.certId); else emp.nominaSel.delete(f.certId);
+  });
+  pintarFilasNomina();
+});
 
 // Certificado de ASISTENCIA para quien se registró pero no rindió o no aprobó la evaluación
 async function emitirAsistencia(filas) {
@@ -2088,10 +2138,10 @@ function baseNomina() {
   return "Certificados_" + nombreArchivo(emp.actual.nombre, 30) + "_" + nombreArchivo(tema, 40);
 }
 el("btn-cert-zip").addEventListener("click", function () {
-  if (emp.nomina) descargarCertificados(filasNominaVisibles().map(function (f) { return f.certId; }), "zip", baseNomina(), this);
+  if (emp.nomina) descargarCertificados(certsElegidos(), "zip", baseNomina(), this);
 });
 el("btn-cert-pdf").addEventListener("click", function () {
-  if (emp.nomina) descargarCertificados(filasNominaVisibles().map(function (f) { return f.certId; }), "pdf", baseNomina(), this);
+  if (emp.nomina) descargarCertificados(certsElegidos(), "pdf", baseNomina(), this);
 });
 
 // ---------------------------------------------------------------------

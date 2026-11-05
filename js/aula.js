@@ -282,8 +282,9 @@ async function abrirSalon(id, alFinal, primeraVez) {
   if (au.jornada) {
     au.t = Math.max(0, au.temas.indexOf(id));
     au.titulos[id] = au.curso.titulo;
-    // Entre temas no hay QR: «Siguiente tema». El QR de la jornada va al final del último.
-    if (au.t < au.temas.length - 1) au.pasos[au.pasos.length - 1] = { tipo: "fintema", etiqueta: "Siguiente", titulo: "Siguiente tema" };
+    // Entre temas no hay QR: al terminar el material, el botón dice «Siguiente tema».
+    // El QR de la jornada va al final del último tema.
+    if (au.t < au.temas.length - 1 && au.pasos.length > 1) au.pasos.pop();
     $a("salon-curso").textContent = au.jornada.nombre + " · Tema " + (au.t + 1) + " de " + au.temas.length + ": " + au.curso.titulo;
     const q = new URLSearchParams(location.search);
     q.set("c", id);
@@ -353,13 +354,8 @@ function irA(k) {
   const activo = $a("lista-pasos").children[au.i];
   if (activo) activo.scrollIntoView({ block: "nearest" });
   $a("salon-paso").textContent = (au.i + 1) + " de " + au.pasos.length + " · " + paso.titulo;
-  const temaAnterior = au.jornada && au.i === 0 && au.t > 0;
-  const temaSiguiente = au.jornada && au.i === au.pasos.length - 1 && au.t < au.temas.length - 1;
-  $a("btn-anterior").disabled = au.i === 0 && !temaAnterior;
-  $a("btn-anterior").textContent = temaAnterior ? "◀ Tema anterior" : "◀ Anterior";
-  $a("btn-siguiente").disabled = au.i === au.pasos.length - 1 && !temaSiguiente;
-  $a("btn-siguiente").textContent = temaSiguiente ? "Siguiente tema ▶" : "Siguiente ▶";
   pintarPaso(paso);
+  actualizarBotones();
 }
 
 function pintarPaso(paso) {
@@ -375,33 +371,39 @@ function pintarPaso(paso) {
   if (paso.tipo === "leccion") return escenaLeccion(caja, paso);
   if (paso.tipo === "juego") return escenaJuego(caja, paso);
   if (paso.tipo === "cierre") return escenaCierre(caja);
-  if (paso.tipo === "fintema") return escenaFinTema(caja);
+}
+
+// ¿Quedan diapositivas del PDF que se está mostrando?
+function quedanDiapositivas() {
+  return Boolean(pdfActivo && pdfActivo.doc && pdfActivo.pagina < pdfActivo.total);
+}
+
+// Botones de abajo. En una jornada, cuando se acaba el material del tema
+// (y sus diapositivas), el botón amarillo pasa a «Siguiente tema ▶».
+function actualizarBotones() {
+  const ultimo = au.i === au.pasos.length - 1;
+  const temaAnterior = au.jornada && au.i === 0 && au.t > 0;
+  const hayOtroTema = au.jornada && au.t < au.temas.length - 1;
+  const temaSiguiente = hayOtroTema && ultimo && !quedanDiapositivas();
+  $a("btn-anterior").disabled = au.i === 0 && !temaAnterior;
+  $a("btn-anterior").textContent = temaAnterior ? "◀ Tema anterior" : "◀ Anterior";
+  $a("btn-siguiente").disabled = ultimo && !hayOtroTema;
+  $a("btn-siguiente").textContent = temaSiguiente ? "Siguiente tema ▶" : "Siguiente ▶";
 }
 
 // Avanzar o retroceder; en una jornada, pasa de un tema a otro sin salir del Salón
 function avanzar() {
   if (au.i < au.pasos.length - 1) return irA(au.i + 1);
-  if (au.jornada && au.t < au.temas.length - 1) return abrirSalon(au.temas[au.t + 1]);
+  if (au.jornada && au.t < au.temas.length - 1) {
+    if (quedanDiapositivas()) return pdfActivo.irPagina(pdfActivo.pagina + 1);
+    return abrirSalon(au.temas[au.t + 1]);
+  }
 }
 function retroceder() {
   if (au.i > 0) return irA(au.i - 1);
   if (au.jornada && au.t > 0) return abrirSalon(au.temas[au.t - 1], true);
 }
 
-function escenaFinTema(caja) {
-  const sig = au.temas[au.t + 1];
-  const cont = crear("div", "fin-tema");
-  cont.append(
-    crear("p", "inicio-eyebrow", au.jornada.nombre + " · Tema " + (au.t + 1) + " de " + au.temas.length + " terminado"),
-    crear("h2", "escena-titulo grande", "✔ " + au.curso.titulo),
-    crear("p", "fin-tema-sig", "Siguiente tema (" + (au.t + 2) + " de " + au.temas.length + "):"),
-    crear("h3", "fin-tema-titulo", au.titulos[sig] || "Tema " + (au.t + 2)));
-  const b = crear("button", "boton fin-tema-boton", "Siguiente tema ▶");
-  b.type = "button";
-  b.addEventListener("click", avanzar);
-  cont.appendChild(b);
-  caja.appendChild(cont);
-}
 
 function escenaInicio(caja) {
   const c = au.curso;
@@ -523,6 +525,7 @@ function escenaPdf(caja, paso) {
     sig.disabled = visor.pagina === visor.total;
     visor.dibujar(lienzo, lienzoCaja);
     if (visor.presentacion) visor.presentacion.mostrar();
+    actualizarBotones();
   };
 
   ant.addEventListener("click", function () { visor.irPagina(visor.pagina - 1); });

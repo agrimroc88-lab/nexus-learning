@@ -575,14 +575,27 @@ function escenaPdf(caja, paso) {
 }
 
 // Pantalla completa en negro con una diapositiva a la vez
-function abrirPresentacion(visor) {
-  if (!visor.doc) return;
+function abrirPresentacion(visorInicial) {
+  if (!visorInicial.doc) return;
+  let v = visorInicial;   // cambia al pasar al siguiente PDF o tema (jornada)
   const capa = crear("div", "presentacion-pdf");
   capa.tabIndex = -1;
   const lienzo = document.createElement("canvas");
   const fin = crear("div", "presentacion-fin");
-  fin.append(crear("p", "", "Fin de la presentación"), crear("small", "", "Presiona Esc o haz clic para salir"));
+  const finTitulo = crear("p", "", "Fin de la presentación");
+  const finTema = crear("strong", "presentacion-fin-tema", "");
+  const finNota = crear("small", "", "Presiona Esc o haz clic para salir");
+  fin.append(finTitulo, finTema, finNota);
   fin.hidden = true;
+  function pantallaFin(titulo, tema, nota) {
+    finTitulo.textContent = titulo;
+    finTema.textContent = tema || "";
+    finTema.hidden = !tema;
+    finNota.textContent = nota;
+    alFinal = true;
+    lienzo.hidden = true;
+    fin.hidden = false;
+  }
   const pista = crear("div", "presentacion-pista", "← → para avanzar · C para foto · Esc para salir");
   const foto = crear("button", "presentacion-foto");
   foto.type = "button";
@@ -595,36 +608,82 @@ function abrirPresentacion(visor) {
   setTimeout(function () { pista.classList.add("oculta"); }, 2500);
 
   let alFinal = false;
+  let pendiente = null;      // "tema": la pantalla anuncia el siguiente tema de la jornada
+  let cambiando = false;
+
+  // Pasa al PDF que muestre el Salón después de ejecutar `ir` (otro paso u otro tema),
+  // sin salir de la presentación ni de la pantalla completa.
+  async function encadenar(ir, alUltima) {
+    cambiando = true;
+    const viejo = v;
+    viejo.presentacion = null;
+    pantallaFin("Cargando…", "", "");
+    await ir();
+    const limite = Date.now() + 20000;
+    while ((pdfActivo === viejo || !pdfActivo || !pdfActivo.doc) && Date.now() < limite) {
+      await new Promise(function (r) { setTimeout(r, 120); });
+    }
+    cambiando = false;
+    if (!pdfActivo || pdfActivo === viejo || !pdfActivo.doc) return cerrar();
+    v = pdfActivo;
+    v.presentacion = pres;
+    if (alUltima) v.irPagina(v.total); else pres.mostrar();
+  }
+
+  async function siguienteTema() {
+    pendiente = null;
+    await encadenar(async function () {
+      await abrirSalon(au.temas[au.t + 1]);
+      const k = au.pasos.findIndex(function (p) { return p.tipo === "pdf"; });
+      if (k >= 0) irA(k);
+    });
+  }
+
   const pres = {
     mostrar: function () {
       alFinal = false;
+      pendiente = null;
       fin.hidden = true;
       lienzo.hidden = false;
-      visor.dibujar(lienzo, capa);
+      v.dibujar(lienzo, capa);
     },
     siguiente: function () {
-      if (alFinal) return cerrar();
-      if (visor.pagina < visor.total) visor.irPagina(visor.pagina + 1);
-      else { alFinal = true; lienzo.hidden = true; fin.hidden = false; }
+      if (cambiando) return;
+      if (alFinal) return pendiente === "tema" ? siguienteTema() : cerrar();
+      if (v.pagina < v.total) return v.irPagina(v.pagina + 1);
+      // Terminó este PDF
+      const sigPaso = au.pasos[au.i + 1];
+      if (sigPaso && sigPaso.tipo === "pdf") return encadenar(function () { irA(au.i + 1); });
+      if (sigPaso) { cerrar(); return irA(au.i + 1); }          // video, lección o juego: en el Salón
+      if (au.jornada && au.t < au.temas.length - 1) {
+        pendiente = "tema";
+        const sig = au.temas[au.t + 1];
+        return pantallaFin("Siguiente tema (" + (au.t + 2) + " de " + au.temas.length + ")",
+          au.titulos[sig] || "Tema " + (au.t + 2), "Presiona → o haz clic para continuar · Esc para salir");
+      }
+      pantallaFin("Fin de la presentación", "", "Presiona Esc o haz clic para salir");
     },
     anterior: function () {
+      if (cambiando) return;
       if (alFinal) return pres.mostrar();
-      visor.irPagina(visor.pagina - 1);
+      if (v.pagina > 1) return v.irPagina(v.pagina - 1);
+      const antPaso = au.pasos[au.i - 1];
+      if (antPaso && antPaso.tipo === "pdf") return encadenar(function () { irA(au.i - 1); }, true);
     }
   };
-  visor.presentacion = pres;
+  v.presentacion = pres;
 
   function tecla(ev) {
     const k = ev.key;
     if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter", "n", "N"].indexOf(k) >= 0) { ev.preventDefault(); ev.stopImmediatePropagation(); pres.siguiente(); }
     else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace", "p", "P"].indexOf(k) >= 0) { ev.preventDefault(); ev.stopImmediatePropagation(); pres.anterior(); }
-    else if (k === "Home") { ev.preventDefault(); ev.stopImmediatePropagation(); visor.irPagina(1); }
-    else if (k === "End") { ev.preventDefault(); ev.stopImmediatePropagation(); visor.irPagina(visor.total); }
+    else if (k === "Home") { ev.preventDefault(); ev.stopImmediatePropagation(); v.irPagina(1); }
+    else if (k === "End") { ev.preventDefault(); ev.stopImmediatePropagation(); v.irPagina(v.total); }
     else if (k === "Escape") { ev.preventDefault(); ev.stopImmediatePropagation(); cerrar(); }
     else if (k === "f" || k === "F") { ev.stopImmediatePropagation(); }
     else if (k === "c" || k === "C") { ev.preventDefault(); ev.stopImmediatePropagation(); tomarCaptura(); }
   }
-  function redimensionar() { if (!alFinal) visor.dibujar(lienzo, capa); }
+  function redimensionar() { if (!alFinal) v.dibujar(lienzo, capa); }
   function alSalirPantalla() { if (!document.fullscreenElement) cerrar(); }
   let cerrada = false;
   function cerrar() {
@@ -633,14 +692,15 @@ function abrirPresentacion(visor) {
     document.removeEventListener("keydown", tecla, true);
     window.removeEventListener("resize", redimensionar);
     document.removeEventListener("fullscreenchange", alSalirPantalla);
-    visor.presentacion = null;
+    v.presentacion = null;
     if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
     capa.remove();
-    visor.dibujar(visor.lienzo, visor.caja);
+    v.dibujar(v.lienzo, v.caja);
   }
 
   capa.addEventListener("click", function (ev) {
-    if (alFinal) return cerrar();
+    if (cambiando) return;
+    if (alFinal) return pendiente === "tema" ? siguienteTema() : cerrar();
     // Clic en el tercio izquierdo: atrás; en el resto: adelante
     if (ev.clientX < window.innerWidth / 3) pres.anterior(); else pres.siguiente();
   });

@@ -1085,16 +1085,20 @@ async function cargarJornadas() {
     return nexusDb
       .from("cap_jornadas")
       .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " + extra +
-              "cap_convocatorias(id, creado_en, horas, evaluacion_presencial, cap_cursos(id, titulo, horas), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
+              "cap_convocatorias(id, creado_en, " + (emp.sinOrdenJornada ? "" : "orden_jornada, ") + "horas, evaluacion_presencial, cap_cursos(id, titulo, horas), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
       .eq("empresa_id", emp.actual.id)
       .order("fecha", { ascending: false });
   };
   // SQL 44: modalidad y enlace de la reunión de la jornada
-  let { data, error } = await consulta("modalidad, encuentros, ");
   emp.sinModJornada = false;
-  if (error && /modalidad|encuentros/i.test(error.message || "")) {
-    emp.sinModJornada = true;
-    ({ data, error } = await consulta(""));
+  emp.sinOrdenJornada = false;
+  let { data, error } = await consulta("modalidad, encuentros, ");
+  for (let i = 0; i < 2 && error; i++) {
+    const m = error.message || "";
+    if (/orden_jornada/i.test(m)) emp.sinOrdenJornada = true;        // falta el SQL 45
+    else if (/modalidad|encuentros/i.test(m)) emp.sinModJornada = true; // falta el SQL 44
+    else break;
+    ({ data, error } = await consulta(emp.sinModJornada ? "" : "modalidad, encuentros, "));
   }
   if (error) {
     // Si aún no se ejecutó el SQL 18, la sección queda oculta sin romper el resto
@@ -1103,6 +1107,13 @@ async function cargarJornadas() {
     return;
   }
   emp.jornadas = data || [];
+  // Temas en el orden elegido (SQL 45); los que no tienen orden, por fecha de creación
+  emp.jornadas.forEach(function (j) {
+    (j.cap_convocatorias || []).sort(function (a, b) {
+      const oa = a.orden_jornada == null ? 1e9 : a.orden_jornada, ob = b.orden_jornada == null ? 1e9 : b.orden_jornada;
+      return oa - ob || String(a.creado_en || "").localeCompare(String(b.creado_en || ""));
+    });
+  });
   emp.jornadas.forEach(function (j) { cont.appendChild(tarjetaJornada(j)); });
 }
 
@@ -1145,12 +1156,40 @@ function tarjetaJornada(j) {
 
   const temas = document.createElement("ul");
   temas.className = "temas-jornada";
-  j.cap_convocatorias.sort(function (a, b) { return String(a.creado_en || "").localeCompare(String(b.creado_en || "")); });
-  j.cap_convocatorias.forEach(function (c) {
+  j.cap_convocatorias.forEach(function (c, i) {
     const li = document.createElement("li");
-    li.textContent = c.cap_cursos.titulo;
+    li.dataset.conv = c.id;
+    if (emp.sinOrdenJornada) {
+      li.textContent = c.cap_cursos.titulo;
+    } else {
+      // Arrastrar para cambiar el orden (o las flechas, en el celular)
+      li.className = "tema-arrastrable";
+      li.draggable = true;
+      li.title = "Arrastra para cambiar el orden";
+      const asa = crearEl("span", "tema-asa", "⠿");
+      const num = crearEl("span", "tema-num", (i + 1) + ".");
+      const t = crearEl("span", "tema-titulo", c.cap_cursos.titulo);
+      const sube = boton("▲", "enlace-boton tema-mover", function () { moverTema(temas, li, -1, j); });
+      const baja = boton("▼", "enlace-boton tema-mover", function () { moverTema(temas, li, 1, j); });
+      sube.title = "Subir"; baja.title = "Bajar";
+      li.append(asa, num, t, sube, baja);
+      li.addEventListener("dragstart", function (ev) { li.classList.add("arrastrando"); ev.dataTransfer.effectAllowed = "move"; ev.dataTransfer.setData("text/plain", c.id); });
+      li.addEventListener("dragend", function () { li.classList.remove("arrastrando"); guardarOrdenTemas(temas, j); });
+    }
     temas.appendChild(li);
   });
+  if (!emp.sinOrdenJornada) {
+    temas.addEventListener("dragover", function (ev) {
+      const arr = temas.querySelector(".arrastrando");
+      if (!arr) return;
+      ev.preventDefault();
+      const despues = Array.from(temas.querySelectorAll(".tema-arrastrable:not(.arrastrando)")).find(function (x) {
+        const r = x.getBoundingClientRect();
+        return ev.clientY < r.top + r.height / 2;
+      });
+      if (despues) temas.insertBefore(arr, despues); else temas.appendChild(arr);
+    });
+  }
 
   // Clave de la jornada (mismo aspecto que las claves de capacitación)
   const fila = document.createElement("div");
@@ -1268,6 +1307,26 @@ async function extenderJornada(j) {
   }
   avisar("Jornada extendida hasta el " + fechaHora(hasta.toISOString()) + ", junto con sus capacitaciones.");
   await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+}
+
+// Orden de los temas de la jornada (SQL 45)
+function moverTema(lista, li, paso, j) {
+  if (paso < 0 && li.previousElementSibling) lista.insertBefore(li, li.previousElementSibling);
+  else if (paso > 0 && li.nextElementSibling) lista.insertBefore(li.nextElementSibling, li);
+  guardarOrdenTemas(lista, j);
+}
+
+async function guardarOrdenTemas(lista, j) {
+  const ids = Array.from(lista.querySelectorAll("li[data-conv]")).map(function (x) { return x.dataset.conv; });
+  const antes = j.cap_convocatorias.map(function (c) { return c.id; });
+  if (ids.join() === antes.join()) return;
+  lista.querySelectorAll(".tema-num").forEach(function (n, i) { n.textContent = (i + 1) + "."; });
+  for (let i = 0; i < ids.length; i++) {
+    const r = await nexusDb.from("cap_convocatorias").update({ orden_jornada: i + 1 }).eq("id", ids[i]);
+    if (r.error) { await cargarJornadas(); return errorSupabase(r.error, "No se pudo guardar el orden de los temas."); }
+  }
+  avisar("Orden de los temas guardado. Así saldrán en la presentación y para los participantes.");
+  await cargarJornadas();
 }
 
 // Eliminar una jornada mal planificada: la jornada, su clave y sus capacitaciones

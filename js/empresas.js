@@ -1085,7 +1085,7 @@ async function cargarJornadas() {
     return nexusDb
       .from("cap_jornadas")
       .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " + extra +
-              "cap_convocatorias(id, cap_cursos(titulo), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
+              "cap_convocatorias(id, creado_en, horas, evaluacion_presencial, cap_cursos(id, titulo, horas), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
       .eq("empresa_id", emp.actual.id)
       .order("fecha", { ascending: false });
   };
@@ -1127,10 +1127,25 @@ function tarjetaJornada(j) {
       s.textContent = t;
       chips.appendChild(s);
     });
-  cab.append(h3, chips);
+  // Salón de clases de la jornada: todos los temas seguidos («Siguiente tema ▶»)
+  const ids = j.cap_convocatorias.map(function (c) { return c.cap_cursos.id; }).filter(Boolean);
+  const cabFila = document.createElement("div");
+  cabFila.className = "conv-fila-chips";
+  cabFila.appendChild(chips);
+  if (ids.length) {
+    const entrar = document.createElement("a");
+    entrar.className = "boton boton-chico btn-entrar-curso";
+    entrar.textContent = "Entrar a la jornada ▸";
+    entrar.title = "Abre el Salón de clases con todos los temas seguidos; al terminar uno, «Siguiente tema».";
+    entrar.href = "aula.html?c=" + encodeURIComponent(ids[0]) + "&temas=" + encodeURIComponent(ids.join(",")) +
+      "&jc=" + encodeURIComponent(j.codigo) + "&jn=" + encodeURIComponent(j.nombre) + "&emp=" + encodeURIComponent(emp.actual.nombre);
+    cabFila.appendChild(entrar);
+  }
+  cab.append(h3, cabFila);
 
   const temas = document.createElement("ul");
   temas.className = "temas-jornada";
+  j.cap_convocatorias.sort(function (a, b) { return String(a.creado_en || "").localeCompare(String(b.creado_en || "")); });
   j.cap_convocatorias.forEach(function (c) {
     const li = document.createElement("li");
     li.textContent = c.cap_cursos.titulo;

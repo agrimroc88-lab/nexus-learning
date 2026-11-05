@@ -14,6 +14,18 @@
 const $a = (id) => document.getElementById(id);
 const au = { papel: null, cursos: [], curso: null, pasos: [], i: 0, claves: [] };
 
+// JORNADA en el Salón: aula.html?c=<primer tema>&temas=<id1,id2,…>&jc=<clave>&jn=<nombre>
+// Al terminar un tema, «Siguiente tema ▶» carga el siguiente sin salir de la
+// pantalla (ni de pantalla completa). El QR de asistencia va al final, con la
+// clave de la jornada.
+(function () {
+  const q = new URLSearchParams(location.search);
+  au.temas = (q.get("temas") || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+  au.jornada = au.temas.length > 1 ? { codigo: q.get("jc") || "", nombre: q.get("jn") || "Jornada de capacitación" } : null;
+  au.titulos = {};
+  au.t = 0;
+})();
+
 (async function iniciar() {
   const acceso = await exigirPersonal();
   if (!acceso) return;
@@ -28,7 +40,11 @@ const au = { papel: null, cursos: [], curso: null, pasos: [], i: 0, claves: [] }
   $a("cargando").hidden = true;
 
   const id = new URLSearchParams(location.search).get("c");
-  if (id) await abrirSalon(id);
+  if (id && au.jornada) {
+    const rt = await nexusDb.from("cap_cursos").select("id, titulo").in("id", au.temas);
+    (rt.data || []).forEach(function (c) { au.titulos[c.id] = c.titulo; });
+  }
+  if (id) await abrirSalon(id, false, true);
   else {
     const pedido = Promise.resolve(nexusDb.rpc("cap_mis_capacitaciones")).catch(function () { return {}; });
     await listarCursos(pedido);
@@ -225,7 +241,7 @@ function pintarCursos() {
 // ---------------------------------------------------------------------
 // 2. Salón de clases
 // ---------------------------------------------------------------------
-async function abrirSalon(id) {
+async function abrirSalon(id, alFinal, primeraVez) {
   document.body.classList.add("con-escenario");
   $a("salon").hidden = false;
   $a("salon-contenido").textContent = "Cargando el material del curso…";
@@ -263,9 +279,19 @@ async function abrirSalon(id) {
   }
 
   au.pasos = armarPasos(au.curso, lecciones, juegos);
+  if (au.jornada) {
+    au.t = Math.max(0, au.temas.indexOf(id));
+    au.titulos[id] = au.curso.titulo;
+    // Entre temas no hay QR: «Siguiente tema». El QR de la jornada va al final del último.
+    if (au.t < au.temas.length - 1) au.pasos[au.pasos.length - 1] = { tipo: "fintema", etiqueta: "Siguiente", titulo: "Siguiente tema" };
+    $a("salon-curso").textContent = au.jornada.nombre + " · Tema " + (au.t + 1) + " de " + au.temas.length + ": " + au.curso.titulo;
+    const q = new URLSearchParams(location.search);
+    q.set("c", id);
+    history.replaceState(null, "", location.pathname + "?" + q.toString());
+  }
   pintarRecorrido();
-  const desdeEnlace = parseInt((location.hash.match(/^#paso-(\d+)$/) || [])[1], 10);
-  irA(desdeEnlace >= 1 && desdeEnlace <= au.pasos.length ? desdeEnlace - 1 : 0);
+  const desdeEnlace = primeraVez ? parseInt((location.hash.match(/^#paso-(\d+)$/) || [])[1], 10) : NaN;
+  irA(desdeEnlace >= 1 && desdeEnlace <= au.pasos.length ? desdeEnlace - 1 : (alFinal ? au.pasos.length - 1 : 0));
 }
 
 function esYoutube(url) { return Boolean(idYoutube(url)); }
@@ -327,8 +353,12 @@ function irA(k) {
   const activo = $a("lista-pasos").children[au.i];
   if (activo) activo.scrollIntoView({ block: "nearest" });
   $a("salon-paso").textContent = (au.i + 1) + " de " + au.pasos.length + " · " + paso.titulo;
-  $a("btn-anterior").disabled = au.i === 0;
-  $a("btn-siguiente").disabled = au.i === au.pasos.length - 1;
+  const temaAnterior = au.jornada && au.i === 0 && au.t > 0;
+  const temaSiguiente = au.jornada && au.i === au.pasos.length - 1 && au.t < au.temas.length - 1;
+  $a("btn-anterior").disabled = au.i === 0 && !temaAnterior;
+  $a("btn-anterior").textContent = temaAnterior ? "◀ Tema anterior" : "◀ Anterior";
+  $a("btn-siguiente").disabled = au.i === au.pasos.length - 1 && !temaSiguiente;
+  $a("btn-siguiente").textContent = temaSiguiente ? "Siguiente tema ▶" : "Siguiente ▶";
   pintarPaso(paso);
 }
 
@@ -345,6 +375,32 @@ function pintarPaso(paso) {
   if (paso.tipo === "leccion") return escenaLeccion(caja, paso);
   if (paso.tipo === "juego") return escenaJuego(caja, paso);
   if (paso.tipo === "cierre") return escenaCierre(caja);
+  if (paso.tipo === "fintema") return escenaFinTema(caja);
+}
+
+// Avanzar o retroceder; en una jornada, pasa de un tema a otro sin salir del Salón
+function avanzar() {
+  if (au.i < au.pasos.length - 1) return irA(au.i + 1);
+  if (au.jornada && au.t < au.temas.length - 1) return abrirSalon(au.temas[au.t + 1]);
+}
+function retroceder() {
+  if (au.i > 0) return irA(au.i - 1);
+  if (au.jornada && au.t > 0) return abrirSalon(au.temas[au.t - 1], true);
+}
+
+function escenaFinTema(caja) {
+  const sig = au.temas[au.t + 1];
+  const cont = crear("div", "fin-tema");
+  cont.append(
+    crear("p", "inicio-eyebrow", au.jornada.nombre + " · Tema " + (au.t + 1) + " de " + au.temas.length + " terminado"),
+    crear("h2", "escena-titulo grande", "✔ " + au.curso.titulo),
+    crear("p", "fin-tema-sig", "Siguiente tema (" + (au.t + 2) + " de " + au.temas.length + "):"),
+    crear("h3", "fin-tema-titulo", au.titulos[sig] || "Tema " + (au.t + 2)));
+  const b = crear("button", "boton fin-tema-boton", "Siguiente tema ▶");
+  b.type = "button";
+  b.addEventListener("click", avanzar);
+  cont.appendChild(b);
+  caja.appendChild(cont);
 }
 
 function escenaInicio(caja) {
@@ -619,6 +675,7 @@ function escenaJuego(caja, paso) {
 
 // Cierre: QR permanente del programa + claves vigentes hoy
 async function escenaCierre(caja) {
+  if (au.jornada) return escenaCierreJornada(caja);
   const enlace = location.origin + location.pathname.replace(/[^/]*$/, "") + "programa.html?p=" + encodeURIComponent(au.curso.id);
   const cont = crear("div", "cierre");
   const qrCaja = crear("div", "cierre-qr", "Generando QR…");
@@ -661,6 +718,38 @@ async function escenaCierre(caja) {
   }
 }
 
+// Cierre de la jornada: un solo QR y la clave de la jornada para todos los temas
+async function escenaCierreJornada(caja) {
+  const enlace = location.origin + location.pathname.replace(/[^/]*$/, "") + "index.html#clave";
+  const cont = crear("div", "cierre");
+  const qrCaja = crear("div", "cierre-qr", "Generando QR…");
+  const textos = crear("div", "cierre-textos");
+  textos.append(crear("p", "inicio-eyebrow", "Registro de asistencia · " + au.jornada.nombre),
+    crear("h2", "escena-titulo grande", "Escanea el código QR"),
+    crear("p", "cierre-paso", "1. Abre la cámara del celular y escanea el código."),
+    crear("p", "cierre-paso", "2. Escribe la clave de la jornada."),
+    crear("p", "cierre-paso", "3. Regístrate una sola vez y descarga un certificado por cada tema (" + au.temas.length + ")."));
+  if (au.jornada.codigo) {
+    const claves = crear("div", "cierre-claves");
+    const f = crear("div", "clave-vigente");
+    f.append(crear("span", "clave-empresa", "Clave de la jornada"), crear("strong", "clave-codigo", au.jornada.codigo));
+    claves.appendChild(f);
+    textos.appendChild(claves);
+  }
+  cont.append(qrCaja, textos);
+  caja.appendChild(cont);
+  try {
+    await cargarQr();
+    const qr = qrcode(0, "M");
+    qr.addData(enlace);
+    qr.make();
+    qrCaja.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+  } catch (e) {
+    qrCaja.textContent = "";
+    qrCaja.appendChild(crear("p", "ayuda", "No se pudo generar el QR. Comparte este enlace: " + enlace));
+  }
+}
+
 function cargarQr() {
   if (typeof qrcode !== "undefined") return Promise.resolve();
   return new Promise(function (ok, falla) {
@@ -675,9 +764,16 @@ function cargarQr() {
 // ---------------------------------------------------------------------
 // Controles del salón
 // ---------------------------------------------------------------------
-$a("btn-anterior").addEventListener("click", function () { irA(au.i - 1); });
-$a("btn-siguiente").addEventListener("click", function () { irA(au.i + 1); });
-$a("btn-qr").addEventListener("click", function () { irA(au.pasos.length - 1); });
+$a("btn-anterior").addEventListener("click", retroceder);
+$a("btn-siguiente").addEventListener("click", avanzar);
+$a("btn-qr").addEventListener("click", function () {
+  // En una jornada, el QR de asistencia (de la jornada) se puede mostrar desde cualquier tema
+  if (au.jornada && au.t < au.temas.length - 1) {
+    $a("salon-paso").textContent = "QR de asistencia de la jornada";
+    return pintarPaso({ tipo: "cierre", titulo: "Asistencia y certificado" });
+  }
+  irA(au.pasos.length - 1);
+});
 $a("btn-planificar").addEventListener("click", function () {
   location.href = "admin.html?curso=" + encodeURIComponent(au.curso ? au.curso.id : "");
 });
@@ -825,10 +921,10 @@ document.addEventListener("keydown", function (ev) {
   const pdf = pdfActivo && pdfActivo.doc ? pdfActivo : null;
   if (ev.key === "ArrowRight" || ev.key === "PageDown") {
     ev.preventDefault();
-    if (pdf && pdf.pagina < pdf.total) pdf.irPagina(pdf.pagina + 1); else irA(au.i + 1);
+    if (pdf && pdf.pagina < pdf.total) pdf.irPagina(pdf.pagina + 1); else avanzar();
   } else if (ev.key === "ArrowLeft" || ev.key === "PageUp") {
     ev.preventDefault();
-    if (pdf && pdf.pagina > 1) pdf.irPagina(pdf.pagina - 1); else irA(au.i - 1);
+    if (pdf && pdf.pagina > 1) pdf.irPagina(pdf.pagina - 1); else retroceder();
   } else if ((ev.key === "p" || ev.key === "P") && pdf) { ev.preventDefault(); abrirPresentacion(pdf); }
   else if ((ev.key === "f" || ev.key === "F") && !ev.ctrlKey && !ev.metaKey) { alternarPantalla(); }
   else if ((ev.key === "c" || ev.key === "C") && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); tomarCaptura(); }

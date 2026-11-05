@@ -961,7 +961,7 @@ async function certificadoEjemplo(c) {
     tipo: asistencia ? "asistencia" : "evaluacion",
     curso: c.cap_cursos.titulo,
     empresa: emp.actual.nombre,
-    modalidad: c.modalidad === "virtual" ? "virtual" : "presencial",
+    modalidad: c._modalidadCert || (c.modalidad === "virtual" ? "virtual" : "presencial"),
     fecha_capacitacion: c.fecha_capacitacion,
     horas: Number(c.horas || c.cap_cursos.horas),
     nota: asistencia ? null : 100,
@@ -1085,17 +1085,21 @@ async function cargarJornadas() {
     return nexusDb
       .from("cap_jornadas")
       .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " + extra +
-              "cap_convocatorias(id, creado_en, " + (emp.sinOrdenJornada ? "" : "orden_jornada, ") + "horas, evaluacion_presencial, cap_cursos(id, titulo, horas), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
+              "cap_convocatorias(id, creado_en, " + (emp.sinOrdenJornada ? "" : "orden_jornada, ") +
+              (emp.jSinExtras ? "" : "alianza_vitalwork, cuestionario, ") +
+              "modalidad, fecha_capacitacion, horas, evaluacion_presencial, cap_cursos(id, titulo, horas), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
       .eq("empresa_id", emp.actual.id)
       .order("fecha", { ascending: false });
   };
   // SQL 44: modalidad y enlace de la reunión de la jornada
   emp.sinModJornada = false;
   emp.sinOrdenJornada = false;
+  emp.jSinExtras = false;
   let { data, error } = await consulta("modalidad, encuentros, ");
-  for (let i = 0; i < 2 && error; i++) {
+  for (let i = 0; i < 3 && error; i++) {
     const m = error.message || "";
-    if (/orden_jornada/i.test(m)) emp.sinOrdenJornada = true;        // falta el SQL 45
+    if (/alianza_vitalwork|cuestionario/i.test(m)) emp.jSinExtras = true;   // falta el SQL 36 o 41
+    else if (/orden_jornada/i.test(m)) emp.sinOrdenJornada = true;        // falta el SQL 45
     else if (/modalidad|encuentros/i.test(m)) emp.sinModJornada = true; // falta el SQL 44
     else break;
     ({ data, error } = await consulta(emp.sinModJornada ? "" : "modalidad, encuentros, "));
@@ -1129,7 +1133,16 @@ function tarjetaJornada(j) {
   chips.className = "chips";
   const certificados = j.cap_convocatorias.reduce(function (n, c) { return n + (c.cap_certificados[0] ? c.cap_certificados[0].count : 0); }, 0);
   const MOD_J = { presencial: "Presencial", virtual: "Virtual", mixta: "Mixta" };
-  ["Jornada", j.modalidad ? MOD_J[j.modalidad] : null, fechaCorta(j.fecha + "T12:00"), j.cap_convocatorias.length + " capacitaciones", certificados + " certificados emitidos"]
+  const cv = j.cap_convocatorias;
+  const conEval = cv.filter(function (c) { return c.evaluacion_presencial; }).length;
+  const horasJ = cv.reduce(function (n, c) { return n + Number(c.horas || c.cap_cursos.horas || 0); }, 0);
+  const atd = cv.find(function (c) { return c.cuestionario === "atd"; });
+  ["Jornada", j.modalidad ? MOD_J[j.modalidad] : null, fechaCorta(j.fecha + "T12:00"), cv.length + " capacitaciones",
+    horasJ ? formatearHoras(horasJ) : null,
+    !conEval ? "Sin evaluación" : conEval === cv.length ? "Con evaluación" : conEval + " con evaluación",
+    cv.length && cv.every(function (c) { return c.alianza_vitalwork; }) ? "🤝 En alianza con VitalWork" : null,
+    atd ? "📋 Test A-T-D en línea: " + atd.cap_cursos.titulo : null,
+    certificados + " certificados emitidos"]
     .concat(encuentrosDe(j).map(function (e, i, t) { return "🎥 " + (t.length > 1 ? "Encuentro " + (i + 1) + ": " : "En vivo: ") + fechaHora(e.inicio); }))
     .filter(Boolean)
     .forEach(function (t) {
@@ -1244,6 +1257,7 @@ function tarjetaJornada(j) {
     }
     acciones.appendChild(boton(encuentrosDe(j).length ? "🎥 Enlace de la reunión" : "🎥 Agregar enlace de la reunión", "boton secundario boton-chico", function () { formReunion(art, j, true); }));
   }
+  accionesJornada(j).forEach(function (b) { acciones.appendChild(b); });
 
   art.append(cab, temas, fila, acciones, nota);
   return art;
@@ -1307,6 +1321,84 @@ async function extenderJornada(j) {
   }
   avisar("Jornada extendida hasta el " + fechaHora(hasta.toISOString()) + ", junto con sus capacitaciones.");
   await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+}
+
+// ---------------------------------------------------------------------
+// Las mismas opciones de una capacitación, para toda la jornada
+// ---------------------------------------------------------------------
+function accionesJornada(j) {
+  const cv = j.cap_convocatorias || [];
+  if (!cv.length) return [];
+  const lista = [];
+  lista.push(boton("Ver nómina", "boton boton-chico", function () { abrirNomina(cv[0], true, j); }));
+  if (!emp.jSinExtras) {
+    const todas = cv.every(function (c) { return c.alianza_vitalwork; });
+    lista.push(boton(todas ? "🤝 Quitar alianza VitalWork" : "🤝 En alianza con VitalWork", "boton secundario boton-chico", function () { alianzaJornada(j, !todas); }));
+  }
+  const conEval = cv.filter(function (c) { return c.evaluacion_presencial; }).length;
+  lista.push(boton(conEval === cv.length ? "📝 Sin evaluación" : "📝 Con evaluación", "boton secundario boton-chico", function () { evaluacionJornada(j, conEval !== cv.length); }));
+  if (!emp.jSinExtras) {
+    const atd = cv.find(function (c) { return c.cuestionario === "atd"; });
+    lista.push(boton(atd ? "📋 Quitar test A-T-D en línea" : "📋 Test A-T-D en línea", "boton secundario boton-chico", function () { atdJornada(j, !atd); }));
+  }
+  lista.push(boton("Ver certificado de ejemplo", "boton secundario boton-chico", function () { elegirTema(j, "¿De qué tema quieres ver el certificado de ejemplo?", function (c) { certificadoEjemplo(Object.assign({}, c, { _modalidadCert: j.modalidad === "virtual" ? "virtual" : null })); }); }));
+  return lista;
+}
+
+// Pide elegir un tema de la jornada (si hay uno solo, lo usa directo)
+function elegirTema(j, pregunta, hacer) {
+  const cv = j.cap_convocatorias;
+  if (cv.length === 1) return hacer(cv[0]);
+  const r = window.prompt(pregunta + "\n\n" + cv.map(function (c, i) { return (i + 1) + ". " + c.cap_cursos.titulo; }).join("\n") + "\n\nEscribe el número:", "1");
+  if (r === null) return;
+  const n = parseInt(r, 10);
+  if (!(n >= 1 && n <= cv.length)) return avisar("Ese número no está en la lista.", "error");
+  hacer(cv[n - 1]);
+}
+
+async function actualizarTemasJornada(j, cambios, ids, mensaje) {
+  const r = await nexusDb.from("cap_convocatorias").update(cambios).in("id", ids || j.cap_convocatorias.map(function (c) { return c.id; }));
+  if (r.error) return errorSupabase(r.error, "No se pudo cambiar la jornada.");
+  avisar(mensaje);
+  await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+}
+
+function alianzaJornada(j, activar) {
+  actualizarTemasJornada(j, { alianza_vitalwork: activar }, null, activar
+    ? "Listo: los certificados de todos los temas de la jornada saldrán con el logo y la firma de VitalWork."
+    : "Alianza quitada en todos los temas: los certificados saldrán solo con Nexus Academy.");
+}
+
+function evaluacionJornada(j, pedir) {
+  const cv = j.cap_convocatorias;
+  if (!pedir) {
+    if (!confirm("¿Quitar la evaluación de todos los temas de la jornada?\n\nQuien se registre recibirá su certificado de asistencia sin rendir prueba.")) return;
+    return actualizarTemasJornada(j, { evaluacion_presencial: false }, null, "Listo: la jornada ya no pide evaluación.");
+  }
+  const conPreguntas = cv.filter(function (c) {
+    const k = emp.cursos.find(function (x) { return x.id === c.cap_cursos.id; });
+    return k && k.preguntas > 0;
+  });
+  const sinPreguntas = cv.filter(function (c) { return conPreguntas.indexOf(c) < 0; });
+  if (!conPreguntas.length) return avisar("Ningún tema de esta jornada tiene preguntas. Agrégalas en Programas → Preguntas.", "error");
+  if (!confirm("¿Pedir evaluación en los temas de la jornada?" + (sinPreguntas.length
+    ? "\n\nEstos temas no tienen preguntas y seguirán sin evaluación:\n" + sinPreguntas.map(function (c) { return "• " + c.cap_cursos.titulo; }).join("\n")
+    : ""))) return;
+  actualizarTemasJornada(j, { evaluacion_presencial: true }, conPreguntas.map(function (c) { return c.id; }),
+    "Listo: " + conPreguntas.length + (conPreguntas.length === 1 ? " tema pide" : " temas piden") + " evaluación.");
+}
+
+function atdJornada(j, activar) {
+  if (!activar) {
+    if (!confirm("¿Quitar el Test A-T-D en línea de la jornada?\n\nLas respuestas que ya llegaron se conservan.")) return;
+    return actualizarTemasJornada(j, { cuestionario: null }, null, "Listo: la jornada ya no pide el Test A-T-D en línea.");
+  }
+  // Se llena una sola vez: va en UN tema (normalmente el de alcohol, tabaco y drogas)
+  elegirTema(j, "¿En qué tema se llenará el Test A-T-D? (se llena una sola vez)", async function (c) {
+    const r = await nexusDb.from("cap_convocatorias").update({ cuestionario: null }).in("id", j.cap_convocatorias.map(function (x) { return x.id; }));
+    if (r.error) return errorSupabase(r.error, "No se pudo cambiar el cuestionario.");
+    actualizarTemasJornada(j, { cuestionario: "atd" }, [c.id], "Listo: el Test A-T-D se pedirá en «" + c.cap_cursos.titulo + "».");
+  });
 }
 
 // Orden de los temas de la jornada (SQL 45)
@@ -1717,15 +1809,21 @@ function gruposDe(c) {
 }
 
 // todos = true: un solo listado con todos los grupos del mismo tema en la empresa
-async function abrirNomina(c, todos) {
-  const grupos = todos ? gruposDe(c) : null;
+// jornada: nómina de todos los temas de la jornada (columna «Tema»)
+async function abrirNomina(c, todos, jornada) {
+  const grupos = jornada
+    ? jornada.cap_convocatorias.map(function (x, i) { return { conv: x, nombre: (i + 1) + ". " + x.cap_cursos.titulo }; })
+    : (todos ? gruposDe(c) : null);
   const ids = grupos ? grupos.map(function (g) { return g.conv.id; }) : [c.id];
   mostrar("vista-nomina");
-  el("nomina-titulo").textContent = c.cap_cursos.titulo + (grupos ? " · todos los grupos" : "");
-  el("nomina-sub").textContent = emp.actual.nombre + " · " + (grupos
-    ? grupos.length + " grupos: " + grupos.map(function (g) { return g.nombre.replace(/^Grupo \d+ · /, ""); }).join(", ")
-    : NOMBRE_MODALIDAD[c.modalidad]) + " · " + formatearHoras(c.horas || c.cap_cursos.horas);
+  el("nomina-titulo").textContent = jornada ? jornada.nombre + " · " + grupos.length + " temas" : c.cap_cursos.titulo + (grupos ? " · todos los grupos" : "");
+  el("nomina-sub").textContent = emp.actual.nombre + " · " + (jornada
+    ? "Jornada del " + fechaCorta(jornada.fecha + "T12:00") + " · clave " + jornada.codigo
+    : (grupos
+      ? grupos.length + " grupos: " + grupos.map(function (g) { return g.nombre.replace(/^Grupo \d+ · /, ""); }).join(", ")
+      : NOMBRE_MODALIDAD[c.modalidad]) + " · " + formatearHoras(c.horas || c.cap_cursos.horas));
   el("th-grupo").hidden = !grupos;
+  el("th-grupo").textContent = jornada ? "Tema" : "Grupo";
   el("nomina-filas").innerHTML = "";
   el("nomina-cifras").innerHTML = "";
   el("buscar-nomina").value = "";
@@ -1770,7 +1868,7 @@ async function abrirNomina(c, todos) {
     };
   });
 
-  emp.nomina = { conv: c, filas: filas, grupos: grupos };
+  emp.nomina = { conv: c, filas: filas, grupos: grupos, jornada: jornada || null };
   const sinCert = filas.filter(function (f) { return !f.certificado; }).length;
   el("btn-asistencia-todos").hidden = !sinCert;
   el("btn-asistencia-todos").textContent = "Emitir certificados de asistencia (" + sinCert + ")";
@@ -1872,7 +1970,7 @@ async function emitirAsistencia(filas) {
     return errorSupabase(r.error, "No se pudieron emitir los certificados.");
   }
   avisar((r.data || 0) + ((r.data === 1) ? " certificado de asistencia emitido." : " certificados de asistencia emitidos.") + " Las personas los descargan en «Mis certificados» con su cédula y fecha de nacimiento.");
-  await abrirNomina(emp.nomina.conv, Boolean(emp.nomina.grupos));
+  await abrirNomina(emp.nomina.conv, Boolean(emp.nomina.grupos), emp.nomina.jornada);
 }
 
 el("btn-asistencia-todos").addEventListener("click", function () {
@@ -1884,7 +1982,7 @@ async function anularCertificado(f) {
   const r = await nexusDb.from("cap_certificados").delete().eq("id", f.certId);
   if (r.error) return errorSupabase(r.error, "No se pudo anular el certificado.");
   avisar("Certificado anulado.");
-  await abrirNomina(emp.nomina.conv, Boolean(emp.nomina.grupos));
+  await abrirNomina(emp.nomina.conv, Boolean(emp.nomina.grupos), emp.nomina.jornada);
 }
 
 el("btn-volver").addEventListener("click", async function () {
@@ -1911,7 +2009,7 @@ el("btn-excel").addEventListener("click", async function () {
   const c = emp.nomina.conv;
   const filas = emp.nomina.filas.map(function (f) {
     const fila = { "Nombres": f.nombres };
-    if (emp.nomina.grupos) fila["Grupo"] = f.grupo;
+    if (emp.nomina.grupos) fila[emp.nomina.jornada ? "Tema" : "Grupo"] = f.grupo;
     return Object.assign(fila, {
       "Cédula": f.cedula,
       "Correo": f.correo,
@@ -1934,7 +2032,7 @@ el("btn-excel").addEventListener("click", async function () {
   const resumen = [
     ["Empresa", emp.actual.nombre],
     ["RUC", emp.actual.ruc || ""],
-    ["Capacitación", c.cap_cursos.titulo],
+    emp.nomina.jornada ? ["Jornada", emp.nomina.jornada.nombre + " · clave " + emp.nomina.jornada.codigo] : ["Capacitación", c.cap_cursos.titulo],
     ...(emp.nomina.grupos ? emp.nomina.grupos.map(function (g) {
       const n = emp.nomina.filas.filter(function (f) { return f.grupo === g.nombre; });
       return [g.nombre, n.length + " inscritos · " + n.filter(function (f) { return f.certificado; }).length + " con certificado"];

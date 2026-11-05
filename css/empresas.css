@@ -235,3 +235,12 @@ body.modo-nomina .tabla td:first-child { min-width: 210px; }
 .panel-atd-informe #btn-informe-atd { margin-top: 14px; }
 .caja-cuestionario { margin: 14px 0; }
 
+
+/* ---------- Orden de los temas de la jornada (arrastrar) ---------- */
+.temas-jornada:has(.tema-arrastrable) { padding-left: 0; list-style: none; }
+.tema-arrastrable { display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin: 0 0 4px; border: 1px solid var(--niebla); border-radius: 8px; background: #fff; cursor: grab; }
+.tema-arrastrable.arrastrando { opacity: .5; border-style: dashed; }
+.tema-asa { color: var(--gris); font-size: 18px; line-height: 1; cursor: grab; }
+.tema-num { font-weight: 700; color: var(--pino); min-width: 2ch; }
+.tema-titulo { flex: 1; }
+.tema-mover { padding: 2px 6px; font-size: 13px; }

@@ -138,6 +138,8 @@ async function seleccionarEmpresa(id) {
   emp.actual = emp.lista.find(function (e) { return e.id === id; });
   pintarEmpresas();
   mostrar("vista-empresa");
+  el("buscar-trabajador").value = "";
+  el("resultado-trabajador").hidden = true;
   pintarCabeceraEmpresa();
   el("btn-editar-empresa").hidden = false;
   el("btn-informe").hidden = false;
@@ -1923,13 +1925,17 @@ function pintarCifras(filas, c) {
 
 el("buscar-nomina").addEventListener("input", pintarFilasNomina);
 
+function filasNominaVisibles() {
+  const filtro = el("buscar-nomina").value.trim().toLowerCase();
+  return emp.nomina.filas.filter(function (f) {
+    return !filtro || f.nombres.toLowerCase().includes(filtro) || f.cedula.includes(filtro);
+  });
+}
+
 function pintarFilasNomina() {
   const tbody = el("nomina-filas");
   tbody.innerHTML = "";
-  const filtro = el("buscar-nomina").value.trim().toLowerCase();
-  const filas = emp.nomina.filas.filter(function (f) {
-    return !filtro || f.nombres.toLowerCase().includes(filtro) || f.cedula.includes(filtro);
-  });
+  const filas = filasNominaVisibles();
 
   if (filas.length === 0) {
     const tr = document.createElement("tr");
@@ -2000,6 +2006,193 @@ async function anularCertificado(f) {
 el("btn-volver").addEventListener("click", async function () {
   mostrar("vista-empresa");
   await cargarConvocatorias();
+});
+
+// ---------------------------------------------------------------------
+// CERTIFICADOS EN LOTE (SQL 47): un ZIP con un PDF por persona, o todos
+// en un solo PDF para imprimir. Desde la nómina y desde «Buscar trabajador».
+// ---------------------------------------------------------------------
+function cargarJSZip() {
+  if (window.JSZip) return Promise.resolve();
+  return new Promise(function (ok, falla) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload = ok;
+    s.onerror = function () { s.remove(); falla(new Error("jszip")); };
+    document.head.appendChild(s);
+  });
+}
+
+function nombreArchivo(t, max) {
+  return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "").slice(0, max || 60);
+}
+
+function descargarBlob(blob, nombre) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+
+// ids: certificados a descargar · modo: "zip" | "pdf" · base: nombre del archivo · boton: para mostrar avance
+async function descargarCertificados(ids, modo, base, boton) {
+  ids = ids.filter(Boolean);
+  if (!ids.length) return avisar("No hay certificados emitidos en esta lista. A quien le falte, emítele primero el de asistencia.", "error");
+  if (typeof NexusCertificado === "undefined" || !NexusCertificado.documento) return avisar("No se cargó el generador de certificados. Recarga la página con Ctrl + F5.", "error");
+  const textoBoton = boton ? boton.textContent : "";
+  const marcar = function (t) { if (boton) { boton.textContent = t; boton.disabled = true; } };
+  const soltar = function () { if (boton) { boton.textContent = textoBoton; boton.disabled = false; } };
+  marcar("Preparando…");
+  try {
+    const r = await nexusDb.rpc("cap_certificados_admin", { p_ids: ids });
+    if (r.error) {
+      soltar();
+      if (/cap_certificados_admin|schema cache|function/i.test(r.error.message || "")) return avisar("Para descargar certificados en lote, ejecuta el SQL 47 en Supabase.", "error");
+      return errorSupabase(r.error, "No se pudieron leer los certificados.");
+    }
+    const lista = r.data || [];
+    if (modo === "pdf") {
+      marcar("Generando " + lista.length + "…");
+      const doc = await NexusCertificado.combinado(lista);
+      doc.save(base + ".pdf");
+    } else {
+      await cargarJSZip();
+      const zip = new JSZip();
+      const usados = {};
+      for (let i = 0; i < lista.length; i++) {
+        marcar("PDF " + (i + 1) + " de " + lista.length + "…");
+        const d = lista[i];
+        const doc = await NexusCertificado.documento(d);
+        let nombre = nombreArchivo(d.nombres, 50) + "_" + nombreArchivo(d.curso, 45);
+        usados[nombre] = (usados[nombre] || 0) + 1;
+        if (usados[nombre] > 1) nombre += "_" + usados[nombre];
+        zip.file(nombre + ".pdf", doc.output("arraybuffer"));
+      }
+      marcar("Comprimiendo…");
+      descargarBlob(await zip.generateAsync({ type: "blob" }), base + ".zip");
+    }
+    avisar(lista.length + (lista.length === 1 ? " certificado descargado." : " certificados descargados."));
+  } catch (e) {
+    console.error(e);
+    avisar("No se pudieron generar los certificados. Revisa tu conexión e inténtalo de nuevo.", "error");
+  }
+  soltar();
+}
+
+function baseNomina() {
+  const n = emp.nomina;
+  const tema = n.jornada ? n.jornada.nombre : n.conv.cap_cursos.titulo;
+  return "Certificados_" + nombreArchivo(emp.actual.nombre, 30) + "_" + nombreArchivo(tema, 40);
+}
+el("btn-cert-zip").addEventListener("click", function () {
+  if (emp.nomina) descargarCertificados(filasNominaVisibles().map(function (f) { return f.certId; }), "zip", baseNomina(), this);
+});
+el("btn-cert-pdf").addEventListener("click", function () {
+  if (emp.nomina) descargarCertificados(filasNominaVisibles().map(function (f) { return f.certId; }), "pdf", baseNomina(), this);
+});
+
+// ---------------------------------------------------------------------
+// BUSCAR TRABAJADOR en todas las capacitaciones de la empresa: ver sus
+// certificados, descargarlos o emitir el de asistencia si no aprobó.
+// ---------------------------------------------------------------------
+const bt = { filas: [], reloj: null };
+
+el("buscar-trabajador").addEventListener("input", function () {
+  clearTimeout(bt.reloj);
+  bt.reloj = setTimeout(buscarTrabajador, 450);
+});
+
+async function buscarTrabajador() {
+  const q = el("buscar-trabajador").value.trim().replace(/[,()*%]/g, " ").replace(/\s+/g, " ");
+  const caja = el("resultado-trabajador");
+  if (q.length < 3 || !emp.actual) { caja.hidden = true; return; }
+  const patron = "*" + q.replace(/ /g, "*") + "*";
+  const r = await nexusDb.from("cap_inscripciones")
+    .select("id, cedula, nombres, convocatoria_id, creado_en, cap_convocatorias!inner(id, empresa_id, fecha_capacitacion, cap_cursos(titulo))")
+    .eq("cap_convocatorias.empresa_id", emp.actual.id)
+    .or("nombres.ilike." + patron + ",cedula.ilike." + patron)
+    .order("nombres")
+    .limit(200);
+  if (r.error) return errorSupabase(r.error, "No se pudo buscar.");
+  if (q !== el("buscar-trabajador").value.trim().replace(/[,()*%]/g, " ").replace(/\s+/g, " ")) return; // ya escribió otra cosa
+  const insc = r.data || [];
+  const ids = insc.map(function (i) { return i.id; });
+  const convs = Array.from(new Set(insc.map(function (i) { return i.convocatoria_id; })));
+  const [cer, int] = ids.length ? await Promise.all([
+    nexusDb.from("cap_certificados").select("id, inscripcion_id, cedula, convocatoria_id, tipo, codigo").in("convocatoria_id", convs),
+    nexusDb.from("cap_intentos").select("inscripcion_id, aprobado").in("inscripcion_id", ids)
+  ]) : [{ data: [] }, { data: [] }];
+  bt.filas = insc.map(function (i) {
+    const c = (cer.data || []).find(function (x) { return x.inscripcion_id === i.id || (x.cedula === i.cedula && x.convocatoria_id === i.convocatoria_id); });
+    const intentos = (int.data || []).filter(function (x) { return x.inscripcion_id === i.id; }).length;
+    return {
+      id: i.id, nombres: i.nombres, cedula: i.cedula,
+      curso: i.cap_convocatorias.cap_cursos ? i.cap_convocatorias.cap_cursos.titulo : "",
+      fecha: i.cap_convocatorias.fecha_capacitacion || i.creado_en.slice(0, 10),
+      certId: c ? c.id : null, certificado: c ? c.codigo : "",
+      estado: c ? (c.tipo === "asistencia" ? "Asistencia certificada" : "Aprobado") : (intentos ? "No aprobado (" + intentos + (intentos === 1 ? " intento)" : " intentos)") : "Pendiente"),
+      clase: c ? "vigente" : (intentos ? "anulado" : "programado")
+    };
+  });
+  pintarTrabajador();
+}
+
+function pintarTrabajador() {
+  const caja = el("resultado-trabajador");
+  const tbody = el("filas-trabajador");
+  caja.hidden = false;
+  tbody.innerHTML = "";
+  const personas = new Set(bt.filas.map(function (f) { return f.cedula; })).size;
+  const conCert = bt.filas.filter(function (f) { return f.certId; }).length;
+  el("resultado-trabajador-texto").textContent = bt.filas.length
+    ? personas + (personas === 1 ? " persona" : " personas") + " · " + bt.filas.length + " capacitaciones · " + conCert + " con certificado"
+    : "No se encontró a nadie con ese nombre o cédula en las capacitaciones de esta empresa.";
+  el("btn-trab-zip").hidden = el("btn-trab-pdf").hidden = !conCert;
+  bt.filas.forEach(function (f) {
+    const tr = document.createElement("tr");
+    [f.nombres, f.cedula, f.curso, f.fecha ? fechaCorta(f.fecha + "T12:00") : "—"].forEach(function (v) {
+      const td = document.createElement("td");
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    const tdE = document.createElement("td");
+    const s = document.createElement("span");
+    s.className = "estado-acceso " + f.clase;
+    s.textContent = f.estado;
+    tdE.appendChild(s);
+    tr.appendChild(tdE);
+    const tdA = document.createElement("td");
+    if (f.certId) {
+      tdA.appendChild(boton("Descargar", "enlace-boton", function () {
+        descargarCertificados([f.certId], "pdf", "Certificado_" + nombreArchivo(f.nombres, 50) + "_" + nombreArchivo(f.curso, 45), this);
+      }));
+    } else {
+      tdA.appendChild(boton("Emitir asistencia", "enlace-boton", function () { emitirAsistenciaBusqueda(f); }));
+    }
+    tr.appendChild(tdA);
+    tbody.appendChild(tr);
+  });
+}
+
+async function emitirAsistenciaBusqueda(f) {
+  if (!confirm("¿Emitir el certificado de ASISTENCIA a " + f.nombres + " en «" + f.curso + "»?\n\nDespués ya no podrá obtener el de aprobación en esta capacitación (salvo que anules el de asistencia).")) return;
+  const r = await nexusDb.rpc("cap_emitir_asistencia", { p_inscripciones: [f.id] });
+  if (r.error) {
+    if (/cap_emitir_asistencia|schema cache|function/i.test(r.error.message || "")) return avisar("Para emitir certificados de asistencia, ejecuta el SQL 39 en Supabase.", "error");
+    return errorSupabase(r.error, "No se pudo emitir el certificado.");
+  }
+  avisar("Certificado de asistencia emitido para " + f.nombres + ". Ya puedes descargarlo.");
+  await buscarTrabajador();
+}
+
+el("btn-trab-zip").addEventListener("click", function () {
+  descargarCertificados(bt.filas.map(function (f) { return f.certId; }), "zip", "Certificados_" + nombreArchivo(el("buscar-trabajador").value, 40), this);
+});
+el("btn-trab-pdf").addEventListener("click", function () {
+  descargarCertificados(bt.filas.map(function (f) { return f.certId; }), "pdf", "Certificados_" + nombreArchivo(el("buscar-trabajador").value, 40), this);
 });
 
 // Exportar a Excel (.xlsx) con dos hojas: Nómina y Resumen

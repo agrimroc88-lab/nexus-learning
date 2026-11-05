@@ -300,9 +300,11 @@ const NexusCertificado = (function () {
     doc.restoreGraphicsState();
   }
 
-  function dibujar(d) {
+  // docExistente: se agrega como una página más (certificados en un solo PDF)
+  function dibujar(d, docExistente) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const doc = docExistente || new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    if (docExistente) doc.addPage("a4", "landscape");
     const W = 297, H = 210;
 
     // --- Fondo y marca ---
@@ -398,6 +400,7 @@ const NexusCertificado = (function () {
       return doc;
     }
 
+    if (docExistente || d.sinGuardar) return doc;
     doc.save("Certificado_" + d.codigo + ".pdf");
   }
 
@@ -450,5 +453,24 @@ const NexusCertificado = (function () {
   if ("requestIdleCallback" in window) requestIdleCallback(function () { librerias().catch(function () {}); });
   else setTimeout(function () { librerias().catch(function () {}); }, 3000);
 
-  return { generar: generar, muestra: muestra };
+  // ---- En lote (administrador): un PDF por persona o todos en un solo PDF ----
+  function preparar() { return Promise.all([librerias(), imagenesListas()]); }
+  // Devuelve el PDF de un certificado (sin descargarlo)
+  function documento(d) {
+    return preparar().then(function () { return revisarAlianza(d); })
+      .then(function (dd) { return dibujar(Object.assign({}, dd, { sinGuardar: true })); });
+  }
+  // Todos los certificados en un solo PDF, uno por página
+  function combinado(lista) {
+    return preparar().then(function () {
+      let doc = null;
+      lista.forEach(function (d) {
+        if (!doc) doc = dibujar(Object.assign({}, d, { sinGuardar: true }));
+        else dibujar(d, doc);
+      });
+      return doc;
+    });
+  }
+
+  return { generar: generar, muestra: muestra, documento: documento, combinado: combinado };
 })();

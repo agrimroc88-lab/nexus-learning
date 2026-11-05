@@ -264,7 +264,10 @@
               <input class="campo campo-clave" id="v-clave-virtual" maxlength="12" placeholder="Vacío = se genera sola" autocomplete="off" spellcheck="false">
               <button type="button" class="boton secundario boton-chico" data-sugerir="v-clave-virtual">Sugerir</button>
             </div>
-            <p class="ayuda">El acceso virtual siempre exige ver las lecciones y aprobar la evaluación.</p>
+            <label class="interruptor" id="v-eval-virtual-caja">
+              <input type="checkbox" id="v-eval-virtual" checked>
+              <span>El acceso virtual pide <strong>evaluación</strong> (si lo desmarcas: ve las lecciones y al terminar recibe su certificado de asistencia)</span>
+            </label>
           </div>
 
           <p class="ayuda">Claves: letras y números (4 a 12). Recomendado: 3 letras de la empresa y 5 números sin orden, por ejemplo AGR48213. Cada clave se usa una sola vez; si hace falta más tiempo, se extiende su vigencia.</p>
@@ -411,6 +414,6 @@
   <script src="js/reporte-empresa.js"></script>
   <script src="js/certificado.js?v=9"></script>
   <script src="js/atd-admin.js?v=2"></script>
-  <script src="js/empresas.js?v=15"></script>
+  <script src="js/empresas.js?v=16"></script>
 </body>
 </html>

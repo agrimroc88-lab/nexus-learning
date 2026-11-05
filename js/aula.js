@@ -569,6 +569,7 @@ function escenaPdf(caja, paso) {
     })
     .catch(function (e) {
       console.error(e);
+      visor.error = true;
       estado.textContent = "No se pudieron mostrar las diapositivas aquí. Usa \"Abrir PDF\".";
       presentar.disabled = true;
     });
@@ -613,30 +614,48 @@ function abrirPresentacion(visorInicial) {
 
   // Pasa al PDF que muestre el Salón después de ejecutar `ir` (otro paso u otro tema),
   // sin salir de la presentación ni de la pantalla completa.
-  async function encadenar(ir, alUltima) {
+  // Devuelve false si no hay un PDF que cargar (el material sigue en el Salón).
+  async function encadenar(ir, alUltima, rotulo) {
     cambiando = true;
     const viejo = v;
     viejo.presentacion = null;
-    pantallaFin("Cargando…", "", "");
-    await ir();
-    const limite = Date.now() + 20000;
-    while ((pdfActivo === viejo || !pdfActivo || !pdfActivo.doc) && Date.now() < limite) {
-      await new Promise(function (r) { setTimeout(r, 120); });
+    pantallaFin("Cargando…", rotulo || "", "Un momento, por favor");
+    let hayPdf = true;
+    try { hayPdf = (await ir()) !== false; } catch (e) { console.error(e); hayPdf = false; }
+    if (cerrada) { cambiando = false; return; }
+    if (!hayPdf) { cambiando = false; return cerrar(); }
+    const inicio = Date.now(), limite = inicio + 45000;
+    const nuevo = function () { return pdfActivo && pdfActivo !== viejo ? pdfActivo : null; };
+    while (!(nuevo() && (nuevo().doc || nuevo().error)) && Date.now() < limite) {
+      await new Promise(function (r) { setTimeout(r, 150); });
+      const seg = Math.round((Date.now() - inicio) / 1000);
+      if (seg >= 3) finNota.textContent = "Descargando las diapositivas… " + seg + " s (Esc para salir)";
     }
     cambiando = false;
-    if (!pdfActivo || pdfActivo === viejo || !pdfActivo.doc) return cerrar();
-    v = pdfActivo;
+    if (cerrada) return;                       // se salió con Esc mientras cargaba
+    const n = nuevo();
+    if (!n || !n.doc) {
+      // No cargó (sin conexión, PDF dañado o muy pesado): no se queda colgado
+      pendiente = null;
+      return pantallaFin("No se pudieron cargar las diapositivas", rotulo || "",
+        "Presiona Esc o haz clic para salir y verlo en el Salón (o usa «Abrir PDF»)");
+    }
+    v = n;
     v.presentacion = pres;
     if (alUltima) v.irPagina(v.total); else pres.mostrar();
   }
 
   async function siguienteTema() {
     pendiente = null;
+    const sig = au.temas[au.t + 1];
     await encadenar(async function () {
-      await abrirSalon(au.temas[au.t + 1]);
+      await abrirSalon(sig);
+      if (!au.curso || au.curso.id !== sig) return false;              // no se pudo abrir el tema
       const k = au.pasos.findIndex(function (p) { return p.tipo === "pdf"; });
-      if (k >= 0) irA(k);
-    });
+      if (k < 0) return false;                                       // ese tema no tiene diapositivas
+      irA(k);
+      return true;
+    }, false, au.titulos[sig] || "");
   }
 
   const pres = {

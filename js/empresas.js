@@ -296,13 +296,16 @@ async function cargarConvocatorias() {
   emp.sinReunion = false;
   emp.sinAlianza = false;
   emp.sinCuestionario = false;
+  emp.sinEvalVirtual = false;
   const extras = function () {
-    return (emp.sinReunion ? "" : "encuentros, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ") + (emp.sinCuestionario ? "" : "cuestionario, ");
+    return (emp.sinReunion ? "" : "encuentros, ") + (emp.sinAlianza ? "" : "alianza_vitalwork, ") +
+      (emp.sinCuestionario ? "" : "cuestionario, ") + (emp.sinEvalVirtual ? "" : "evaluacion_virtual, ");
   };
   let { data, error } = await consulta(extras());
-  for (let i = 0; i < 3 && error; i++) {
+  for (let i = 0; i < 4 && error; i++) {
     const m = error.message || "";
-    if (/cuestionario/i.test(m)) emp.sinCuestionario = true;
+    if (/evaluacion_virtual/i.test(m)) emp.sinEvalVirtual = true;
+    else if (/cuestionario/i.test(m)) emp.sinCuestionario = true;
     else if (/alianza/i.test(m)) emp.sinAlianza = true;
     else if (/encuentros/i.test(m)) emp.sinReunion = true;
     else break;
@@ -412,6 +415,7 @@ function tarjetaConvocatoria(c) {
     formatearHoras(horas),
     c.fecha_capacitacion ? "Charla: " + fechaCorta(c.fecha_capacitacion + "T12:00") : null,
     c.modalidad !== "virtual" ? (c.evaluacion_presencial ? "QR con evaluación" : "QR sin evaluación") : null,
+    c.modalidad !== "presencial" ? (c.evaluacion_virtual === false ? "Virtual sin evaluación" : "Virtual con evaluación") : null,
     c.observaciones,
     c.alianza_vitalwork ? "🤝 En alianza con VitalWork" : null,
     c.cuestionario === "atd" ? "📋 Test A-T-D en línea" : null,
@@ -496,6 +500,9 @@ function tarjetaConvocatoria(c) {
   }
   if (!emp.sinAlianza) {
     acciones.appendChild(boton(c.alianza_vitalwork ? "🤝 Quitar alianza VitalWork" : "🤝 En alianza con VitalWork", "boton secundario boton-chico", function () { cambiarAlianza(c); }));
+  }
+  if (!emp.sinEvalVirtual && c.modalidad !== "presencial") {
+    acciones.appendChild(boton(c.evaluacion_virtual === false ? "📝 Pedir evaluación en lo virtual" : "📝 Virtual sin evaluación", "boton secundario boton-chico", function () { cambiarEvalVirtual(c); }));
   }
   if (!emp.sinCuestionario) {
     acciones.appendChild(boton(c.cuestionario === "atd" ? "📋 Quitar test A-T-D en línea" : "📋 Test A-T-D en línea", "boton secundario boton-chico", function () { cambiarCuestionario(c); }));
@@ -936,7 +943,8 @@ async function eliminarConvocatoria(c, inscritos, certificados) {
 async function certificadoEjemplo(c) {
   if (typeof NexusCertificado === "undefined") return avisar("No se cargó el generador de certificados. Recarga la página con Ctrl + F5.", "error");
   const curso = await nexusDb.from("cap_cursos").select("subtemas").eq("id", c.cap_cursos.id).maybeSingle();
-  const asistencia = c.modalidad === "presencial" && !c.evaluacion_presencial;
+  const asistencia = (c.modalidad === "presencial" && !c.evaluacion_presencial) ||
+    (c.modalidad === "virtual" && c.evaluacion_virtual === false);
   NexusCertificado.muestra({
     tipo: asistencia ? "asistencia" : "evaluacion",
     curso: c.cap_cursos.titulo,
@@ -959,6 +967,22 @@ async function cambiarAlianza(c) {
   avisar(nuevo
     ? "Listo: los certificados de esta capacitación saldrán con el logo y la firma de VitalWork (también los ya emitidos, al volver a descargarlos)."
     : "Alianza quitada: los certificados saldrán solo con Nexus Academy.");
+  await cargarConvocatorias();
+}
+
+// Acceso virtual con o sin evaluación (SQL 43)
+async function cambiarEvalVirtual(c) {
+  const conEval = c.evaluacion_virtual === false;
+  const texto = conEval
+    ? "¿Pedir evaluación en el acceso virtual de esta capacitación?\n\nQuienes entren desde ahora deberán aprobarla. El curso necesita preguntas."
+    : "¿Quitar la evaluación del acceso virtual?\n\nQuienes entren verán las lecciones y al terminar recibirán su certificado de asistencia.";
+  if (!confirm(texto)) return;
+  if (conEval && !(c.cap_cursos && (emp.cursos.find(function (k) { return k.id === c.cap_cursos.id; }) || {}).preguntas)) {
+    if (!confirm("Este curso parece no tener preguntas todavía. ¿Continuar de todos modos?")) return;
+  }
+  const r = await nexusDb.from("cap_convocatorias").update({ evaluacion_virtual: conEval }).eq("id", c.id);
+  if (r.error) return errorSupabase(r.error, "No se pudo cambiar la evaluación.");
+  avisar(conEval ? "Listo: el acceso virtual pide evaluación." : "Listo: el acceso virtual ya no pide evaluación.");
   await cargarConvocatorias();
 }
 
@@ -1314,6 +1338,8 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-hora-desde").value = horaActual();
   el("v-hora-hasta").value = horaMas(4);
   el("v-eval-presencial").checked = false;
+  el("v-eval-virtual").checked = true;
+  el("v-eval-virtual-caja").hidden = emp.sinEvalVirtual === true;
   el("v-virtual-desde").value = hoyISO();
   el("v-virtual-hasta").value = sumarDiasISO(15);
   el("v-horas").value = "";
@@ -1353,13 +1379,17 @@ el("form-conv").addEventListener("submit", async function (ev) {
   const modalidad = modalidadElegida();
   const curso = emp.cursos.find(function (c) { return c.id === el("v-curso").value; });
   const evalPresencial = el("v-eval-presencial").checked;
+  const evalVirtual = emp.sinEvalVirtual || el("v-eval-virtual").checked;
   const horasTexto = el("v-horas").value.trim();
   const horas = horasTexto === "" ? null : Number(horasTexto);
 
   // Validaciones según la modalidad
   if (!curso) return avisar("Elige un curso.", "error");
-  if (modalidad !== "presencial" && (curso.lecciones === 0 || curso.preguntas === 0)) {
-    return avisar("Para el acceso virtual, el curso necesita lecciones y preguntas. Agrégalas en la sección Cursos.", "error");
+  if (modalidad !== "presencial" && curso.lecciones === 0) {
+    return avisar("Para el acceso virtual, el curso necesita lecciones. Agrégalas en la sección Cursos.", "error");
+  }
+  if (modalidad !== "presencial" && evalVirtual && curso.preguntas === 0) {
+    return avisar("Este curso no tiene preguntas, así que el acceso virtual no puede pedir evaluación. Desmarca esa opción o agrega preguntas.", "error");
   }
   if (modalidad !== "virtual" && evalPresencial && curso.preguntas === 0) {
     return avisar("Este curso no tiene preguntas, así que el QR no puede pedir evaluación. Desmarca esa opción o agrega preguntas.", "error");
@@ -1401,6 +1431,7 @@ el("form-conv").addEventListener("submit", async function (ev) {
 
   if (!emp.sinAlianza && el("v-alianza").checked) reunion.alianza_vitalwork = true;
   if (!emp.sinCuestionario && el("v-cuestionario").value) reunion.cuestionario = el("v-cuestionario").value;
+  if (!emp.sinEvalVirtual && modalidad !== "presencial" && !evalVirtual) reunion.evaluacion_virtual = false;
 
   const conv = await nexusDb.from("cap_convocatorias").insert({
     ...reunion,

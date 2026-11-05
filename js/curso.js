@@ -143,6 +143,9 @@ function mostrarRegistro() {
   } else if (a.tipo === "presencial") {
     $("registro-titulo").textContent = "Regístrate para rendir la evaluación";
     $("registro-intro").textContent = "Escribe tus datos tal como deben aparecer en el certificado. Luego responderás una evaluación corta.";
+  } else if (!a.requiere_evaluacion) {
+    $("registro-titulo").textContent = "Regístrate para comenzar";
+    $("registro-intro").textContent = "Escribe tus datos tal como deben aparecer en el certificado. Luego estudiarás las lecciones y, al terminar, obtendrás tu certificado de asistencia.";
   } else {
     $("registro-titulo").textContent = "Regístrate para comenzar";
     $("registro-intro").textContent = "Escribe tus datos tal como deben aparecer en el certificado. Luego podrás estudiar las lecciones y rendir la evaluación.";
@@ -232,6 +235,13 @@ async function registrar(persona, silencioso) {
       db: nexusDb, codigo: st.codigo, cedula: persona.cedula, caja: $("vista-atd"),
       alTerminar: function () { registrar(persona, true); }
     });
+    return;
+  }
+
+  // Virtual sin evaluación (SQL 43): lecciones y luego el certificado
+  if (data.estado === "lecciones") {
+    if (st.acceso.lecciones > 0) await cargarLecciones();
+    else { prepararSinLecciones(); await finalizarSinEvaluacion(); }
     return;
   }
 
@@ -334,6 +344,9 @@ async function unirse(d, cedula) {
   }
   if (d.estado === "certificado" && d.certificado) {
     mostrarCertificado(d.certificado, true);
+  } else if (d.misma && d.estado === "lecciones") {
+    if (st.acceso.lecciones > 0) await cargarLecciones();
+    else { prepararSinLecciones(); await finalizarSinEvaluacion(); }
   } else if (d.misma && d.estado === "evaluacion") {
     if (st.acceso.tipo === "virtual" && st.acceso.lecciones > 0) await cargarLecciones();
     else { prepararSinLecciones(); await mostrarEvaluacion(); }
@@ -378,6 +391,29 @@ function mostrarUnido(d) {
     cont.appendChild(acciones);
   }
   mostrarVista("vista-resultado");
+}
+
+// Virtual sin evaluación: al terminar las lecciones se entrega el certificado de asistencia
+async function finalizarSinEvaluacion() {
+  const boton = $("btn-siguiente");
+  if (boton) boton.disabled = true;
+  const { data, error } = await nexusDb.rpc("cap_finalizar_sin_evaluacion", { p_codigo: st.codigo, p_cedula: st.persona.cedula });
+  if (boton) boton.disabled = false;
+  if (error) {
+    console.error(error);
+    alert(error.message || "No se pudo obtener el certificado. Inténtalo de nuevo.");
+    return;
+  }
+  if (data.estado === "cuestionario" && window.NexusAtd) {
+    st.vueltasAtd = (st.vueltasAtd || 0) + 1;
+    if (st.vueltasAtd > 3) return;
+    await NexusAtd.mostrar({
+      db: nexusDb, codigo: st.codigo, cedula: st.persona.cedula, caja: $("vista-atd"),
+      alTerminar: finalizarSinEvaluacion
+    });
+    return;
+  }
+  if (data.estado === "certificado") mostrarCertificado(data.certificado, data.ya_emitido);
 }
 
 // ---------------------------------------------------------------------
@@ -425,7 +461,7 @@ function construirTemario() {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.id = "btn-temario-evaluacion";
-  btn.textContent = "Evaluación final";
+  btn.textContent = st.acceso.requiere_evaluacion ? "Evaluación final" : "Obtener mi certificado";
   btn.addEventListener("click", mostrarEvaluacion);
   li.appendChild(btn);
   ol.appendChild(li);
@@ -442,7 +478,9 @@ function actualizarTemario(activa) {
   });
   const listas = st.vistas.size >= total;
   $("btn-temario-evaluacion").disabled = !listas;
-  $("btn-temario-evaluacion").title = listas ? "" : "Revisa todas las lecciones para habilitar la evaluación";
+  $("btn-temario-evaluacion").title = listas ? "" : (st.acceso.requiere_evaluacion
+    ? "Revisa todas las lecciones para habilitar la evaluación"
+    : "Revisa todas las lecciones para obtener tu certificado");
   $("progreso-texto").textContent = "Progreso: " + st.vistas.size + " de " + total + " lecciones";
   $("progreso-barra").style.width = Math.round((st.vistas.size / total) * 100) + "%";
 
@@ -495,7 +533,7 @@ function mostrarLeccion(i) {
     siguiente.textContent = "Siguiente lección";
     siguiente.onclick = function () { mostrarLeccion(i + 1); };
   } else {
-    siguiente.textContent = "Ir a la evaluación";
+    siguiente.textContent = st.acceso.requiere_evaluacion ? "Ir a la evaluación" : "Terminar y obtener mi certificado";
     siguiente.onclick = mostrarEvaluacion;
   }
 
@@ -571,6 +609,7 @@ function obtenerIdYoutube(url) {
 // ---------------------------------------------------------------------
 async function mostrarEvaluacion() {
   if (st.lecciones.length > 0 && st.vistas.size < st.lecciones.length) return;
+  if (!st.acceso.requiere_evaluacion) return finalizarSinEvaluacion();
 
   actualizarTemario(st.lecciones.length);
   mostrarVista("vista-evaluacion");

@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/admin.css?v=3">
   <link rel="stylesheet" href="css/juegos.css?v=3">
-  <link rel="stylesheet" href="css/aula.css?v=12">
+  <link rel="stylesheet" href="css/aula.css?v=13">
 </head>
 <body>
 
@@ -62,10 +62,16 @@
       <a class="boton secundario" href="admin.html" id="btn-planificar-general">Planificación y diseño</a>
     </div>
     <div id="aviso" class="aviso" role="status" hidden></div>
+    <!-- Pestañas: Capacitaciones programadas | Programas -->
+    <div class="pestanas aula-pestanas" id="aula-pestanas" role="tablist" hidden>
+      <button type="button" class="pestana activa" role="tab" data-vista="programadas">📅 Capacitaciones programadas <span id="n-programadas"></span></button>
+      <button type="button" class="pestana" role="tab" data-vista="programas">📚 Programas <span id="n-programas"></span></button>
+    </div>
     <section id="proximas" class="proximas" hidden aria-labelledby="proximas-titulo">
       <h2 id="proximas-titulo">Capacitaciones programadas</h2>
       <ul id="lista-proximas" class="lista-proximas"></ul>
     </section>
+    <div id="vista-programas">
     <h2 class="titulo-programas" id="titulo-programas" hidden>Programas</h2>
     <label class="buscador-cursos aula-buscador">
       <span class="sr-only">Buscar curso</span>
@@ -73,6 +79,7 @@
       <input type="search" id="buscar-curso" placeholder="Buscar curso…" autocomplete="off">
     </label>
     <ul id="cursos-aula" class="cursos-aula"></ul>
+    </div>
   </main>
 
   <!-- ===== Salón de clases ===== -->
@@ -110,6 +117,6 @@
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/juegos-motor.js?v=3"></script>
-  <script src="js/aula.js?v=18"></script>
+  <script src="js/aula.js?v=19"></script>
 </body>
 </html>

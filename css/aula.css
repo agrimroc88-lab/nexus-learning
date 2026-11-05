@@ -204,3 +204,7 @@
 .tarjeta-jornada-proxima .proxima-temas { margin: 6px 0 4px; padding-left: 20px; font-size: 14px; line-height: 1.35; }
 .tarjeta-jornada-proxima .proxima-temas li { margin-bottom: 2px; }
 @media (max-width: 700px) { .tarjeta-jornada-proxima { grid-column: auto; } }
+
+/* ---------- Pestañas de la página Cursos ---------- */
+.aula-pestanas { margin: 10px 0 18px; }
+.aula-pestanas .pestana span { font-weight: 600; color: var(--gris); }

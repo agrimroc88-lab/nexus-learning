@@ -1085,7 +1085,7 @@ async function cargarJornadas() {
     return nexusDb
       .from("cap_jornadas")
       .select("id, nombre, fecha, codigo, valido_desde, valido_hasta, anulado, creado_en, " + extra +
-              "cap_convocatorias(id, cap_cursos(titulo), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count))")
+              "cap_convocatorias(id, cap_cursos(titulo), cap_accesos(id, tipo, anulado, valido_hasta), cap_certificados(count), cap_inscripciones(count))")
       .eq("empresa_id", emp.actual.id)
       .order("fecha", { ascending: false });
   };
@@ -1167,6 +1167,7 @@ function tarjetaJornada(j) {
     botones.appendChild(boton("Extender vigencia", "enlace-boton", function () { extenderJornada(j); }));
     botones.appendChild(boton("Anular", "enlace-boton rojo", function () { anularJornada(j); }));
   }
+  botones.appendChild(boton("Eliminar jornada", "enlace-boton rojo", function () { eliminarJornada(j); }));
   fila.append(info, botones);
 
   const nota = document.createElement("p");
@@ -1251,6 +1252,44 @@ async function extenderJornada(j) {
     if (a.error) return errorSupabase(a.error, "La jornada se extendió, pero no las claves de sus capacitaciones.");
   }
   avisar("Jornada extendida hasta el " + fechaHora(hasta.toISOString()) + ", junto con sus capacitaciones.");
+  await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+}
+
+// Eliminar una jornada mal planificada: la jornada, su clave y sus capacitaciones
+async function eliminarJornada(j) {
+  const convs = j.cap_convocatorias || [];
+  const cuenta = function (c, k) { return c[k] && c[k][0] ? c[k][0].count : 0; };
+  const inscritos = convs.reduce(function (n, c) { return n + cuenta(c, "cap_inscripciones"); }, 0);
+  const certificados = convs.reduce(function (n, c) { return n + cuenta(c, "cap_certificados"); }, 0);
+  const temas = convs.map(function (c) { return "• " + c.cap_cursos.titulo; }).join("\n");
+  if (!inscritos) {
+    if (!confirm("¿Eliminar la jornada \"" + j.nombre + "\" (clave " + j.codigo + ") y sus " + convs.length + " capacitaciones?\n\n" + temas + "\n\nNadie se ha inscrito todavía.")) return;
+  } else {
+    const r0 = window.prompt("¿Eliminar la jornada \"" + j.nombre + "\" (clave " + j.codigo + ")?\n\n" + temas + "\n\n" +
+      "Se borrarán sus " + convs.length + " capacitaciones con " + inscritos + (inscritos === 1 ? " inscrito" : " inscritos") +
+      (certificados ? " y " + certificados + (certificados === 1 ? " certificado" : " certificados") + " (dejarán de ser válidos en la verificación)" : "") +
+      ". No se puede deshacer.\n\nSi lo necesitas como respaldo, descarga antes el Excel de cada nómina.\n\nPara confirmar escribe ELIMINAR:", "");
+    if (r0 === null) return;
+    if (r0.trim().toUpperCase() !== "ELIMINAR") return avisar("No se eliminó: no escribiste ELIMINAR.", "error");
+  }
+
+  for (const c of convs) {
+    let r = await nexusDb.rpc("cap_eliminar_capacitacion", { p_convocatoria: c.id });
+    if (r.error && /cap_eliminar_capacitacion|function/i.test(r.error.message || "") && !cuenta(c, "cap_inscripciones")) {
+      r = await nexusDb.from("cap_convocatorias").delete().eq("id", c.id);
+    }
+    if (r.error) {
+      await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+      if (/cap_eliminar_capacitacion|schema cache/i.test(r.error.message || "")) return avisar("Para eliminar capacitaciones con inscritos, ejecuta el SQL 32 en Supabase.", "error");
+      return errorSupabase(r.error, "No se pudo eliminar la capacitación «" + c.cap_cursos.titulo + "» de la jornada.");
+    }
+  }
+  const rj = await nexusDb.from("cap_jornadas").delete().eq("id", j.id);
+  if (rj.error) {
+    await Promise.all([cargarJornadas(), cargarConvocatorias()]);
+    return errorSupabase(rj.error, "Se eliminaron sus capacitaciones, pero no la jornada.");
+  }
+  avisar("Jornada eliminada, con sus " + convs.length + " capacitaciones.");
   await Promise.all([cargarJornadas(), cargarConvocatorias()]);
 }
 

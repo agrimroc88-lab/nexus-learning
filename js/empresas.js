@@ -504,7 +504,7 @@ function tarjetaConvocatoria(c) {
   if (!emp.sinEvalVirtual && c.modalidad !== "presencial") {
     acciones.appendChild(boton(c.evaluacion_virtual === false ? "📝 Pedir evaluación en lo virtual" : "📝 Virtual sin evaluación", "boton secundario boton-chico", function () { cambiarEvalVirtual(c); }));
   }
-  if (!emp.sinCuestionario) {
+  if (!emp.sinCuestionario && (esTemaAtd(c.cap_cursos.titulo) || c.cuestionario === "atd")) {
     acciones.appendChild(boton(c.cuestionario === "atd" ? "📋 Quitar test A-T-D en línea" : "📋 Test A-T-D en línea", "boton secundario boton-chico", function () { cambiarCuestionario(c); }));
   }
   acciones.appendChild(boton("Ver certificado de ejemplo", "boton secundario boton-chico", function () { certificadoEjemplo(c); }));
@@ -998,6 +998,18 @@ async function cambiarEvalVirtual(c) {
   await cargarConvocatorias();
 }
 
+// En «Nueva capacitación», el campo del cuestionario solo aparece para ese curso
+function actualizarCajaCuestionario() {
+  const curso = emp.cursos.find(function (c) { return c.id === el("v-curso").value; });
+  el("v-cuestionario-caja").hidden = emp.sinCuestionario === true || !curso || !esTemaAtd(curso.titulo);
+}
+el("v-curso").addEventListener("change", actualizarCajaCuestionario);
+
+// El Test A-T-D solo corresponde a la capacitación de alcohol, tabaco y drogas
+function esTemaAtd(titulo) {
+  return /alcohol|tabaco|droga/i.test(String(titulo || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+}
+
 // Cuestionario en línea de la capacitación (SQL 41). En papel = sin cuestionario.
 async function cambiarCuestionario(c) {
   const activar = c.cuestionario !== "atd";
@@ -1337,7 +1349,8 @@ function accionesJornada(j) {
   }
   const conEval = cv.filter(function (c) { return c.evaluacion_presencial; }).length;
   lista.push(boton(conEval === cv.length ? "📝 Sin evaluación" : "📝 Con evaluación", "boton secundario boton-chico", function () { evaluacionJornada(j, conEval !== cv.length); }));
-  if (!emp.jSinExtras) {
+  const temaAtd = cv.find(function (c) { return esTemaAtd(c.cap_cursos.titulo); });
+  if (!emp.jSinExtras && (temaAtd || cv.some(function (c) { return c.cuestionario === "atd"; }))) {
     const atd = cv.find(function (c) { return c.cuestionario === "atd"; });
     lista.push(boton(atd ? "📋 Quitar test A-T-D en línea" : "📋 Test A-T-D en línea", "boton secundario boton-chico", function () { atdJornada(j, !atd); }));
   }
@@ -1393,12 +1406,11 @@ function atdJornada(j, activar) {
     if (!confirm("¿Quitar el Test A-T-D en línea de la jornada?\n\nLas respuestas que ya llegaron se conservan.")) return;
     return actualizarTemasJornada(j, { cuestionario: null }, null, "Listo: la jornada ya no pide el Test A-T-D en línea.");
   }
-  // Se llena una sola vez: va en UN tema (normalmente el de alcohol, tabaco y drogas)
-  elegirTema(j, "¿En qué tema se llenará el Test A-T-D? (se llena una sola vez)", async function (c) {
-    const r = await nexusDb.from("cap_convocatorias").update({ cuestionario: null }).in("id", j.cap_convocatorias.map(function (x) { return x.id; }));
-    if (r.error) return errorSupabase(r.error, "No se pudo cambiar el cuestionario.");
-    actualizarTemasJornada(j, { cuestionario: "atd" }, [c.id], "Listo: el Test A-T-D se pedirá en «" + c.cap_cursos.titulo + "».");
-  });
+  // Solo en el tema de alcohol, tabaco y drogas (se llena una sola vez)
+  const c = j.cap_convocatorias.find(function (x) { return esTemaAtd(x.cap_cursos.titulo); });
+  if (!c) return avisar("Esta jornada no tiene el tema de alcohol, tabaco y drogas.", "error");
+  if (!confirm("¿Activar el Test A-T-D en línea en «" + c.cap_cursos.titulo + "»?\n\nCada participante lo llenará una sola vez y recibirá su certificado de ese tema al guardarlo.")) return;
+  actualizarTemasJornada(j, { cuestionario: "atd" }, [c.id], "Listo: el Test A-T-D se pedirá en «" + c.cap_cursos.titulo + "».");
 }
 
 // Orden de los temas de la jornada (SQL 45)
@@ -1635,7 +1647,7 @@ el("btn-nueva-conv").addEventListener("click", function () {
   el("v-alianza").checked = false;
   el("v-alianza-caja").hidden = emp.sinAlianza === true;
   el("v-cuestionario").value = "";
-  el("v-cuestionario-caja").hidden = emp.sinCuestionario === true;
+  actualizarCajaCuestionario();
   el("v-clave-virtual").value = "";
   actualizarBloquesModalidad();
 
@@ -1715,7 +1727,7 @@ el("form-conv").addEventListener("submit", async function (ev) {
   botonGuardar.disabled = true;
 
   if (!emp.sinAlianza && el("v-alianza").checked) reunion.alianza_vitalwork = true;
-  if (!emp.sinCuestionario && el("v-cuestionario").value) reunion.cuestionario = el("v-cuestionario").value;
+  if (!emp.sinCuestionario && esTemaAtd(curso.titulo) && el("v-cuestionario").value) reunion.cuestionario = el("v-cuestionario").value;
   if (!emp.sinEvalVirtual && modalidad !== "presencial" && !evalVirtual) reunion.evaluacion_virtual = false;
 
   const conv = await nexusDb.from("cap_convocatorias").insert({

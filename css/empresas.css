@@ -219,7 +219,7 @@ body.modo-nomina .tabla-caja { max-height: calc(100vh - 160px); overflow: auto; 
 body.modo-nomina .tabla thead th { position: sticky; top: 0; z-index: 1; }
 body.modo-nomina .tabla { font-size: 14px; }
 body.modo-nomina .tabla td { padding: 8px 10px; }
-body.modo-nomina .tabla td:first-child { min-width: 210px; }
+body.modo-nomina .tabla td:first-child:not(.col-sel), body.modo-nomina .tabla td.col-sel + td { min-width: 210px; }
 .tabla td.celda-grupo { white-space: nowrap; }
 
 /* ---------- Logo de la empresa ---------- */
@@ -250,3 +250,9 @@ body.modo-nomina .tabla td:first-child { min-width: 210px; }
 .buscar-trabajador .campo { max-width: 520px; }
 #resultado-trabajador { margin-top: 12px; }
 #resultado-trabajador .nomina-herramientas { align-items: center; }
+
+/* Casillas para elegir certificados en la nómina */
+.tabla th.col-sel, .tabla td.col-sel { width: 1%; min-width: 34px; padding-left: 10px; padding-right: 4px; text-align: center; }
+.col-sel input { width: 18px; height: 18px; accent-color: var(--pino); cursor: pointer; }
+.celda-acciones { white-space: nowrap; }
+.celda-acciones .enlace-boton + .enlace-boton { margin-left: 10px; }
